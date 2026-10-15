@@ -1,0 +1,33 @@
+# Install once per clone:  pre-commit install
+# The frozen conference code is excluded from every fixer and linter.
+exclude: ^src/solaris/legacy/
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.1
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: legacy-sha256
+        name: legacy code is byte-identical (SHA-256)
+        entry: python src/solaris/integrity.py
+        language: system
+        pass_filenames: false
+        always_run: true
