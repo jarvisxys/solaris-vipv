@@ -12,7 +12,13 @@
 
 ## Working conventions
 - Platform: Windows 11 native (conda env `solaris` from environment.yml; no WSL).
-  Snakemake rules use `run:` or `script:`, not `shell:`; build paths with pathlib.
+  Snakemake rules use `run:` (load experiments with `experiment("<name>")` from the
+  Snakefile), never `script:` or `shell:` — Snakemake launches them through cmd without
+  quoting, which breaks on the space in the user-profile path. Build paths with pathlib.
+- Conference numbers: printed values live in configs/experiments/e0.yaml; the measured
+  baseline is results/e0/table_b0.csv. Compare new results against B0, never the paper.
+- `solaris.core` is bit-identical to legacy; extend it with new keyword arguments only and
+  keep tests/test_core_equivalence.py green.
 - One phase (P0-P9) per session; start in plan mode; write tests before implementation.
 - Commit after every passing task with the phase and experiment ID in the subject,
   e.g. `P1/E0: regression tests for Tables II-IV`. Remote: github.com/jarvisxys/solaris-vipv.

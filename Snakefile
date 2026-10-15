@@ -7,15 +7,35 @@
 import sys
 from pathlib import Path
 
+import yaml
+
 sys.path.insert(0, str(Path(workflow.basedir) / "src"))
 
 LEGACY = "src/solaris/legacy/solaris_v1.py"
 LEGACY_SUMS = "src/solaris/legacy/SHA256SUMS"
+CORE_SRC = sorted(str(f) for f in Path("src/solaris/core").glob("*.py"))
+E0_CFG = "configs/experiments/e0.yaml"
+E0 = yaml.safe_load(Path(E0_CFG).read_text(encoding="utf-8"))
+
+
+def experiment(name):
+    """Load experiments/<name>/run.py in-process. Rules use run: rather than script:
+    because Snakemake's script: launches python through cmd without quoting its path,
+    which breaks under a user profile containing a space."""
+    import importlib.util
+
+    path = Path(workflow.basedir) / "experiments" / name / "run.py"
+    spec = importlib.util.spec_from_file_location(f"experiments.{name}.run", path)
+    run_py = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(run_py)
+    return run_py
 
 
 rule all:
     input:
         "results/p0/legacy_sha256.ok",
+        E0["b0"]["out_table"],
+        E0["b0"]["out_pareto"],
 
 
 # ---------------------------------------------------------------- P0 bootstrap
@@ -37,9 +57,25 @@ rule legacy_sha256:
         )
 
 
+# ---------------------------------------------------------------- P1 / E0
+rule e0_measured:
+    """Table B0: conference metrics on the measured NSRDB TMY (Phoenix), next to the
+    reproduced synthetic values and the numbers printed in the conference paper."""
+    input:
+        tmy=E0["inputs"]["tmy_phoenix"]["path"],
+        base="configs/base.yaml",
+        e0=E0_CFG,
+        legacy_ok="results/p0/legacy_sha256.ok",
+        code=CORE_SRC,
+    output:
+        table=E0["b0"]["out_table"],
+        pareto=E0["b0"]["out_pareto"],
+    run:
+        experiment("e0_reproduce").main(input.tmy, output.table, output.pareto)
+
+
 # ---------------------------------------------------------------- planned rules
-# P1  E0   e0_regression, e0_measured        -> results/e0/table_b0.csv
-# P2       weather_tmy, weather_conus_5min   -> data/raw/nsrdb/
+# P2      weather_tmy, weather_conus_5min   -> data/raw/nsrdb/
 # P3       geom_aoi ... geom_freshness       -> data/derived/{dsm,cdsm,dem}.tif, tiles/*.glb
 # P4  E1   e1_verification                   -> results/e1/
 # P5  E2   e2_facets                         -> results/e2/
