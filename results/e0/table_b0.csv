@@ -17,6 +17,9 @@ II,grid_relief_balanced_pct,%,,76.78597635,,77.87379359
 II,saved_usd_per_yr,USD/yr,,671.6406233,,663.9619915
 II,payback_full_yr,yr,14.2,14.23380252,,14.39841455
 II,payback_pvonly_yr,yr,6.6,6.640455989,,6.717251977
+II,saved_usd_balanced_per_yr,USD/yr,,645.9378651,,648.8577446
+II,payback_full_balanced_yr,yr,,14.80018515,,14.73358387
+II,payback_pvonly_balanced_yr,yr,,6.904688889,,6.87361758
 II,fT,-,,0.9539054498,,0.9090063109
 II,E_aux_kWh_day,kWh/day,,2.988202007,,2.851190699
 II,A_req_m2,m2,13.6,13.61875599,,15.42651848
@@ -41,6 +44,9 @@ I,grid_relief_balanced_pct,%,,44.02037052,,38.86238505
 I,saved_usd_per_yr,USD/yr,,765.6144697,,667.5487778
 I,payback_full_yr,yr,,12.48670235,,14.32105086
 I,payback_pvonly_yr,yr,,5.825386244,,6.681159712
+I,saved_usd_balanced_per_yr,USD/yr,,740.9913593,,651.0087685
+I,payback_full_balanced_yr,yr,,12.90163492,,14.68490205
+I,payback_pvonly_balanced_yr,yr,,6.018963573,,6.850906187
 I,fT,-,,0.9539054498,,0.9090063109
 I,E_aux_kWh_day,kWh/day,,3.015350576,,2.876176837
 I,A_req_m2,m2,27.3,27.25135214,,31.01466899

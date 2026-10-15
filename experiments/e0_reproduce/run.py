@@ -7,7 +7,8 @@ Every later experiment compares against this table. Columns:
 
 grid_relief_pct is the conference definition (demand - grid) / demand; it credits the
 pack's net discharge over the year as solar. grid_relief_balanced_pct uses the harvest
-actually delivered, so the pack energy balance closes.
+actually delivered, so the pack energy balance closes. The journal reports the balanced
+definition (author decision, 2026-10-16); the *_balanced paybacks follow from it.
 
 Run by Snakemake (rule e0_measured, which calls main()) or directly:
   python experiments/e0_reproduce/run.py --tmy <csv> --table <csv> --pareto <csv>
@@ -44,6 +45,9 @@ METRICS = {
     "saved_usd_per_yr": ("USD/yr", None, None),
     "payback_full_yr": ("yr", "table6.Phoenix.payback_full_yr", None),
     "payback_pvonly_yr": ("yr", "table6.Phoenix.payback_pvonly_yr", None),
+    "saved_usd_balanced_per_yr": ("USD/yr", None, None),
+    "payback_full_balanced_yr": ("yr", None, None),
+    "payback_pvonly_balanced_yr": ("yr", None, None),
     "fT": ("-", None, None),
     "E_aux_kWh_day": ("kWh/day", None, None),
     "A_req_m2": ("m2", "inversion.{s}.Phoenix.A_req", None),
@@ -60,6 +64,7 @@ def metrics(km, city, climate) -> dict:
     r = core.simulate(SITE, km, city, climate=climate)
     r0 = core.simulate(SITE, km, city, climate=climate, pv_scale=0.0)
     e = core.economics(SITE, km, city, climate=climate)
+    saved_usd_balanced = r["harvest_used_kwh"] * core.BASE.price[SITE]
     return {
         "psh": r["psh"],
         "fss": r["fss"],
@@ -80,6 +85,9 @@ def metrics(km, city, climate) -> dict:
         "saved_usd_per_yr": e["saved_usd"],
         "payback_full_yr": e["payback_yr"],
         "payback_pvonly_yr": e["payback_pvonly"],
+        "saved_usd_balanced_per_yr": saved_usd_balanced,
+        "payback_full_balanced_yr": core.SYSTEM_COST / saved_usd_balanced,
+        "payback_pvonly_balanced_yr": core.PV_ONLY_COST / saved_usd_balanced,
         "fT": core.engine_fT(SITE, climate),
         "E_aux_kWh_day": core.engine_Eaux(SITE, city, km, climate),
         "A_req_m2": core.required_pv_area(km, city, SITE, climate),
