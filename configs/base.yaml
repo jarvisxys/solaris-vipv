@@ -1,0 +1,114 @@
+# Conference baseline parameters -- FROZEN (see CLAUDE.md).
+# Transcribed from src/solaris/legacy/solaris_v1.py (SHA-256 7b30b213...96d5).
+# tests/test_legacy.py asserts every introspectable value equals the legacy module;
+# values marked "literal" sit inside function bodies and are checked by the E0
+# refactor regression (P1) instead. Never edit; new parameters go in other configs.
+
+physics:
+  g: 9.81                    # m/s2
+  rho_air: 1.204             # kg/m3
+  Cd: 0.28
+  Af: 2.9                    # m2, frontal area
+  Cr: 0.010                  # rolling resistance
+  eta_dt: 0.92               # drivetrain efficiency
+  eta_regen_base: 0.60       # 0.72 optimistic sensitivity
+  P_susp_W: 200.0            # regenerative suspension, during motion
+
+pv:
+  A_skin_m2: 11.6
+  eta_pv: 0.22
+  beta_per_K: -0.004         # power temperature coefficient
+  kappa_pv_base: 0.80
+  cell_temp_rise_K_per_kWm2: 25.0   # literal: Pcell = Tamb + 25 * GHI/1000
+
+pack:
+  E_pack_kWh: 250.0
+  pack_mass_kg: {P0: 500, PA: 714}
+  capacity_kWh: {P0: 250.0, PA: 250.0, PB: 175.0}
+
+mass_kg:
+  "Glider (body, chassis, 2 motors, interior, 7 seats, HVAC)": 1800
+  "PV skin (11.6 m^2 VIPV laminate @3.5 kg/m^2)": 41
+  "TEG subsystem (2 m^2 modules + cold plate)": 35
+  "Regenerative suspension (4 EM dampers)": 32
+  "Power electronics (multi-input MPPT, 800V DC-DC)": 12
+  "Thermal management (added pump/HX capacity)": 15
+  "HV wiring / harness (distributed PV+TEG)": 10
+  "Coolant + loops (TEG + pack)": 8
+  "Added structure (roof/panel load paths)": 20
+  "Encapsulation / protective coatings": 9
+
+teg:                         # defaults of teg_daily_kwh()
+  A_teg: 2.0
+  alpha: 0.90
+  G: 700.0
+  h_loss: 15.0
+  k_TE: 1.2
+  leg: 0.004
+  fill: 0.5
+  R_contact: 0.001
+  S_mod: 0.051
+  R_int: 3.0
+  mod_per_m2: 625
+  hours: 5.0
+
+wltc:                        # official WLTC Class 3b phase statistics
+  Low:       {distance_km: 3.095, duration_s: 589, vmax_kmh: 56.5,  n_microtrips: 8}
+  Medium:    {distance_km: 4.756, duration_s: 433, vmax_kmh: 76.6,  n_microtrips: 5}
+  High:      {distance_km: 7.158, duration_s: 455, vmax_kmh: 97.4,  n_microtrips: 4}
+  ExtraHigh: {distance_km: 8.254, duration_s: 323, vmax_kmh: 131.3, n_microtrips: 2}
+  build_phase: {a_acc: 1.0, a_dec: 1.2}
+  official_total_km: 23.263  # literal in wltp_recon_error()
+
+synthetic_climate:           # LOCS: synthetic-climate design assumptions (not measured)
+  Phoenix: {lat: 33.4, psh: 6.3, T_mean: 24, T_amp: 12}
+  Lucknow: {lat: 26.8, psh: 5.2, T_mean: 26, T_amp: 10}
+  London:  {lat: 51.5, psh: 2.7, T_mean: 11, T_amp: 7}
+
+global_solar_atlas:          # GSA, reports generated 18 Jul 2026
+  Phoenix: {lat: 33.543171, lon: -112.073593, GHI: 2119.4, DNI: 2719.8, GTI_opta: 2440.5, T: 23.1, elev_m: 369}
+  Lucknow: {lat: 26.857530, lon: 80.912659,   GHI: 1725.6, DNI: 1145.5, GTI_opta: 1851.5, T: 24.9, elev_m: 127}
+  London:  {lat: 51.501993, lon: -0.119476,   GHI: 1032.7, DNI: 883.8,  GTI_opta: 1209.5, T: 10.9, elev_m: 9}
+
+tmy_files:
+  Phoenix: data/323705_33.45_-112.06_tmy-2023.csv   # NSRDB PSM v4.0.1
+  London: data/tmy_51_526_-0_129_2005_2023.csv       # PVGIS 5.2
+
+park_load:                   # defaults of park_load()
+  setpt: 30.0
+  UA: 25.0
+  COP: 2.2
+  soak: 15.0
+  P_min_W: 50.0              # literal
+
+schedule:                    # literals inside simulate()
+  drive_hours: [8, 18]
+  P_aux_driving_W: 250.0
+
+simulate:                    # defaults of simulate()
+  variant: P0
+  floor: 0.10
+  recharge_to: 0.80
+  seed: 0
+  pv_scale: 1.0
+  soc_initial_frac: 0.9      # literal
+
+economics:
+  price_usd_per_kWh: {Phoenix: 0.16, Lucknow: 0.09, London: 0.34}
+  cost_items_usd:
+    "PV skin (2.55 kWp @ ~$1.2/Wp incl. integration)": 3060
+    "Multi-input MPPT / power electronics": 800
+    "TEG subsystem (~1250 modules + cold plate)": 2500
+    "Regenerative suspension (4 EM dampers)": 2000
+    "HV wiring / structure / coatings": 1200
+
+pareto:                      # literals inside pareto()
+  pv_cost_usd_per_m2: 400.0
+  pack_cost_usd_per_kWh: 90.0
+  areas_m2: [8, 11.6, 15, 20]
+  capacities_kWh: [150, 200, 250]
+  seeds: [0, 1, 2, 3]
+
+scenarios:
+  II: {daily_km: 50, city: true}     # light urban
+  I: {daily_km: 100, city: false}    # moderate mixed
