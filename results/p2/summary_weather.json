@@ -1,0 +1,66 @@
+{
+  "timezone": "America/Phoenix",
+  "utc_offset_h": -7.0,
+  "tmy": {
+    "file": "33.45_-112.06_tmy-2023_60min.csv",
+    "sha256": "a44db2d2663f2f6ce544ce2281e05b4857add23b4f04e78854a13e3b632eca9a",
+    "dataset": "GOES TMY v4",
+    "names": "tmy-2023",
+    "version": "4.0.1",
+    "location_id": 323705,
+    "lat": 33.45,
+    "lon": -112.06,
+    "elevation_m": 334,
+    "rows": 8760,
+    "first": "2023-01-01 00:30:00-07:00",
+    "last": "2023-12-31 23:30:00-07:00",
+    "minutes": [
+      30
+    ],
+    "max_abs_zenith_residual_deg": 0.2416,
+    "ghi_kWh_m2": 2110.0,
+    "dni_kWh_m2": 2660.5,
+    "temp_air_mean_C": 23.23
+  },
+  "conus_5min": {
+    "file": "33.45_-112.06_2023_5min.csv",
+    "sha256": "256f0e8af87d8ac80c9dc07ef57e4191dbd69782d5b9b25145faba044f79feca",
+    "dataset": "GOES CONUS v4",
+    "names": "2023",
+    "version": "4.0.1",
+    "location_id": 518064,
+    "lat": 33.46,
+    "lon": -112.07,
+    "elevation_m": 334,
+    "rows": 105120,
+    "first": "2023-01-01 00:00:00-07:00",
+    "last": "2023-12-31 23:55:00-07:00",
+    "minutes": [
+      0,
+      5,
+      10,
+      15,
+      20,
+      25,
+      30,
+      35,
+      40,
+      45,
+      50,
+      55
+    ],
+    "max_abs_zenith_residual_deg": 0.0561,
+    "ghi_kWh_m2": 2132.9,
+    "dni_kWh_m2": 2735.9,
+    "temp_air_mean_C": 23.37
+  },
+  "tmy_vs_e0_pinned": {
+    "file": "323705_33.45_-112.06_tmy-2023.csv",
+    "max_abs_diff": {
+      "ghi": 0.0,
+      "dni": 0.0,
+      "dhi": 0.0,
+      "temp_air": 0.0
+    }
+  }
+}

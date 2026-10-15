@@ -3,6 +3,44 @@
 Every decision that changes a number, claim or reference in the journal paper,
 newest first, with date and reason.
 
+## 2026-10-16 · P2 weather
+
+Sources: `src/solaris/weather/`, `tests/test_weather.py`, `results/p2/summary_weather.json`
+(rules `weather_tmy`, `weather_conus_5min`, `weather_check`).
+
+- **Weather inputs downloaded and pinned.** NSRDB GOES TMY v4 tmy-2023 (cell 323705,
+  hourly, SHA-256 `a44db2d2…ca9a`) and GOES CONUS v4 2023 5-min (SHA-256 `256f0e8a…feca`),
+  both PSM v4.0.1 in local standard time, cached in `data/raw/nsrdb/`. The downloaded TMY's
+  GHI, DNI, DHI and temperature are identical to the file behind Table B0, so B0 stands.
+  Reason: P2; the E5 sub-hourly sensitivity needs the 5-min year.
+- **The 5-min year comes from a neighbouring cell.** The CONUS v4 grid cell nearest the site
+  is 518064 at 33.46/−112.07, about 1.4 km from the TMY cell 323705. Its 2023 GHI is
+  2132.9 kWh/m², against 2110.0 for the TMY. The E5 sensitivity must state both the cell
+  and the year. Reason: NSRDB serves the two products on different grids.
+- **Time convention fixed.** All series use America/Phoenix (UTC−7 all year). Stamps keep
+  NSRDB's Minute column: :30 for the TMY and :00…:55 for the 5-min year. pvlib SPA at those
+  stamps reproduces NSRDB's own solar zenith within 0.06° (5-min) and 0.24° (TMY), while a
+  5-min slip gives ≥1.5° and a 30-min slip ≥6.8°. TMY rows are relabelled onto 2023; the
+  TMY months come from 2014–2023. Reason: workflow guide, weather timestamp convention.
+- **Finding, TMY month seams.** NSRDB stitches TMY months in UTC. In the local-time file the
+  last local hours of some months come from another source day: 32 of 8760 rows, sun
+  position off by up to 0.24°. The irradiance values are unchanged. No effect on hourly
+  energy totals; noted for the E5 interpolation-limit statement.
+
+## 2026-10-16 · P1 / E0 author decisions
+
+- **Grid relief: energy-balanced definition adopted.** The journal reports relief as
+  (harvest − curtailed)/demand, which closes the pack energy balance, instead of the
+  conference (demand − grid)/demand. Table B0, measured: 77.9 % (Scen. II, 4055 kWh/yr) and
+  38.9 % (Scen. I). Paybacks on the balanced savings are now in B0:
+  full 14.7 yr / PV-only 6.9 yr for both scenarios (conference definition: 14.4 / 6.7 and
+  14.3 / 6.7). Reason: author decision; the conference definition counts the pack's
+  year-end deficit (94 kWh) as solar.
+- **London measured-hourly values dropped.** The PVGIS London TMY will not be supplied. The
+  5 London measured-hourly values (Table IV T2 0.48/0.23, PVGIS GHI 1050.7,
+  −6.2 %/12.1 % MAPE) stay unverified and are not carried into the journal. Reason: author
+  decision; the journal baseline is Phoenix only.
+
 ## 2026-10-16 · P1 / E0 reproduce and reconcile
 
 Sources: `configs/experiments/e0.yaml` (printed values), `tests/test_regression_v1.py`,

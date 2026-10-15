@@ -19,12 +19,18 @@ aoi:                             # routes + parking sites + buffer (P3)
   buffer_m: 1000                 # shadow length H/tan(alpha): 150 m tower at 10 deg ~ 850 m
   polygon: null
 
-nsrdb:
-  location_id: 323705
+nsrdb:                           # fetched by src/solaris/weather (P2) into data/raw/nsrdb/
+  location_id: 323705            # TMY cell; the CONUS 5-min cell is 518064 (33.46, -112.07)
   lat: 33.45
   lon: -112.06
-  tmy: {dataset: GOES TMY v4, version: PSM v4.0.1, name: tmy-2023}
-  conus_5min: {dataset: GOES CONUS v4, years: [2018, 2024], sensitivity_year: 2023}
+  utc: false                     # stamps in local standard time (UTC-7), as the pinned E0 TMY
+  attributes: [ghi, dni, dhi, clearsky_ghi, clearsky_dni, clearsky_dhi, solar_zenith_angle,
+               air_temperature, dew_point, relative_humidity, surface_pressure, wind_speed,
+               wind_direction, surface_albedo, total_precipitable_water, cloud_type, fill_flag]
+  tmy: {dataset: GOES TMY v4, version: PSM v4.0.1, name: tmy-2023, interval_min: 60,
+        reference_year: 2023}      # TMY months come from different years; relabelled to this one
+  conus_5min: {dataset: GOES CONUS v4, years: [2018, 2024], sensitivity_year: 2023,
+               interval_min: 5}
 
 lidar:
   project: AZ_MaricopaPinal_2020_B20   # USGS 3DEP, public domain, flown 2020-10-02 to 2021-12-18

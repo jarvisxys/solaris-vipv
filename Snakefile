@@ -16,6 +16,14 @@ LEGACY_SUMS = "src/solaris/legacy/SHA256SUMS"
 CORE_SRC = sorted(str(f) for f in Path("src/solaris/core").glob("*.py"))
 E0_CFG = "configs/experiments/e0.yaml"
 E0 = yaml.safe_load(Path(E0_CFG).read_text(encoding="utf-8"))
+SITE_CFG = "configs/site/phoenix.yaml"
+WEATHER_SRC = sorted(str(f) for f in Path("src/solaris/weather").glob("*.py"))
+
+
+def nsrdb_raw(kind):
+    from solaris.weather import raw_path
+
+    return raw_path(kind, root=".").as_posix()
 
 
 def experiment(name):
@@ -36,6 +44,7 @@ rule all:
         "results/p0/legacy_sha256.ok",
         E0["b0"]["out_table"],
         E0["b0"]["out_pareto"],
+        "results/p2/summary_weather.json",
 
 
 # ---------------------------------------------------------------- P0 bootstrap
@@ -74,9 +83,52 @@ rule e0_measured:
         experiment("e0_reproduce").main(input.tmy, output.table, output.pareto)
 
 
+# ---------------------------------------------------------------- P2 weather
+# Downloads need NREL_API_KEY (and NREL_API_EMAIL, else git user.email). They have no
+# inputs on purpose: editing configs/site/phoenix.yaml must not trigger a re-download.
+# Delete the cached CSV to fetch it again.
+rule weather_tmy:
+    """NSRDB GOES TMY v4, tmy-2023, hourly, local standard time."""
+    output:
+        nsrdb_raw("tmy"),
+    run:
+        from solaris.weather import download
+
+        download("tmy", output[0])
+
+
+rule weather_conus_5min:
+    """NSRDB GOES CONUS v4, 2023, 5-min, local standard time (E5 sub-hourly sensitivity)."""
+    output:
+        nsrdb_raw("conus_5min"),
+    run:
+        from solaris.weather import download
+
+        download("conus_5min", output[0])
+
+
+rule weather_check:
+    """Minute convention, no DST, row counts, provenance; the downloaded TMY must equal the
+    TMY pinned for E0."""
+    input:
+        tmy=nsrdb_raw("tmy"),
+        conus=nsrdb_raw("conus_5min"),
+        e0_tmy=E0["inputs"]["tmy_phoenix"]["path"],
+        site=SITE_CFG,
+        code=WEATHER_SRC,
+    output:
+        "results/p2/summary_weather.json",
+    run:
+        import json
+
+        from solaris.weather import summary
+
+        s = summary(input.tmy, input.conus, input.e0_tmy)
+        Path(output[0]).write_text(json.dumps(s, indent=2) + "\n", encoding="utf-8", newline="\n")
+
+
 # ---------------------------------------------------------------- planned rules
-# P2      weather_tmy, weather_conus_5min   -> data/raw/nsrdb/
-# P3       geom_aoi ... geom_freshness       -> data/derived/{dsm,cdsm,dem}.tif, tiles/*.glb
+# P3      geom_aoi ... geom_freshness       -> data/derived/{dsm,cdsm,dem}.tif, tiles/*.glb
 # P4  E1   e1_verification                   -> results/e1/
 # P5  E2   e2_facets                         -> results/e2/
 # P6  E3/4 routes_select, sumo_traces, e3_driving, e4_parking
