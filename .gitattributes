@@ -1,0 +1,17 @@
+# Text files are stored with LF line endings.
+* text=auto eol=lf
+
+# Frozen conference code: never convert line endings (SHA-256 in SHA256SUMS).
+src/solaris/legacy/solaris_v1.py -text
+
+# Git LFS: digital-twin binaries (guide Sec. 4 and Sec. 6 step 1).
+*.glb filter=lfs diff=lfs merge=lfs -text
+*.fbx filter=lfs diff=lfs merge=lfs -text
+*.unity filter=lfs diff=lfs merge=lfs -text
+twin/unity/**/*.png filter=lfs diff=lfs merge=lfs -text
+twin/unity/**/*.exr filter=lfs diff=lfs merge=lfs -text
+
+# Other binaries
+*.pdf binary
+*.tif binary
+*.laz binary

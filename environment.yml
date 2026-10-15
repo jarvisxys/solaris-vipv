@@ -1,0 +1,38 @@
+# SOLARIS-Twin analysis environment, Windows 11 (win-64). From a Miniforge Prompt:
+#   conda env create -f environment.yml && conda activate solaris
+# SUMO (P6) and SOLWEIG (E1/E4 reference, GPL-3, external process only) get
+# their own environments when those phases start.
+name: solaris
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.11
+  # scientific core
+  - numpy>=1.24
+  - pandas>=2.0
+  - matplotlib>=3.7
+  - pyyaml
+  - pvlib>=0.13
+  - numba
+  # lidar and GIS
+  - pdal>=2.6
+  - python-pdal
+  - gdal
+  - rasterio
+  - geopandas
+  - shapely>=2
+  - pyproj
+  - osmnx
+  # mesh ray engine (embreex is pip-only, below)
+  - trimesh
+  # pipeline and tooling (snakemake has no win-64 conda build; it is pip, below)
+  - pytest>=8
+  - ruff>=0.17
+  - pre-commit>=4
+  - git-lfs
+  - pip
+  - pip:
+      - embreex
+      - snakemake>=8
+      - -e .

@@ -1,0 +1,32 @@
+# Phoenix site definition. Values marked null are set in the phase noted.
+
+name: phoenix
+timezone: America/Phoenix        # MST, UTC-7 all year, no DST. Never America/Denver.
+
+crs:
+  horizontal: EPSG:26912         # NAD83 / UTM zone 12N
+  vertical: EPSG:5703            # NAVD88 height
+  compound: EPSG:26912+5703
+  # UTM grid north is ~0.6 deg from true north here; read the exact meridian
+  # convergence from pyproj get_factors() before marching rays (P4).
+
+enu_origin:                      # Unity CesiumGeoreference origin (P3)
+  lat_deg: null
+  lon_deg: null
+  h_ellipsoid_m: null
+
+aoi:                             # routes + parking sites + buffer (P3)
+  buffer_m: 1000                 # shadow length H/tan(alpha): 150 m tower at 10 deg ~ 850 m
+  polygon: null
+
+nsrdb:
+  location_id: 323705
+  lat: 33.45
+  lon: -112.06
+  tmy: {dataset: GOES TMY v4, version: PSM v4.0.1, name: tmy-2023}
+  conus_5min: {dataset: GOES CONUS v4, years: [2018, 2024], sensitivity_year: 2023}
+
+lidar:
+  project: AZ_MaricopaPinal_2020_B20   # USGS 3DEP, public domain, flown 2020-10-02 to 2021-12-18
+  ept: s3://usgs-lidar-public/AZ_MaricopaPinal_1_2020   # verify the _N_ part covers the AOI (P3)
+  raster_resolution_m: 0.5

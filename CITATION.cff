@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "SOLARIS: An Open Toolkit for Vehicle-Integrated Photovoltaic Feasibility Assessment"
+type: software
+authors:
+  - family-names: Kumar
+    given-names: Aditya
+version: "2.0.0.dev0"
+license: MIT
+repository-code: "https://github.com/jarvisxys/solaris-vipv"
+keywords:
+  - vehicle-integrated photovoltaics
+  - solar electric vehicle
+  - digital twin
+  - urban shading
+  - energy-balance simulation

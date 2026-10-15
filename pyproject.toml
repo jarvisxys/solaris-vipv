@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "solaris"
+version = "2.0.0.dev0"
+description = "SOLARIS-Twin: trajectory- and parking-resolved VIPV assessment of solar-assisted heavy EVs"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Aditya Kumar" }]
+requires-python = ">=3.11"
+# Geospatial stack (pdal, gdal, rasterio, osmnx, trimesh+embreex) comes from conda-forge;
+# see environment.yml. Only pure-pip runtime dependencies are listed here.
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "matplotlib>=3.7",
+    "pyyaml>=6.0",
+    "pvlib>=0.13",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.17", "pre-commit>=4", "snakemake>=8"]
+
+[project.urls]
+Repository = "https://github.com/jarvisxys/solaris-vipv"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+# The conference code is frozen byte-identical; never lint or format it.
+extend-exclude = ["src/solaris/legacy"]
+force-exclude = true
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "NPY"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["solaris"]
