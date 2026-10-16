@@ -18,6 +18,17 @@ E0_CFG = "configs/experiments/e0.yaml"
 E0 = yaml.safe_load(Path(E0_CFG).read_text(encoding="utf-8"))
 SITE_CFG = "configs/site/phoenix.yaml"
 WEATHER_SRC = sorted(str(f) for f in Path("src/solaris/weather").glob("*.py"))
+DD = "data/derived"
+
+
+def geom(step):
+    """Settings a geometry step depends on, as a Snakemake params value: the rule reruns
+    when they change, not on every edit of configs/site/phoenix.yaml."""
+    import json
+
+    from solaris.geometry.build import step_params
+
+    return json.dumps(step_params(step), sort_keys=True)
 
 
 def nsrdb_raw(kind):
@@ -45,6 +56,7 @@ rule all:
         E0["b0"]["out_table"],
         E0["b0"]["out_pareto"],
         "results/p2/summary_weather.json",
+        "results/p3/summary_geometry.json",
 
 
 # ---------------------------------------------------------------- P0 bootstrap
@@ -127,8 +139,239 @@ rule weather_check:
         Path(output[0]).write_text(json.dumps(s, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 
+# ---------------------------------------------------------------- P3 geometry
+# Workflow guide Sec. 2, steps 1-8; layout and run times in geom/README.md. Downloads cache
+# under data/raw and are never refetched; per-tile steps cache per tile and reset when
+# their settings (params) change. Long step: snakemake -c1 geom_lidar_fetch (hours).
+rule geom_aoi:
+    """Step 1: AOI = bounding box of the route and parking seeds + 1 km, 500 m tiles."""
+    params:
+        geom("aoi"),
+    output:
+        aoi=f"{DD}/aoi.geojson",
+        tiles=f"{DD}/tiles.csv",
+    run:
+        from solaris.geometry.build import step_aoi
+
+        step_aoi()
+
+
+rule geom_lidar_fetch:
+    """Step 2a: USGS 3DEP EPT -> cleaned LAZ per tile (EPSG:26912, NAVD88, no noise)."""
+    input:
+        f"{DD}/tiles.csv",
+    params:
+        geom("fetch"),
+    output:
+        "data/raw/lidar/tiles/MANIFEST.json",
+    run:
+        from solaris.geometry.build import _log, run_step_subprocess, write_json
+        from solaris.site import site_config
+
+        run_step_subprocess("fetch")
+        write_json(output[0], {"ept": site_config()["lidar"]["ept"], "tiles": _log("fetch")})
+
+
+rule geom_lidar_rasters:
+    """Step 2b: 0.5 m DSM (max Z, all returns), DTM (ground IDW), HAG per tile + mosaics."""
+    input:
+        "data/raw/lidar/tiles/MANIFEST.json",
+    params:
+        geom("rasterize"),
+    output:
+        dtm_raw=f"{DD}/lidar/dtm_raw.tif",
+        dsm=f"{DD}/lidar/dsm_lidar.vrt",
+        hag=f"{DD}/lidar/hag_lidar.vrt",
+    run:
+        from solaris.geometry.build import run_step_subprocess, step_lidar_mosaics
+
+        run_step_subprocess("rasterize")
+        step_lidar_mosaics()
+
+
+rule geom_dem:
+    """Step 3: FillNodata on the DTM -> dem.tif."""
+    input:
+        f"{DD}/lidar/dtm_raw.tif",
+    params:
+        geom("dem"),
+    output:
+        f"{DD}/dem.tif",
+    run:
+        from solaris.geometry.build import step_dem
+
+        step_dem()
+
+
+rule geom_naip:
+    """NAIP four-band imagery for NDVI (year closest to the lidar flights)."""
+    params:
+        geom("naip"),
+    output:
+        f"{DD}/naip.vrt",
+    run:
+        from solaris.geometry.build import step_naip
+
+        step_naip()
+
+
+rule geom_overture:
+    """Current building footprints (Overture Maps, latest release at first fetch)."""
+    output:
+        "data/raw/overture/buildings.gpkg",
+    run:
+        from solaris.geometry import sources
+        from solaris.geometry.crs import aoi
+        from solaris.site import site_config
+
+        sources.fetch_overture_buildings(aoi(site_config()), output[0])
+
+
+rule geom_osm:
+    """OSM ways tagged bridge, tunnel or covered."""
+    output:
+        "data/raw/osm/covered_ways.gpkg",
+    run:
+        from solaris.geometry import sources
+        from solaris.geometry.crs import aoi
+        from solaris.site import site_config
+
+        sources.fetch_osm_covered(aoi(site_config()), output[0])
+
+
+rule geom_covered:
+    """Step 6: road and rail bridges, tunnels and covered ways as polygons."""
+    input:
+        "data/raw/osm/covered_ways.gpkg",
+    params:
+        geom("covered"),
+    output:
+        f"{DD}/covered.gpkg",
+    run:
+        from solaris.geometry.build import step_covered
+
+        step_covered()
+
+
+rule geom_model:
+    """Steps 4-5: building/tree split (nDSM, NDVI, footprints) and the model rasters."""
+    input:
+        dsm=f"{DD}/lidar/dsm_lidar.vrt",
+        dem=f"{DD}/dem.tif",
+        naip=f"{DD}/naip.vrt",
+        footprints="data/raw/overture/buildings.gpkg",
+    params:
+        geom("model"),
+    output:
+        classes=f"{DD}/classes.tif",
+        dsm=f"{DD}/dsm_lidar_epoch.tif",
+        cdsm=f"{DD}/cdsm.tif",
+        holes=f"{DD}/dsm_holes.tif",
+    run:
+        from solaris.geometry.build import run_step_subprocess, step_model_mosaics
+
+        run_step_subprocess("model")
+        step_model_mosaics()
+
+
+rule geom_enu_origin:
+    """Unity origin: DEM ground at Central Ave & Washington St, NAVD88 -> ellipsoid."""
+    input:
+        f"{DD}/dem.tif",
+    params:
+        geom("meshes"),
+    output:
+        "twin/exchange/enu_origin.json",
+    run:
+        from solaris.geometry.build import step_enu_origin
+
+        step_enu_origin()
+
+
+rule geom_freshness:
+    """Step 8: candidates for buildings added or demolished since the lidar, per route."""
+    input:
+        classes=f"{DD}/classes.tif",
+        dsm=f"{DD}/dsm_lidar_epoch.tif",
+        dem=f"{DD}/dem.tif",
+        footprints="data/raw/overture/buildings.gpkg",
+        covered=f"{DD}/covered.gpkg",
+    params:
+        geom("freshness"),
+    output:
+        table="results/p3/table_freshness.csv",
+        gpkg=f"{DD}/freshness_candidates.gpkg",
+    run:
+        from solaris.geometry.build import step_freshness
+
+        step_freshness(output.table)
+
+
+rule geom_dsm:
+    """dsm.tif = lidar-epoch building DSM + confirmed freshness changes."""
+    input:
+        dsm=f"{DD}/dsm_lidar_epoch.tif",
+        dem=f"{DD}/dem.tif",
+        candidates=f"{DD}/freshness_candidates.gpkg",
+        confirmations="configs/site/freshness_v1.yaml",
+    output:
+        f"{DD}/dsm.tif",
+    run:
+        from solaris.geometry.build import step_dsm
+
+        step_dsm()
+
+
+rule geom_meshes:
+    """Step 7: surface and tree .glb tiles in ENU, Delatin to 0.25 m."""
+    input:
+        dsm=f"{DD}/dsm.tif",
+        cdsm=f"{DD}/cdsm.tif",
+        dem=f"{DD}/dem.tif",
+        origin="twin/exchange/enu_origin.json",
+    params:
+        geom("meshes"),
+    output:
+        f"{DD}/tiles/MANIFEST.json",
+    run:
+        from solaris.geometry.build import run_step_subprocess, step_mesh_manifest
+
+        run_step_subprocess("meshes")
+        step_mesh_manifest()
+
+
+rule geom_ground_control:
+    """NGS marks (adjusted position and NAVD88 height) in every frame, DEM residuals."""
+    input:
+        dem=f"{DD}/dem.tif",
+        origin="twin/exchange/enu_origin.json",
+    output:
+        "results/p3/table_ground_control.csv",
+    run:
+        from solaris.geometry.build import step_ground_control
+
+        step_ground_control(output[0])
+
+
+rule geom_summary:
+    """Provenance and checks: results/p3/summary_geometry.json."""
+    input:
+        gcp="results/p3/table_ground_control.csv",
+        fresh="results/p3/table_freshness.csv",
+        meshes=f"{DD}/tiles/MANIFEST.json",
+        classes=f"{DD}/classes.tif",
+        holes=f"{DD}/dsm_holes.tif",
+        covered=f"{DD}/covered.gpkg",
+        dsm=f"{DD}/dsm.tif",
+    output:
+        "results/p3/summary_geometry.json",
+    run:
+        from solaris.geometry.build import step_summary
+
+        step_summary(input.gcp, input.fresh, output[0])
+
+
 # ---------------------------------------------------------------- planned rules
-# P3      geom_aoi ... geom_freshness       -> data/derived/{dsm,cdsm,dem}.tif, tiles/*.glb
 # P4  E1   e1_verification                   -> results/e1/
 # P5  E2   e2_facets                         -> results/e2/
 # P6  E3/4 routes_select, sumo_traces, e3_driving, e4_parking

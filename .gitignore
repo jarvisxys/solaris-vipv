@@ -14,6 +14,7 @@ dist/
 # Data: never committed; data/README.md lists the fetch commands
 data/*
 !data/README.md
+cache/                  # osmnx Overpass response cache
 
 # Results: only summary tables are committed
 results/**

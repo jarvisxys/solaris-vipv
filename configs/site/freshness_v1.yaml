@@ -1,0 +1,8 @@
+# Freshness confirmations (P3, step 8): the author's verdict on each candidate in
+# results/p3/table_freshness.csv, checked against current imagery. Rule geom_dsm burns
+# confirmed changes into data/derived/dsm.tif; unlisted candidates change nothing.
+#
+#   - {id: A-E400123-N3701234, status: added, floors: 12}   # new tower: footprint x 12 x 3.5 m
+#   - {id: D-E400456-N3702345, status: demolished}          # lowered to the DEM
+#   - {id: A-E400789-N3703456, status: rejected, note: "parking canopy"}
+confirmed: []

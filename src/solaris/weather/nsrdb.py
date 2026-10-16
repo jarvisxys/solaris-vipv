@@ -20,14 +20,13 @@ from pathlib import Path
 import pandas as pd
 import pvlib
 import requests
-import yaml
 from pvlib.iotools import psm4
 
 from solaris.core.params import REPO_ROOT
+from solaris.site import site_config
 
 TZ = "America/Phoenix"
 UTC_OFFSET = pd.Timedelta(hours=-7)
-SITE_YAML = REPO_ROOT / "configs" / "site" / "phoenix.yaml"
 RAW_SUBDIR = Path("data") / "raw" / "nsrdb"
 DATASETS = {"tmy": psm4.PSM4_TMY_URL, "conus_5min": psm4.PSM4_CON_URL}
 # NSRDB zenith vs pvlib SPA at the stamps. Correct stamps agree within 0.06 deg, except that
@@ -35,10 +34,6 @@ DATASETS = {"tmy": psm4.PSM4_TMY_URL, "conus_5min": psm4.PSM4_CON_URL}
 # months in UTC): up to 0.24 deg on 32 of 8760 rows. A 5-min slip moves the sun >= 1.5 deg,
 # a 30-min slip >= 6.8 deg.
 ZENITH_TOL_DEG = 0.3
-
-
-def site_config(path=SITE_YAML) -> dict:
-    return yaml.safe_load(Path(path).read_text(encoding="utf-8"))
 
 
 def dataset_name(kind, cfg) -> str:

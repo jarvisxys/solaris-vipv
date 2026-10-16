@@ -10,14 +10,43 @@ crs:
   # UTM grid north is ~0.6 deg from true north here; read the exact meridian
   # convergence from pyproj get_factors() before marching rays (P4).
 
-enu_origin:                      # Unity CesiumGeoreference origin (P3)
-  lat_deg: null
-  lon_deg: null
-  h_ellipsoid_m: null
+enu_origin:                      # Unity CesiumGeoreference origin (P3): Central Ave & Washington St
+  lat_deg: 33.4484               # NAD83; Cesium reads it as WGS84 (~1 m apart, visual only)
+  lon_deg: -112.0740
+  h_ellipsoid_m: null            # DEM ground + GEOID18 here; written by rule geom_enu_origin
 
 aoi:                             # routes + parking sites + buffer (P3)
   buffer_m: 1000                 # shadow length H/tan(alpha): 150 m tower at 10 deg ~ 850 m
-  polygon: null
+  shape: bbox                    # bounding box of the buffered seeds (author decision 2026-10-16)
+  seeds:                         # [lat, lon], workflow guide Sec. 3; approximate, snapped in P6
+    R-OPEN: [[33.378, -112.074], [33.378, -111.978]]
+    R-DENSE: [[33.495, -112.074], [33.4466, -112.074], [33.4466, -112.0652],
+              [33.4517, -112.0652], [33.4517, -112.074]]
+    R-MIXED: [[33.509, -112.083], [33.509, -111.987]]
+    R-TUNNEL: [[33.4625, -112.100], [33.4600, -112.0436]]
+    P1: [[33.444, -112.066]]
+    P2: [[33.449, -112.074]]
+    P3: [[33.469, -112.090]]
+  # polygon: data/derived/aoi.geojson (rule geom_aoi)
+
+geometry:                        # P3 build parameters (workflow guide Sec. 2, steps 1-8)
+  resolution_m: 0.5
+  tile_m: 500                    # raster tiles and Unity mesh tiles
+  tile_margin_m: 20              # lidar read around each tile (HAG, IDW, blob edges)
+  noise_classes: [7, 18]
+  dtm_fill_max_m: 250            # gdal FillNodata search distance (largest building footprint)
+  naip_year: 2021                # NDVI for tree/building split; lidar flown 2020-10 to 2021-12
+  tree: {ndsm_min_m: 2.0, ndsm_max_m: 35.0, ndvi_min: 0.2, footprint_buffer_m: 1.0}
+  # ndsm_max_m: taller "green" pixels are tower walls (NAIP relief displacement), not trees;
+  # the tallest Washingtonia palms here reach ~33 m.
+  building: {ndsm_min_m: 2.5, ndvi_max: 0.15}
+  min_blob_m2: 4.0               # cars, poles, signs
+  covered_ndsm_m: 4.5            # road point under DSM - DTM above this is covered
+  mesh: {max_error_m: 0.25, skirt_m: 1.0}
+  freshness: {corridor_m: 250, min_area_m2: 50, min_height_m: 8.0, built_frac_max: 0.3,
+              demolished_min_area_m2: 400, footprint_tolerance_m: 3.0, floor_height_m: 3.5}
+  # demolished_min_area_m2: smaller unmapped lidar blobs downtown are canopies, rooftop
+  # structures and shadowed trees, not demolished buildings.
 
 nsrdb:                           # fetched by src/solaris/weather (P2) into data/raw/nsrdb/
   location_id: 323705            # TMY cell; the CONUS 5-min cell is 518064 (33.46, -112.07)
@@ -34,5 +63,6 @@ nsrdb:                           # fetched by src/solaris/weather (P2) into data
 
 lidar:
   project: AZ_MaricopaPinal_2020_B20   # USGS 3DEP, public domain, flown 2020-10-02 to 2021-12-18
-  ept: s3://usgs-lidar-public/AZ_MaricopaPinal_1_2020   # verify the _N_ part covers the AOI (P3)
-  raster_resolution_m: 0.5
+  ept: https://s3-us-west-2.amazonaws.com/usgs-lidar-public/AZ_MaricopaPinal_1_2020/ept.json
+  # Only part _1_ exists; it covers 32.65-33.88 N, 112.79-111.06 W. EPSG:3857 horizontal,
+  # NAVD88 heights (ground downtown 331.7 m); classes 1, 2, 7 (no building class).

@@ -1,8 +1,9 @@
 # data/
 
-Gitignored. Nothing here is redistributed. Lidar and rasters run to tens of GB:
-keep this folder out of OneDrive sync (mark it "Always keep on this device" or
-junction it to a local, non-synced folder).
+Gitignored. Nothing here is redistributed. Lidar and rasters run to tens of GB, so
+`raw/` and `derived/` are junctions to `D:\solaris-data\{raw,derived}` (external drive,
+outside OneDrive). Recreate them on another machine with
+`New-Item -ItemType Junction -Path data\raw -Target <folder>` (same for `derived`).
 
 | Path | Source | Fetched by |
 |---|---|---|
@@ -11,10 +12,12 @@ junction it to a local, non-synced folder).
 | `raw/nsrdb/33.45_-112.06_tmy-2023_60min.csv` | NSRDB GOES TMY v4, tmy-2023, cell 323705, local time, 17 attributes incl. solar zenith; identical GHI/DNI/DHI/T to the E0 file | `snakemake -c1 weather_tmy` |
 | `raw/nsrdb/33.45_-112.06_2023_5min.csv` | NSRDB GOES CONUS v4, 2023, 5-min, cell 518064 (33.46/-112.07), local time | `snakemake -c1 weather_conus_5min` |
 | `raw/nsrdb/323705_33.45_-112.06_tmy-2023_utc.csv` | same TMY-2023 in UTC, all 28 columns; superseded by the P2 download, kept as the source of the UTC test fixture | manual download |
-| `raw/lidar/` | USGS 3DEP AZ_MaricopaPinal_2020_B20 (EPT on AWS, public domain) | P3, `geom/` |
-| `raw/osm/` | OpenStreetMap Arizona (Geofabrik), Overture buildings | P3, P6 |
-| `raw/naip/` | NAIP 0.6 m four-band (Planetary Computer) | P3 |
-| `derived/` | `dsm.tif`, `cdsm.tif`, `dem.tif` at 0.5 m, EPSG:26912; `.glb` tiles | P3 |
+| `raw/lidar/tiles/` | USGS 3DEP AZ_MaricopaPinal_2020_B20 (EPT on AWS, public domain), one cleaned LAZ per 500 m tile, ~25 GB | `snakemake -c1 geom_lidar_fetch` |
+| `raw/naip/2021/` | NAIP 2021 0.6 m four-band COGs (Planetary Computer, public domain), ~6 GB | `geom_naip` |
+| `raw/overture/` | Overture Maps buildings (ODbL), release in `MANIFEST.json` | `geom_overture` |
+| `raw/osm/` | OSM bridge / tunnel / covered ways via Overpass (ODbL) | `geom_osm` |
+| `raw/ngs/` | NGS survey marks in the AOI (datasheet API) | `geom_ground_control` |
+| `derived/` | `dsm.tif`, `cdsm.tif`, `dem.tif` at 0.5 m, EPSG:26912 + NAVD88; `tiles/*.glb`; see `geom/README.md` | `snakemake -c1 all` |
 
 The fetch commands for each row are added in the phase that first needs the data.
 
