@@ -1,0 +1,80 @@
+{
+  "crs": "EPSG:26912+5703 (NAD83 / UTM 12N + NAVD88)",
+  "resolution_m": 0.5,
+  "aoi": {
+    "area_km2": 238.0,
+    "bounds_utm": [
+      396500.0,
+      3692500.0,
+      410500.0,
+      3709500.0
+    ],
+    "tiles": 952
+  },
+  "lidar": {
+    "ept": "https://s3-us-west-2.amazonaws.com/usgs-lidar-public/AZ_MaricopaPinal_1_2020/ept.json",
+    "points_kept": 5281345668,
+    "points_per_m2": 22.19,
+    "tiles_ok": 952
+  },
+  "dtm_ground_coverage_pct": 84.37,
+  "classes_pct": {
+    "ground": 70.15,
+    "building": 25.43,
+    "tree": 4.42
+  },
+  "dsm_holes_pct": 0.748,
+  "sources": {
+    "overture_release": "2026-09-23.1",
+    "overture_buildings": 135145,
+    "osm_fetched_utc": "2026-10-15T22:55:04+00:00",
+    "naip": [
+      "az_m_3311125_sw_12_060_20211014",
+      "az_m_3311133_nw_12_060_20211014",
+      "az_m_3311133_sw_12_060_20211014",
+      "az_m_3311141_nw_12_060_20211014",
+      "az_m_3311232_se_12_060_20211014",
+      "az_m_3311232_sw_12_060_20211014",
+      "az_m_3311240_ne_12_060_20211014",
+      "az_m_3311240_nw_12_060_20211112",
+      "az_m_3311240_se_12_060_20211014",
+      "az_m_3311240_sw_12_060_20211112",
+      "az_m_3311248_ne_12_060_20211014",
+      "az_m_3311248_nw_12_060_20211103"
+    ]
+  },
+  "covered_polygons": {
+    "bridge": 911,
+    "covered": 481,
+    "tunnel": 364
+  },
+  "meshes": {
+    "tiles": 952,
+    "surface_faces": 192811985,
+    "tree_tiles": 940,
+    "tree_faces": 55338106
+  },
+  "enu_origin": {
+    "lat_deg": 33.4484,
+    "lon_deg": -112.074,
+    "datum": "NAD83 / GRS80",
+    "E_m": 400179.648,
+    "N_m": 3701514.105,
+    "H_navd88_m": 331.663,
+    "h_ellipsoid_m": 301.742,
+    "geoid": "GEOID18",
+    "note": "Cesium for Unity: set CesiumGeoreference to lat/lon/h_ellipsoid_m"
+  },
+  "ground_control": {
+    "n_marks": 87,
+    "median_m": -0.107,
+    "mad_m": 0.143,
+    "within_0p5m_pct": 69.0,
+    "p90_abs_m": 2.441,
+    "outliers_gt_1m": 22
+  },
+  "freshness_candidates": {
+    "added": 102,
+    "demolished": 102
+  }
+}

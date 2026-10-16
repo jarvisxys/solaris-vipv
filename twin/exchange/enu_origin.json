@@ -1,0 +1,11 @@
+{
+  "lat_deg": 33.4484,
+  "lon_deg": -112.074,
+  "datum": "NAD83 / GRS80",
+  "E_m": 400179.648,
+  "N_m": 3701514.105,
+  "H_navd88_m": 331.663,
+  "h_ellipsoid_m": 301.742,
+  "geoid": "GEOID18",
+  "note": "Cesium for Unity: set CesiumGeoreference to lat/lon/h_ellipsoid_m"
+}

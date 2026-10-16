@@ -91,19 +91,23 @@ def ground_control(cfg, marks, dem_path, origin) -> pd.DataFrame:
             "H_navd88_m": origin["H_navd88_m"],
             "pos_source": "",
             "vert_source": "DEM",
+            "monument": "",
+            "setting": "",
         }
     ]
-    for m in df.itertuples():
+    for m in df.to_dict("records"):
         rows.append(
             {
-                "id": m.pid,
-                "name": m.name.strip(),
+                "id": m["pid"],
+                "name": m["name"].strip(),
                 "source": "NGS",
-                "lat_deg": m.lat,
-                "lon_deg": m.lon,
-                "H_navd88_m": m.orthoHt,
-                "pos_source": m.posSource.strip(),
-                "vert_source": m.vertSource.strip(),
+                "lat_deg": m["lat"],
+                "lon_deg": m["lon"],
+                "H_navd88_m": m["orthoHt"],
+                "pos_source": m["posSource"].strip(),
+                "vert_source": m["vertSource"].strip(),
+                "monument": str(m.get("monumentType", "")).strip(),
+                "setting": str(m.get("setting", "")).strip(),
             }
         )
     out = pd.DataFrame(rows)
@@ -123,6 +127,9 @@ def ground_control(cfg, marks, dem_path, origin) -> pd.DataFrame:
     )
     out["dem_H_m"] = np.round(dem_height(dem_path, E, N), 3)
     out["dem_minus_mark_m"] = (out["dem_H_m"] - out["H_navd88_m"]).round(3)
+    # Marks on structures sit above the ground the DEM models; hand-held positions (a few m)
+    # can land a mark on a freeway cut or curb. Flagged, not dropped.
+    out["outlier_gt_1m"] = (out["dem_minus_mark_m"].abs() > 1.0) & (out["source"] == "NGS")
     return out
 
 
@@ -134,5 +141,7 @@ def control_summary(gcp) -> dict:
         "n_marks": int(len(d)),
         "median_m": round(float(d.median()), 3),
         "mad_m": round(float((d - d.median()).abs().median()), 3),
+        "within_0p5m_pct": round(float(100 * (d.abs() <= 0.5).mean()), 1),
         "p90_abs_m": round(float(d.abs().quantile(0.9)), 3),
+        "outliers_gt_1m": int((d.abs() > 1.0).sum()),
     }

@@ -3,6 +3,49 @@
 Every decision that changes a number, claim or reference in the journal paper,
 newest first, with date and reason.
 
+## 2026-10-16 · P3 geometry
+
+Sources: `src/solaris/geometry/`, `geom/README.md`, `tests/test_geometry.py`,
+`results/p3/summary_geometry.json`, `results/p3/table_ground_control.csv`,
+`results/p3/table_freshness.csv`, `twin/exchange/enu_origin.json` (rules `geom_*`).
+
+- **City model built.** The AOI is the bounding box of the seed routes and parking sites
+  plus 1 km: 238 km², 952 tiles of 500 m (author decision: full box rather than corridors).
+  USGS 3DEP AZ_MaricopaPinal_2020 gives 5.28 billion points after noise and withheld
+  points are removed, 22.2 points/m². `dsm.tif`, `cdsm.tif` and `dem.tif` are 0.5 m,
+  EPSG:26912 + NAVD88. Classes: 25.4 % building, 4.4 % tree, 70.2 % ground. DSM holes
+  (no return) cover 0.75 % and take the DEM, flagged in `dsm_holes.tif`. Sources: NAIP
+  2021 (flown 14 Oct–12 Nov 2021, matching the lidar), Overture release 2026-09-23.1
+  (135,145 buildings), OSM covered ways (911 bridges, 481 covered, 364 tunnels).
+- **Vertical datum checked.** The EPT carries NAVD88 heights, not ellipsoidal ones (ground
+  downtown 331.7 m). Against 87 NGS marks with adjusted heights, DEM − mark has median
+  −0.11 m and MAD 0.14 m; 69 % agree within 0.5 m. The 22 marks off by more than 1 m sit on
+  structures or have hand-held positions; they are flagged in the table, not dropped.
+- **Unity frame.** The ENU origin is Central Ave & Washington St: ground 331.66 m NAVD88,
+  301.74 m ellipsoidal (GEOID18). The meshes have 193 M surface faces and 55 M tree faces
+  (0.25 m Delatin error), 5.3 GB of `.glb`. Raycasts under bridges need
+  `Physics.queriesHitBackfaces`.
+- **Deviation from the guide, tree height cap.** Pixels taller than 35 m are never trees.
+  NAIP's relief displacement paints tower walls green, which produced "trees" of up to
+  77 m downtown; the tallest real trees here are palms of ~33 m. Reason: step 4 as written
+  misclassifies tower edges.
+- **Deviation from the guide, DSM gridding.** The DSM and HAG keep each return in its own
+  0.5 m cell (PDAL binmode). PDAL's default search radius spreads roof maxima into
+  neighbouring cells, which widens every building by 0.5 m. Reason: footprint accuracy for shading.
+- **Deviation from the guide, covered points.** A point driving on a bridge is not covered
+  by that bridge, and the DSM − DTM rule measures from the road surface: the bridge deck
+  for a point on a bridge. Taken literally, step 6 would tag every bridge crossing as a
+  tunnel. Reason: step 6 is ambiguous for vehicles on overpasses.
+- **Freshness list (step 8), pending author confirmation.** 204 candidates in 250 m route
+  corridors, all at least 8 m tall: 102 *added* (current footprint, little lidar height
+  under it; the largest is a 76 m tower on R-DENSE at 33.4572, −112.0758) and 102
+  *demolished* (lidar structure ≥ 400 m² outside every footprint, grown by 3 m, and every
+  bridge; many will be unmapped parking garages that still stand). Thresholds were set
+  on a ten-tile trial, where the raw comparison flagged 464 blobs downtown, mostly shade
+  canopies, rooftop structures and tower edges. `dsm.tif` equals the lidar-epoch DSM until
+  confirmations are entered in `configs/site/freshness_v1.yaml`. The confirmed list is
+  reported in the paper.
+
 ## 2026-10-16 · P2 weather
 
 Sources: `src/solaris/weather/`, `tests/test_weather.py`, `results/p2/summary_weather.json`

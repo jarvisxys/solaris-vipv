@@ -34,6 +34,21 @@ already done, so an interrupted run resumes. A step's tile cache is cleared when
 change (`PARAMS.json` in the cache folder). Set `SOLARIS_DATA` to build into another folder
 (trial runs on a few tiles).
 
+## Visual check and freshness review in QGIS
+
+```
+"C:\Program Files\QGIS 3.44.15\bin\python-qgis-ltr.bat" geom\qgis_review.py
+```
+
+This writes `data/derived/p3_review.qgz` with these layers:
+- Esri World Imagery (current) as the basemap.
+- `dsm.tif` and `dem.tif` as hillshades.
+- Classes and canopy height.
+- DSM holes.
+- The AOI outline.
+- The NGS marks.
+- The freshness candidates, labelled by id: blue for added, magenta for demolished.
+
 ## Frames
 
 - Analysis: NAD83 / UTM 12N + NAVD88. The EPT is served in EPSG:3857 with NAVD88 heights;
