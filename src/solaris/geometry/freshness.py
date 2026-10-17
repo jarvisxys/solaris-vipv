@@ -224,8 +224,13 @@ def apply_confirmed(dsm_epoch, dem, candidates_gpkg, confirmations, out, floor_h
                 [geom], (w.height, w.width), d.window_transform(w), invert=True
             )
             z, ground = d.read(1, window=w), t.read(1, window=w)
-            top = ground + float(c["floors"]) * floor_h if c["status"] == "added" else ground
-            d.write(np.where(mask, top, z).astype(np.float32), 1, window=w)
+            if c["status"] == "added":
+                # A new block never lowers what the lidar already saw inside its footprint
+                # (a taller part of the same site, a parking deck it was built against).
+                new = np.maximum(z, ground + float(c["floors"]) * floor_h)
+            else:
+                new = ground
+            d.write(np.where(mask, new, z).astype(np.float32), 1, window=w)
             n += 1
     return {"applied": n}
 

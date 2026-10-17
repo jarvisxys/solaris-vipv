@@ -50,7 +50,7 @@
   },
   "meshes": {
     "tiles": 952,
-    "surface_faces": 192811985,
+    "surface_faces": 192694711,
     "tree_tiles": 940,
     "tree_faces": 55338106
   },
@@ -76,5 +76,10 @@
   "freshness_candidates": {
     "added": 102,
     "demolished": 102
+  },
+  "freshness_confirmed": {
+    "rejected": 19,
+    "added": 14,
+    "demolished": 12
   }
 }

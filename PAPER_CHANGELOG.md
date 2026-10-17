@@ -3,6 +3,32 @@
 Every decision that changes a number, claim or reference in the journal paper,
 newest first, with date and reason.
 
+## 2026-10-18 · P3 freshness confirmed
+
+Sources: `configs/site/freshness_v1.yaml`, `results/p3/summary_geometry.json` (rule `geom_dsm`).
+
+- **City model updated to the present.** The author checked the 45 tallest and largest of the
+  204 freshness candidates against current imagery (Esri World Imagery, QGIS):
+  - **14 buildings added.** They are burnt into `dsm.tif` as footprint × floors × 3.5 m.
+    Among them are a 23-floor tower at 33.4572, −112.0758 and an 18-floor block at
+    33.4549, −112.0732, both on R-DENSE.
+  - **12 structures demolished**, lowered to the DEM. One of them is a 2020–21 tower crane
+    whose 110 m jib the lidar recorded beside a building under construction (33.4473, −112.0702).
+  - **19 rejected:** standing bridges and their railings, parking decks, dense trees, a
+    glass roof and a tall palm.
+  - **159 candidates were not reviewed** and stay as in the lidar.
+
+  The meshes were rebuilt from the updated `dsm.tif`. Reason: guide Sec. 2 step 8; the
+  paper reports this list.
+- **Method change.** A confirmed addition only raises the DSM, as max(lidar DSM, ground +
+  floors × 3.5 m). It never lowers taller lidar structures inside its footprint: candidate
+  A-E400317-N3706332 holds a 38.9 m parking structure inside a 4-floor footprint. Reason:
+  the step 8 burn must not delete standing structures.
+- **Finding, freshness detector.** Of the 16 rejected "demolished" candidates, 8 are bridges
+  or bridge railings. The OSM bridge polygons, buffered to tag widths, are narrower than the
+  lidar decks, so deck edges survive the bridge mask. Shading is unaffected, since bridges
+  stay in the DSM; only the candidate list is noisier.
+
 ## 2026-10-16 · P3 geometry
 
 Sources: `src/solaris/geometry/`, `geom/README.md`, `tests/test_geometry.py`,

@@ -420,6 +420,27 @@ def test_confirmed_changes_are_burnt_into_the_dsm(town, tmp_path):
     assert z[25, 25] == pytest.approx(352)  # untouched
 
 
+def test_added_block_never_lowers_the_dsm(town, tmp_path):
+    paths, fp, tile = town
+    with rasterio.open(paths["dsm"], "r+") as s:
+        z = s.read(1)
+        z[20:25, 80:85] = 400.0  # a 60 m structure already inside the new footprint
+        s.write(z, 1)
+    bridges = gpd.GeoDataFrame(geometry=[], crs=crs.H_CRS)
+    cand = freshness.candidates(
+        CFG, [tile], fp, bridges, paths["classes"], paths["dsm"], paths["dem"]
+    )
+    cand.to_file(tmp_path / "cand.gpkg", layer="candidates")
+    aid = cand.loc[cand.kind == "added", "id"].iloc[0]
+    conf = tmp_path / "conf.yaml"
+    conf.write_text(f"confirmed:\n  - {{id: {aid}, status: added, floors: 2}}\n")
+    out = tmp_path / "dsm_now.tif"
+    freshness.apply_confirmed(paths["dsm"], paths["dem"], tmp_path / "cand.gpkg", conf, out, 3.5)
+    with rasterio.open(out) as s:
+        z = s.read(1)
+    assert z[22, 82] == pytest.approx(400) and z[30, 90] == pytest.approx(347)
+
+
 def test_unknown_confirmation_id_is_rejected(town, tmp_path):
     paths, fp, tile = town
     gpd.GeoDataFrame({"id": ["A-E1-N1"]}, geometry=[box(0, 0, 1, 1)], crs=crs.H_CRS).to_file(

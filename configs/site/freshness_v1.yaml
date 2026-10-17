@@ -5,4 +5,57 @@
 #   - {id: A-E400123-N3701234, status: added, floors: 12}   # new tower: footprint x 12 x 3.5 m
 #   - {id: D-E400456-N3702345, status: demolished}          # lowered to the DEM
 #   - {id: A-E400789-N3703456, status: rejected, note: "parking canopy"}
-confirmed: []
+#
+# Reviewed 2026-10-18 by A. Kumar on Esri World Imagery (data/derived/p3_review.qgz):
+# 45 of 204 candidates, the tall and large ones; the other 159 stay as in the lidar.
+confirmed:
+  # ---- added (new since the 2020-21 lidar)
+  - {id: A-E400023-N3702493, status: added, floors: 23}
+  - {id: A-E398427-N3702919, status: added, floors: 5}
+  - {id: A-E400129-N3706345, status: added, floors: 4}
+  - {id: A-E400445-N3704848, status: added, floors: 4}
+  - {id: A-E400040-N3706710, status: added, floors: 5}
+  - {id: A-E400317-N3706332, status: added, floors: 4}
+  - {id: A-E400208-N3705482, status: added, floors: 3}
+  - {id: A-E406541-N3693554, status: added, floors: 3}
+  - {id: A-E400357-N3702479, status: added, floors: 3}
+  - {id: A-E405997-N3693465, status: added, floors: 3}
+  - {id: A-E400069-N3702888, status: added, floors: 3}
+  - {id: A-E400951-N3701536, status: added, floors: 2}
+  - {id: A-E406091-N3693421, status: added, floors: 2}
+  - {id: A-E400266-N3702236, status: added, floors: 18}
+
+  # ---- demolished (gone since the lidar)
+  - {id: D-E408263-N3708295, status: demolished}
+  - {id: D-E400168-N3703383, status: demolished}
+  - {id: D-E400728-N3701914, status: demolished}
+  - {id: D-E402964-N3708350, status: demolished}
+  - {id: D-E399576-N3708430, status: demolished}
+  - {id: D-E403957-N3708098, status: demolished}
+  - {id: D-E405036-N3708166, status: demolished}
+  - {id: D-E400191-N3705414, status: demolished}
+  - {id: D-E400525-N3701389, status: demolished, note: "2020-21 tower crane (110 m jib) and site huts"}
+  - {id: D-E400279-N3702346, status: demolished}
+  - {id: D-E399752-N3702963, status: demolished}
+  - {id: D-E399525-N3702933, status: demolished}
+
+  # ---- rejected (no real change)
+  - {id: A-E400262-N3701699, status: rejected, note: "parking is still there"}
+  - {id: A-E400469-N3693507, status: rejected}
+  - {id: A-E405111-N3708393, status: rejected, note: "parking is there"}
+  - {id: D-E397749-N3703019, status: rejected, note: "overbridge is still there"}
+  - {id: D-E405574-N3708389, status: rejected, note: "building still there"}
+  - {id: D-E400064-N3702616, status: rejected, note: "building still there"}
+  - {id: D-E398284-N3702975, status: rejected, note: "bridge still there"}
+  - {id: D-E398251-N3703024, status: rejected, note: "bridge still there"}
+  - {id: D-E397771-N3703062, status: rejected, note: "bridge still there"}
+  - {id: D-E400685-N3702713, status: rejected}
+  - {id: D-E400702-N3703064, status: rejected, note: "bridge still there"}
+  - {id: D-E398231-N3703007, status: rejected, note: "bridge railings still there"}
+  - {id: D-E400025-N3702890, status: rejected, note: "dense trees still there"}
+  - {id: D-E400192-N3703776, status: rejected, note: "dense trees still there"}
+  - {id: D-E400547-N3701675, status: rejected, note: "glass roof still there"}
+  - {id: D-E400609-N3701863, status: rejected, note: "tall palm tree still there"}
+  - {id: D-E397569-N3703050, status: rejected, note: "bridge side railings still there"}
+  - {id: D-E398215-N3703057, status: rejected, note: "bridge side railings still there"}
+  - {id: D-E400202-N3705682, status: rejected, note: "still dense trees"}

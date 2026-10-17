@@ -369,6 +369,11 @@ def step_summary(gcp_csv, freshness_csv, out):
         "enu_origin": man["origin"],
         "ground_control": control.control_summary(gcp),
         "freshness_candidates": fresh["kind"].value_counts().to_dict(),
+        "freshness_confirmed": pd.Series(
+            [c["status"] for c in freshness.load_confirmations(P["confirmations"]).values()]
+        )
+        .value_counts()
+        .to_dict(),
     }
     write_json(out, doc)
     return doc
