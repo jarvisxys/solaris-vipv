@@ -11,8 +11,11 @@ repos:
       - id: check-merge-conflict
       - id: check-added-large-files
         args: [--maxkb=1024]
+      # Unity writes its own YAML (.asset, .meta, .prefab); fixing it just churns on every save
       - id: end-of-file-fixer
+        exclude: ^twin/unity/SOLARIS-Twin/(Assets|ProjectSettings|Packages)/
       - id: trailing-whitespace
+        exclude: ^twin/unity/SOLARIS-Twin/(Assets|ProjectSettings|Packages)/
       - id: mixed-line-ending
         args: [--fix=lf]
 
