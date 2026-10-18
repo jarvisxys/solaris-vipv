@@ -1,0 +1,94 @@
+{
+  "version": "v1",
+  "frozen_utc": "2026-10-18T02:24:02+00:00",
+  "files": {
+    "R-DENSE.geojson": "720c455a1193692811ad343e67d89ec30f6c6e49cd88bf5a6138eceae7c3a75a",
+    "R-OPEN.geojson": "395df670e95fb1918278e6bdba3d2300397b999d9b8de4c8ec52d8af7c92ec40",
+    "R-MIXED.geojson": "ac48665d34f5d85cd0defb7c8cfc7b5b51ee3f49678dd8877ea5bf5587544f40",
+    "R-TUNNEL.geojson": "0ebbfd420acfcbc7e5f911be4d0d403463e2a2d8996472152ec4cd18abbda613",
+    "parking_sites.geojson": "7dc02a02356271c7e9ca8b5292562174755f9e5cddd7e7dd5de0ab51c226a6f9"
+  },
+  "selection": {
+    "R-OPEN": {
+      "id": "R-OPEN",
+      "street": "Southern Avenue",
+      "orientation": "E-W",
+      "length_m": 8282.8,
+      "window_from_m": 401181.603,
+      "window_to_m": 409181.603,
+      "svf_mean": 0.9273,
+      "svf_var": 0.00358,
+      "svf_bld_mean": 0.9334,
+      "sunlit_mean": 0.8491,
+      "seed_overlap": "{\"R-OPEN\": 0.0, \"R-DENSE\": 0.0, \"R-MIXED\": 0.0, \"R-TUNNEL\": 0.0}"
+    },
+    "R-DENSE": {
+      "id": "R-DENSE",
+      "street": "Central Avenue",
+      "orientation": "N-S",
+      "length_m": 7842.4,
+      "window_from_m": 3698079.7059,
+      "window_to_m": 3706079.7059,
+      "svf_mean": 0.7109,
+      "svf_var": 0.0622,
+      "svf_bld_mean": 0.7148,
+      "sunlit_mean": 0.5826,
+      "seed_overlap": "{\"R-OPEN\": 0.0, \"R-DENSE\": 0.565, \"R-MIXED\": 0.0, \"R-TUNNEL\": 0.026}"
+    },
+    "R-MIXED": {
+      "id": "R-MIXED",
+      "street": "19th Avenue",
+      "orientation": "N-S",
+      "length_m": 8178.6,
+      "window_from_m": 3692100.4483,
+      "window_to_m": 3700100.4483,
+      "svf_mean": 0.8519,
+      "svf_var": 0.04913,
+      "svf_bld_mean": 0.8554,
+      "sunlit_mean": 0.7494,
+      "seed_overlap": "{\"R-OPEN\": 0.0, \"R-DENSE\": 0.0, \"R-MIXED\": 0.0, \"R-TUNNEL\": 0.0}"
+    }
+  },
+  "candidates": 128,
+  "arterial_points": 45601,
+  "rule": "Open = max mean SVF; Dense = min; Mixed = max SVF variance in the [0.4, 0.6] mean-SVF quantile band; >= 1 N-S and >= 1 E-W; distinct streets",
+  "parking": {
+    "P1": {
+      "x": 400924.2195,
+      "y": 3700982.5978,
+      "svf": 0.9504622220993042,
+      "heading_deg": 0.0,
+      "criterion": "SVF 0.950 >= 0.95, no canopy within 20 m, nearest the seed"
+    },
+    "P2": {
+      "x": 400192.1774,
+      "y": 3701532.2637,
+      "svf": 0.346527099609375,
+      "heading_deg": 180.0,
+      "criterion": "lowest curb SVF on Central Avenue between the lat range: 0.347 (<= 0.5 required), west curb"
+    },
+    "P3": {
+      "x": 398714.4553,
+      "y": 3703811.6369,
+      "svf": 0.3925970792770386,
+      "heading_deg": 0.0,
+      "criterion": "open ground, canopy 2.5 m away (<= 5), building within 15 m, nearest the seed"
+    },
+    "P4": {
+      "x": 400416.4065,
+      "y": 3701574.3217,
+      "svf": 0.9103624820709229,
+      "heading_deg": 0.0,
+      "deck": true,
+      "criterion": "top deck of Overture 'parking' structure b8b477da-a97c-4950-b7b8-78c6d26b8be7 (19 m), highest-SVF point"
+    },
+    "P5": {
+      "x": 400924.2195,
+      "y": 3700982.5978,
+      "svf": 0.9504622220993042,
+      "heading_deg": 0.0,
+      "criterion": "the P1 stall under a 4.0 m x 3.0 x 6.0 m shade roof",
+      "canopy": true
+    }
+  }
+}

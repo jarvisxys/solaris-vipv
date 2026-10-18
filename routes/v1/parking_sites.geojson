@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "parking_sites",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::4269" } },
+"features": [
+{ "type": "Feature", "properties": { "svf": 0.95046222, "heading_deg": 0.0, "criterion": "SVF 0.950 >= 0.95, no canopy within 20 m, nearest the seed", "id": "P1", "deck": null, "canopy": null }, "geometry": { "type": "Point", "coordinates": [ -112.065931485966971, 33.443675900823095 ] } },
+{ "type": "Feature", "properties": { "svf": 0.3465271, "heading_deg": 180.0, "criterion": "lowest curb SVF on Central Avenue between the lat range: 0.347 (<= 0.5 required), west curb", "id": "P2", "deck": null, "canopy": null }, "geometry": { "type": "Point", "coordinates": [ -112.073867228641404, 33.448564920892792 ] } },
+{ "type": "Feature", "properties": { "svf": 0.39259708, "heading_deg": 0.0, "criterion": "open ground, canopy 2.5 m away (<= 5), building within 15 m, nearest the seed", "id": "P3", "deck": null, "canopy": null }, "geometry": { "type": "Point", "coordinates": [ -112.090021294525584, 33.468981774629519 ] } },
+{ "type": "Feature", "properties": { "svf": 0.91036248, "heading_deg": 0.0, "criterion": "top deck of Overture 'parking' structure b8b477da-a97c-4950-b7b8-78c6d26b8be7 (19 m), highest-SVF point", "id": "P4", "deck": "True", "canopy": null }, "geometry": { "type": "Point", "coordinates": [ -112.071459701840496, 33.448965075218204 ] } },
+{ "type": "Feature", "properties": { "svf": 0.95046222, "heading_deg": 0.0, "criterion": "the P1 stall under a 4.0 m x 3.0 x 6.0 m shade roof", "id": "P5", "deck": null, "canopy": "True" }, "geometry": { "type": "Point", "coordinates": [ -112.065931485966971, 33.443675900823095 ] } }
+]
+}

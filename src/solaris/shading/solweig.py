@@ -90,3 +90,61 @@ def shadow(
     shutil.rmtree(out_dir, ignore_errors=True)
     with rasterio.open(out_tif) as s:
         return s.read(1)
+
+
+def compare_tile(tile, days, hours, buffer_m, transmissivity_pct, trunk_pct, work, root, res=0.5):
+    """Pixel agreement of our shadow map with SOLWEIG on ``tile`` (UTM bounds) at local
+    standard times; both run on the same clipped rasters (tile + buffer), and the comparison
+    covers the tile itself. Returns one dict per time."""
+    import pandas as pd
+    import pyproj
+
+    from solaris.geometry.crs import GEOG_CRS, H_CRS
+
+    from .horizon import convergence_deg, march_steps, shadow_map
+    from .sun import sun_position
+
+    work = Path(work)
+    work.mkdir(parents=True, exist_ok=True)
+    big = (tile[0] - buffer_m, tile[1] - buffer_m, tile[2] + buffer_m, tile[3] + buffer_m)
+    dsm, tr = clip(Path(root) / "dsm.tif", big, work / "dsm.tif")
+    cdsm, _ = clip(Path(root) / "cdsm.tif", big, work / "cdsm.tif")
+    dem, _ = clip(Path(root) / "dem.tif", big, work / "dem.tif")
+    canopy = cdsm > 0
+    top = np.where(canopy, dem + cdsm, np.nan)
+    bot = np.where(canopy, dem + trunk_pct / 100.0 * cdsm, np.nan)
+    k = int(round(buffer_m / res))
+    inner = (slice(k, dsm.shape[0] - k), slice(k, dsm.shape[1] - k))
+    cx, cy = (tile[0] + tile[2]) / 2, (tile[1] + tile[3]) / 2
+    conv = float(convergence_deg(np.array([cx]), np.array([cy]))[0])
+    lon, lat = pyproj.Transformer.from_crs(H_CRS, GEOG_CRS, always_xy=True).transform(cx, cy)
+    steps = march_steps(res, float(np.hypot(*dsm.shape) * res))
+    out = []
+    for d in days:
+        for hr in hours:
+            when = pd.Timestamp(f"{d} {hr:02d}:00")
+            path = work / f"solweig_{when:%Y%m%d_%H%M}.tif"
+            if path.exists():
+                with rasterio.open(path) as s:
+                    ref = s.read(1)
+            else:
+                ref = shadow(
+                    work / "dsm.tif", work / "cdsm.tif", when, path, transmissivity_pct, trunk_pct
+                )
+            sp = sun_position([when.tz_localize("America/Phoenix")], lat, lon, altitude=331.0).iloc[
+                0
+            ]
+            bld, veg = shadow_map(
+                dsm, dsm, tr, res, sp.azimuth, sp.elevation, steps, conv, top, bot
+            )
+            ours, theirs = (bld | veg)[inner], (ref < 0.5)[inner]
+            out.append(
+                {
+                    "time": f"{when:%Y-%m-%d %H:%M}",
+                    "sun_el": round(float(sp.elevation), 2),
+                    "agreement": float(np.mean(ours == theirs)),
+                    "shaded_ours": round(float(ours.mean()), 4),
+                    "shaded_solweig": round(float(theirs.mean()), 4),
+                }
+            )
+    return out

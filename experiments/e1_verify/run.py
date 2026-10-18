@@ -29,7 +29,6 @@ from rasterio.windows import from_bounds
 from scipy import ndimage
 
 from solaris.core.params import REPO_ROOT
-from solaris.geometry.crs import GEOG_CRS, H_CRS
 from solaris.geometry.meshes import tile_mesh
 from solaris.pv.irradiance import facet_irradiance
 from solaris.shading import (
@@ -37,7 +36,6 @@ from solaris.shading import (
     beam_visible,
     bitmask,
     city_engine,
-    convergence_deg,
     horizon,
     horizon_at,
     march_steps,
@@ -365,71 +363,29 @@ def cross_engine_checks(e1, cfg, details):
 
 def solweig_checks(e1, cfg, details, work):
     so = e1["solweig"]
-    tile = e1["downtown_tile_utm"]
-    b = so["buffer_m"]
-    big = (tile[0] - b, tile[1] - b, tile[2] + b, tile[3] + b)
-    work.mkdir(parents=True, exist_ok=True)
-    dsm, tr = sw.clip(D / "dsm.tif", big, work / "dsm.tif")
-    cdsm, _ = sw.clip(D / "cdsm.tif", big, work / "cdsm.tif")
-    dem, _ = read_window(D / "dem.tif", big)
-    canopy = cdsm > 0
-    top = np.where(canopy, dem + cdsm, np.nan)
-    bot = np.where(canopy, dem + so["trunk_zone_pct"] / 100.0 * cdsm, np.nan)
-    inner = (slice(int(b / RES), -int(b / RES)), slice(int(b / RES), -int(b / RES)))
-    cx, cy = (tile[0] + tile[2]) / 2, (tile[1] + tile[3]) / 2
-    conv = float(convergence_deg(np.array([cx]), np.array([cy]))[0])
-    import pyproj
-
-    lon, lat = pyproj.Transformer.from_crs(H_CRS, GEOG_CRS, always_xy=True).transform(cx, cy)
-    steps = march_steps(RES, float(np.hypot(*dsm.shape) * RES))
-    rows, det = [], []
-    for d in so["days"]:
-        for hr in so["hours"]:
-            when = pd.Timestamp(f"{d} {hr:02d}:00")
-            out = work / f"solweig_{when:%Y%m%d_%H%M}.tif"
-            ref = (
-                sw.shadow(
-                    work / "dsm.tif",
-                    work / "cdsm.tif",
-                    when,
-                    out,
-                    so["transmissivity_pct"],
-                    so["trunk_zone_pct"],
-                )
-                if not out.exists()
-                else (rasterio.open(out).read(1))
-            )
-            sp = sun_position([when.tz_localize("America/Phoenix")], lat, lon, altitude=331.0).iloc[
-                0
-            ]
-            bld, veg = shadow_map(
-                dsm, dsm, tr, RES, sp.azimuth, sp.elevation, steps, conv, top, bot
-            )
-            ours = (bld | veg)[inner]
-            theirs = (ref < 0.5)[inner]
-            agree = float(np.mean(ours == theirs))
-            rows.append(
-                row(
-                    "solweig",
-                    f"{when:%Y-%m-%d %H:%M} MST",
-                    "raster vs SOLWEIG",
-                    "pixel agreement",
-                    agree,
-                    so["min_pixel_agreement"],
-                    ">=",
-                )
-            )
-            det.append(
-                {
-                    "time": f"{when:%Y-%m-%d %H:%M}",
-                    "sun_el": round(float(sp.elevation), 2),
-                    "agreement": round(agree, 4),
-                    "shaded_ours": round(float(ours.mean()), 4),
-                    "shaded_solweig": round(float(theirs.mean()), 4),
-                }
-            )
-    details["solweig"] = det
-    return rows
+    det = sw.compare_tile(
+        e1["downtown_tile_utm"],
+        so["days"],
+        so["hours"],
+        so["buffer_m"],
+        so["transmissivity_pct"],
+        so["trunk_zone_pct"],
+        work,
+        D,
+    )
+    details["solweig"] = [{**d, "agreement": round(d["agreement"], 4)} for d in det]
+    return [
+        row(
+            "solweig",
+            f"{d['time']} MST",
+            "raster vs SOLWEIG",
+            "pixel agreement",
+            d["agreement"],
+            so["min_pixel_agreement"],
+            ">=",
+        )
+        for d in det
+    ]
 
 
 def main(out_table, out_summary, skip_city=False):

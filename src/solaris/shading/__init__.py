@@ -5,9 +5,12 @@ from solaris.geometry.covered import tag_covered
 
 from .horizon import (
     azimuth_bins,
+    beam_points,
     beam_visible,
     bitmask,
     convergence_deg,
+    facet_sky_weights,
+    facet_view,
     horizon,
     horizon_at,
     march_steps,
@@ -21,10 +24,13 @@ from .sun import sun_position, sun_vector
 __all__ = [
     "MeshEngine",
     "azimuth_bins",
+    "beam_points",
     "beam_visible",
     "bitmask",
     "city_engine",
     "convergence_deg",
+    "facet_sky_weights",
+    "facet_view",
     "horizon",
     "horizon_at",
     "load_tiles",

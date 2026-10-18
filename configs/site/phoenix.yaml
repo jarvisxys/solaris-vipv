@@ -68,6 +68,43 @@ shading:                         # P4 raster horizon engine (src/solaris/shading
   near_m: 50                     # march at half-pixel steps out to here,
   growth: 0.005                  # then grow each step by 0.5 % of the distance
 
+routes:                          # P6 route selection (workflow guide Sec. 3), routes/select_routes.py
+  road_types: [trunk, primary, secondary]
+  street_suffix: "(Street|Avenue|Road|Boulevard|Drive|Parkway)$"   # arterials, not freeways
+  sample_step_m: 10
+  eye_height_m: 1.8              # vehicle roof
+  window_m: 8000                 # candidate routes: 8 km windows along each arterial,
+  stride_m: 1000                 # every 1 km; whole arterials of 6-10 km also qualify
+  min_m: 6000
+  max_m: 10000
+  min_coverage: 0.9              # share of a window's length that has road points
+  mixed_band: [0.4, 0.6]         # Mixed = highest SVF variance with mean SVF in this quantile band
+  version: v1
+
+sumo:                            # P6 traffic traces (separate 'sumo' conda env, SUMO 1.28)
+  sim_start_local: "07:30"       # MST; departures are local standard time
+  departures: ["08:00", "10:00", "12:00", "14:00", "16:00"]
+  end_s: 36000                   # 07:30 + 10 h
+  step_s: 1                      # 1 Hz FCD
+  corridor_buffer_m: 1500        # road network kept around the routes
+  demand:                        # background trips over the network (randomTrips)
+    low: {seed: 1, period_s: 6.0}
+    medium: {seed: 2, period_s: 3.0}
+    high: {seed: 3, period_s: 1.5}
+
+parking:                         # P6 parking sites (guide Sec. 3 table), chosen from SVF
+  search_radius_m: 200           # around each seed
+  grid_m: 2.0
+  P1: {svf_min: 0.95, canopy_free_m: 20}
+  P2: {svf_max: 0.5, street: Central Avenue, lat_range: [33.4483, 33.4508],
+       curb_offsets_m: [4.0, 5.5, 7.0], min_wall_distance_m: 4.0,
+       axis_lon: -112.0740, axis_tolerance_m: 15}   # Central Ave axis (OSM ways jog onto couplets)
+  # P2: a parked car's centre sits >= 4 m off the building face (sidewalk ~3 m + half the car)
+  P3: {canopy_within_m: 5, building_within_m: 15}
+  P4: {footprint_class: parking, min_height_m: 8}
+  P5: {canopy_height_m: 4.0, canopy_across_m: 3.0, canopy_along_m: 6.0}   # at the P1 lot
+  headings_deg: {N: 0, E: 90, S: 180, W: 270}
+
 lidar:
   project: AZ_MaricopaPinal_2020_B20   # USGS 3DEP, public domain, flown 2020-10-02 to 2021-12-18
   ept: https://s3-us-west-2.amazonaws.com/usgs-lidar-public/AZ_MaricopaPinal_1_2020/ept.json

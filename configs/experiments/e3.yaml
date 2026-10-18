@@ -1,0 +1,17 @@
+# E3 -- driving shading on real routes (workflow guide Sec. 5). experiments/e3_driving/run.py.
+routes: [R-OPEN, R-DENSE, R-MIXED]
+directions: [fwd, rev]
+departures: ["08:00", "10:00", "12:00", "14:00", "16:00"]
+days: ["2023-03-21", "2023-06-21", "2023-09-21", "2023-12-21"]
+demand: [low, medium, high]      # SUMO seeds (configs/site/phoenix.yaml: sumo.demand)
+skies: [clear, tmy]              # pvlib Ineichen (geometric study), then the matching TMY day
+tree_transmissivity: 0.03        # case C base; sweep below
+tau_sweep: [0.03, 0.1, 0.3]
+horizon_band_deg: 6.0
+position_round_m: 0.5            # horizons computed once per rounded position
+
+tunnel_check:                    # R-TUNNEL, outside the 360-trip matrix
+  route: R-TUNNEL
+  departure: "12:00"
+  day: "2023-06-21"
+  demand: medium

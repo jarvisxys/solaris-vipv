@@ -1,0 +1,17 @@
+# E4 -- parking shading (workflow guide Sec. 5). experiments/e4_parking/run.py.
+sites: [P1, P2, P3, P4, P5]      # routes/v1/parking_sites.geojson
+headings_deg: {N: 0, E: 90, S: 180, W: 270}
+step_min: 5                      # all 8760 h at 5-min daylight resolution
+tree_transmissivity: 0.03        # base; sweep below
+tau_sweep: [0.03, 0.1, 0.3]
+horizon_band_deg: 6.0            # Perez horizon-brightening band seen by v_hz
+
+solweig:                         # cross-check P1-P3 (pass: agreement >= 95 %)
+  sites: [P1, P2, P3]
+  half_size_m: 150               # 300 m x 300 m tile around each site
+  buffer_m: 250
+  days: ["2023-03-20", "2023-06-21", "2023-09-22", "2023-12-21"]
+  hours: [8, 12, 16]
+  transmissivity_pct: 3.0
+  trunk_zone_pct: 25.0
+  min_pixel_agreement: 0.95

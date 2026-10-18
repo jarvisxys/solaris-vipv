@@ -60,6 +60,8 @@ rule all:
         "results/e1/table_e1.csv",
         "results/e2/summary_e2.json",
         "twin/exchange/facet_samples.csv",
+        "results/e3/summary_e3.json",
+        "results/e4/summary_e4.json",
 
 
 # ---------------------------------------------------------------- P0 bootstrap
@@ -429,8 +431,80 @@ rule e2_facets:
         experiment("e2_facets").main(output.table, output.facets, output.summary)
 
 
+# ---------------------------------------------------------------- P6 / E3, E4
+def script(path):
+    """Load a repo script (not under experiments/) in-process, like experiment()."""
+    import importlib.util
+
+    p = Path(workflow.basedir) / path
+    spec = importlib.util.spec_from_file_location(p.stem, p)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+RASTERS = [f"{DD}/dsm.tif", f"{DD}/dem.tif", f"{DD}/cdsm.tif", f"{DD}/classes.tif"]
+
+
+rule routes_select:
+    """Guide Sec. 3: routes by measured SVF; frozen in routes/v1 with SHA-256 MANIFEST.
+    A frozen version is never rewritten (the script refuses); a change is routes/v2."""
+    input:
+        RASTERS,
+        covered=f"{DD}/covered.gpkg",
+        tmy=nsrdb_raw("tmy"),
+    output:
+        "routes/v1/MANIFEST.json",
+    run:
+        script("routes/select_routes.py").main()
+
+
+rule sumo_traces:
+    """SUMO (separate 'sumo' env): network from OSM, three demand seeds, 1 Hz ego traces."""
+    input:
+        "routes/v1/MANIFEST.json",
+        covered=f"{DD}/covered.gpkg",
+    output:
+        "results/p6/table_traces.csv",
+    run:
+        from solaris.site import site_config
+        from solaris.trajectory.sumo import build_traces
+
+        build_traces(site_config(), "routes/v1", f"{DD}/trajectories", output[0])
+
+
+rule e3_driving:
+    """E3: 360 trips, cases A/B/C, clear sky and TMY day."""
+    input:
+        RASTERS,
+        traces="results/p6/table_traces.csv",
+        cfg="configs/experiments/e3.yaml",
+        vehicle=VEHICLE_CFG,
+    output:
+        trips="results/e3/table_e3_trips.csv",
+        table="results/e3/table_e3_summary.csv",
+        tod="results/e3/table_e3_tod.csv",
+        summary="results/e3/summary_e3.json",
+    run:
+        experiment("e3_driving").main(output.trips, output.table, output.tod, output.summary)
+
+
+rule e4_parking:
+    """E4: P1-P5 x 4 headings, 5-min daylight steps, F_park; SOLWEIG check at P1-P3."""
+    input:
+        RASTERS,
+        sites="routes/v1/MANIFEST.json",
+        cfg="configs/experiments/e4.yaml",
+        vehicle=VEHICLE_CFG,
+    output:
+        table="results/e4/table_e4.csv",
+        sites="results/e4/table_e4_sites.csv",
+        summary="results/e4/summary_e4.json",
+    run:
+        experiment("e4_parking").main(output.table, output.sites, output.summary)
+
+
 # ---------------------------------------------------------------- planned rules
-# P6  E3/4 routes_select, sumo_traces, e3_driving, e4_parking
 # P7  E5/6 e5_annual, e6_mismatch            -> waterfall figure
 # P8  E8   e8_twin_agreement, e8_mapillary_svf
 # P9  E7   e7_inversion, figures, paper

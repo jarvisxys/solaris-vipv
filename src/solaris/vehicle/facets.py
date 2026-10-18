@@ -63,6 +63,34 @@ def flat_skin(area_m2) -> list[Facet]:
     return [Facet("flat", float(area_m2), 0.0, 0.0, (0.0, 0.0, 1.85), side, side)]
 
 
+def body_axes(heading_deg):
+    """ENU unit vectors of the body's forward and left axes at compass heading(s)."""
+    h = np.radians(np.asarray(heading_deg, float))
+    fwd = np.stack([np.sin(h), np.cos(h), np.zeros_like(h)], axis=-1)
+    left = np.stack([-np.cos(h), np.sin(h), np.zeros_like(h)], axis=-1)
+    return fwd, left
+
+
+def to_world(body_xyz, x, y, z_ground, heading_deg):
+    """Body-frame points (n, 3) of a vehicle at UTM (x, y), ground height z_ground and heading
+    -> world points (n, 3). Scalars only (one pose); see poses_to_world for many poses."""
+    fwd, left = body_axes(heading_deg)
+    b = np.asarray(body_xyz, float)
+    return (
+        np.array([x, y, z_ground])[None, :]
+        + b[:, :1] * fwd[None, :]
+        + b[:, 1:2] * left[None, :]
+        + b[:, 2:3] * np.array([0.0, 0.0, 1.0])[None, :]
+    )
+
+
+def normal_enu(facet, heading_deg):
+    """Facet normal in ENU at a compass heading."""
+    fwd, left = body_axes(heading_deg)
+    n = facet.normal_body()
+    return n[0] * fwd + n[1] * left + n[2] * np.array([0.0, 0.0, 1.0])
+
+
 def samples(fs, spacing=0.25) -> pd.DataFrame:
     """Sample points on every facet: body position, unit normal, represented area."""
     rows = []

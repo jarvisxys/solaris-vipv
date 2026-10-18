@@ -81,6 +81,83 @@ def _shadow(surf, z0, veg_top, veg_bot, az_rad, el_rad, steps, res):
     return bld, veg
 
 
+@njit(parallel=True, cache=True)
+def _beam(surf_b, surf_a, rows, cols, z0, az_rad, el_rad, steps, res, zmax):
+    n = rows.shape[0]
+    nr, nc = surf_b.shape
+    bld = np.zeros(n, np.bool_)
+    tree = np.zeros(n, np.bool_)
+    for i in prange(n):
+        if el_rad[i] <= 0.0:
+            bld[i] = True  # sun below the horizontal: no beam
+            continue
+        dx, dy, t = math.sin(az_rad[i]), -math.cos(az_rad[i]), math.tan(el_rad[i])
+        for s in steps:
+            z = z0[i] + s * res * t
+            if z > zmax:
+                break  # above everything in the raster: free
+            r = int(math.floor(rows[i] + dy * s))
+            c = int(math.floor(cols[i] + dx * s))
+            if r < 0 or c < 0 or r >= nr or c >= nc:
+                break
+            if surf_b[r, c] > z:
+                bld[i] = True
+                break
+            if surf_a[r, c] > z:
+                tree[i] = True
+    return bld, tree
+
+
+def beam_points(surf_b, surf_a, transform, x, y, z, sun_az, sun_el, res, steps, convergence):
+    """Beam blocked by buildings / by trees only, per point with its own sun position.
+
+    surf_b  building surface (dsm); surf_a  buildings + trees (max of dsm, dem + cdsm)
+    sun_az, sun_el  true azimuth and elevation per point (deg); convergence deg per point
+    """
+    x, y = np.asarray(x, float), np.asarray(y, float)
+    col, row = ~transform * (x, y)
+    sb = np.ascontiguousarray(surf_b, np.float32)
+    sa = np.ascontiguousarray(surf_a, np.float32)
+    return _beam(
+        sb,
+        sa,
+        np.asarray(row, float),
+        np.asarray(col, float),
+        np.asarray(z, float),
+        np.radians(np.asarray(sun_az, float) - np.asarray(convergence, float)),
+        np.radians(np.asarray(sun_el, float)),
+        steps,
+        float(res),
+        float(np.nanmax(sa)),
+    )
+
+
+def facet_sky_weights(normal_enu, n_azimuth=360, elevation_step=0.5):
+    """Weights W (azimuth, elevation bin) = max(0, n . d) cos(el) d_el d_az of the sky
+    hemisphere seen by a facet with ENU normal ``normal_enu``. Sum = the facet's view of the
+    open sky (pi-normalised later)."""
+    az = np.radians(np.arange(n_azimuth) * 360.0 / n_azimuth)
+    e0 = np.radians(np.arange(int(round(90 / elevation_step))) * elevation_step)
+    el = e0 + np.radians(elevation_step) / 2
+    A, E = np.meshgrid(az, el, indexing="ij")
+    d = np.stack([np.sin(A) * np.cos(E), np.cos(A) * np.cos(E), np.sin(E)], axis=-1)
+    w = np.clip(d @ np.asarray(normal_enu, float), 0.0, None) * np.cos(E)
+    return w * np.radians(elevation_step) * 2 * np.pi / n_azimuth
+
+
+def facet_view(h, weights, elevation_step=0.5, band_deg=None):
+    """Visible share of a facet's sky weights above horizons ``h`` (points, azimuth):
+    1 = open sky. With ``band_deg``, only the band [0, band_deg) above the horizontal."""
+    W = weights if band_deg is None else weights[:, : int(round(band_deg / elevation_step))]
+    total = W.sum()
+    if total <= 0:
+        return np.ones(h.shape[0])
+    C = np.concatenate([np.cumsum(W[:, ::-1], axis=1)[:, ::-1], np.zeros((W.shape[0], 1))], axis=1)
+    j = np.clip(np.ceil(np.asarray(h, float) / elevation_step).astype(int), 0, W.shape[1])
+    vis = C[np.arange(W.shape[0])[None, :], j].sum(axis=1)
+    return vis / total
+
+
 def convergence_deg(x, y):
     """Meridian convergence (grid north minus true north, deg) at UTM points."""
     lon, lat = pyproj.Transformer.from_crs(H_CRS, GEOG_CRS, always_xy=True).transform(x, y)
