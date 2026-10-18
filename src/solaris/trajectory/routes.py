@@ -8,7 +8,7 @@
    6-10 km too); score = mean SVF and SVF variance.
 5. Open = highest mean SVF; Dense = lowest; Mixed = highest variance among candidates whose
    mean SVF lies in the middle quantile band. At least one N-S and one E-W route.
-6. Frozen as routes/v1/*.geojson with SHA-256 in routes/v1/MANIFEST.json.
+6. Frozen as routes/<version>/*.geojson with SHA-256 in its MANIFEST.json.
 """
 
 import re

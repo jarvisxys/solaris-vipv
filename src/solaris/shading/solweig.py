@@ -113,6 +113,17 @@ def compare_tile(tile, days, hours, buffer_m, transmissivity_pct, trunk_pct, wor
     canopy = cdsm > 0
     top = np.where(canopy, dem + cdsm, np.nan)
     bot = np.where(canopy, dem + trunk_pct / 100.0 * cdsm, np.nan)
+    # cached SOLWEIG maps are valid only for the exact rasters they were made from
+    import hashlib
+
+    key = hashlib.sha256(
+        dsm.tobytes() + cdsm.tobytes() + f"{transmissivity_pct},{trunk_pct}".encode()
+    ).hexdigest()
+    stamp = work / "inputs.sha256"
+    if not stamp.exists() or stamp.read_text().strip() != key:
+        for old in work.glob("solweig_*.tif"):
+            old.unlink()
+        stamp.write_text(key + "\n")
     k = int(round(buffer_m / res))
     inner = (slice(k, dsm.shape[0] - k), slice(k, dsm.shape[1] - k))
     cx, cy = (tile[0] + tile[2]) / 2, (tile[1] + tile[3]) / 2

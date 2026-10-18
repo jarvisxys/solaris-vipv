@@ -1,30 +1,30 @@
 {
   "cross_engine_buildings": {
     "cases": 43000,
-    "kept_after_horizon_exclusion": 41703,
-    "beam_agreement": 0.9959,
-    "dsvf_mean": 0.0075,
-    "dsvf_median": 0.0051,
-    "dsvf_p95": 0.0222,
-    "dsvf_max": 0.1587,
-    "svf_raster_mean": 0.624
+    "kept_after_horizon_exclusion": 41707,
+    "beam_agreement": 0.9955,
+    "dsvf_mean": 0.0071,
+    "dsvf_median": 0.0044,
+    "dsvf_p95": 0.0211,
+    "dsvf_max": 0.3543,
+    "svf_raster_mean": 0.6349
   },
   "cross_engine_buildings+trees": {
     "cases": 43000,
-    "kept_after_horizon_exclusion": 41705,
-    "beam_agreement": 0.9957,
-    "dsvf_mean": 0.0081,
-    "dsvf_median": 0.0053,
-    "dsvf_p95": 0.0232,
-    "dsvf_max": 0.1587,
-    "svf_raster_mean": 0.6182
+    "kept_after_horizon_exclusion": 41714,
+    "beam_agreement": 0.9948,
+    "dsvf_mean": 0.0077,
+    "dsvf_median": 0.0047,
+    "dsvf_p95": 0.0226,
+    "dsvf_max": 0.3519,
+    "svf_raster_mean": 0.6274
   },
   "cross_engine": {
     "points": 1000,
     "suns": 43,
-    "mesh_faces": 13573828,
-    "raster_s": 2.1,
-    "mesh_s": 78.0,
+    "mesh_faces": 11210393,
+    "raster_s": 2.2,
+    "mesh_s": 67.3,
     "tile_utm": [
       399700,
       3701100,
@@ -36,86 +36,86 @@
     {
       "time": "2023-03-20 08:00",
       "sun_el": 17.43,
-      "agreement": 0.9833,
-      "shaded_ours": 0.6837,
-      "shaded_solweig": 0.6777
+      "agreement": 0.9832,
+      "shaded_ours": 0.6679,
+      "shaded_solweig": 0.6618
     },
     {
       "time": "2023-03-20 12:00",
       "sun_el": 55.48,
-      "agreement": 0.9929,
-      "shaded_ours": 0.2806,
-      "shaded_solweig": 0.2775
+      "agreement": 0.993,
+      "shaded_ours": 0.2715,
+      "shaded_solweig": 0.2686
     },
     {
       "time": "2023-03-20 16:00",
       "sun_el": 31.65,
-      "agreement": 0.9841,
-      "shaded_ours": 0.5154,
-      "shaded_solweig": 0.5062
+      "agreement": 0.9845,
+      "shaded_ours": 0.5029,
+      "shaded_solweig": 0.4943
     },
     {
       "time": "2023-06-21 08:00",
       "sun_el": 30.82,
-      "agreement": 0.9886,
-      "shaded_ours": 0.487,
-      "shaded_solweig": 0.4858
+      "agreement": 0.9885,
+      "shaded_ours": 0.4712,
+      "shaded_solweig": 0.4705
     },
     {
       "time": "2023-06-21 12:00",
       "sun_el": 78.01,
-      "agreement": 0.989,
-      "shaded_ours": 0.1131,
-      "shaded_solweig": 0.1045
+      "agreement": 0.9899,
+      "shaded_ours": 0.109,
+      "shaded_solweig": 0.1013
     },
     {
       "time": "2023-06-21 16:00",
       "sun_el": 43.31,
-      "agreement": 0.9929,
-      "shaded_ours": 0.3387,
-      "shaded_solweig": 0.3377
+      "agreement": 0.9928,
+      "shaded_ours": 0.3232,
+      "shaded_solweig": 0.322
     },
     {
       "time": "2023-09-22 08:00",
       "sun_el": 20.62,
-      "agreement": 0.9798,
-      "shaded_ours": 0.6382,
-      "shaded_solweig": 0.6327
+      "agreement": 0.9799,
+      "shaded_ours": 0.6229,
+      "shaded_solweig": 0.6173
     },
     {
       "time": "2023-09-22 12:00",
       "sun_el": 56.39,
-      "agreement": 0.9918,
-      "shaded_ours": 0.2647,
-      "shaded_solweig": 0.2634
+      "agreement": 0.9921,
+      "shaded_ours": 0.2549,
+      "shaded_solweig": 0.254
     },
     {
       "time": "2023-09-22 16:00",
       "sun_el": 28.88,
-      "agreement": 0.9829,
-      "shaded_ours": 0.5424,
-      "shaded_solweig": 0.5341
+      "agreement": 0.9832,
+      "shaded_ours": 0.5291,
+      "shaded_solweig": 0.5215
     },
     {
       "time": "2023-12-21 08:00",
       "sun_el": 5.04,
-      "agreement": 0.9927,
-      "shaded_ours": 0.9225,
-      "shaded_solweig": 0.9198
+      "agreement": 0.9929,
+      "shaded_ours": 0.9213,
+      "shaded_solweig": 0.9186
     },
     {
       "time": "2023-12-21 12:00",
       "sun_el": 32.79,
       "agreement": 0.9897,
-      "shaded_ours": 0.4635,
-      "shaded_solweig": 0.4638
+      "shaded_ours": 0.4497,
+      "shaded_solweig": 0.4503
     },
     {
       "time": "2023-12-21 16:00",
       "sun_el": 13.79,
-      "agreement": 0.9823,
-      "shaded_ours": 0.7767,
-      "shaded_solweig": 0.767
+      "agreement": 0.9828,
+      "shaded_ours": 0.7656,
+      "shaded_solweig": 0.7564
     }
   ],
   "passed": 40,

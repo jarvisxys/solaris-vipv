@@ -201,7 +201,81 @@ def load_confirmations(path) -> dict:
     return {c["id"]: c for c in doc.get("confirmed") or []}
 
 
-def apply_confirmed(dsm_epoch, dem, candidates_gpkg, confirmations, out, floor_h) -> dict:
+MATCH_M = 25.0
+
+
+def match_ids(conf, cand, blob_at=None):
+    """Confirmed id -> where to apply it. An id is the candidate's kind and rounded centroid.
+
+    - the same id, or the same-kind candidate within MATCH_M of it (a rebuild shifted the
+      centroid): ("candidate", id)
+    - a rejection with no candidate left: ("none", reason) - nothing to apply anyway
+    - a demolition with no candidate left (the structure fell below the candidate
+      thresholds, e.g. once power lines stopped inflating it): the lidar blob at that spot,
+      from ``blob_at(x, y)``: ("blob", geometry), or ("none", reason) if nothing is left
+    - an addition with no candidate: an error (it needs its footprint)
+    """
+    out, missing = {}, []
+    for cid, c in conf.items():
+        if cid in cand.index:
+            out[cid] = ("candidate", cid)
+            continue
+        kind, e, n = cid.split("-")
+        x, y = float(e[1:]), float(n[1:])
+        same = cand[cand.index.str.startswith(kind + "-")]
+        d = same.geometry.centroid.distance(shapely.Point(x, y))
+        if len(d) and d.min() <= MATCH_M:
+            out[cid] = ("candidate", d.idxmin())
+        elif c.get("status") not in ("added", "demolished"):
+            out[cid] = ("none", "rejected, no candidate left")
+        elif c.get("status") == "demolished" and blob_at is not None:
+            g = blob_at(x, y)
+            out[cid] = ("blob", g) if g is not None else ("none", "no lidar structure left")
+        else:
+            missing.append(cid)
+    if missing:
+        raise ValueError(f"confirmed ids with no candidate within {MATCH_M} m: {missing}")
+    return out
+
+
+def lidar_blob(classes, dsm, dem, footprints, tol_m, nmin, min_area_m2, res=0.5):
+    """Function (x, y) -> polygon of the building-class lidar blob outside every footprint
+    (grown by tol_m) nearest the point within MATCH_M, at least min_area_m2; None if none."""
+
+    def find(x, y):
+        b = (x - MATCH_M - 30, y - MATCH_M - 30, x + MATCH_M + 30, y + MATCH_M + 30)
+        with rasterio.open(classes) as c, rasterio.open(dsm) as d, rasterio.open(dem) as t:
+            w = _window(c, b, pad=0)
+            tr = c.window_transform(w)
+            nd = d.read(1, window=w, boundless=True) - t.read(1, window=w, boundless=True)
+            built = (c.read(1, window=w, boundless=True) == BUILDING) & (nd > nmin)
+        near = footprints[footprints.intersects(box(*b))]
+        if len(near):
+            built &= rasterio.features.geometry_mask(
+                list(near.geometry.buffer(tol_m)), built.shape, tr
+            )
+        lab, _ = ndimage.label(built, structure=np.ones((3, 3), bool))
+        best = None
+        for i, sl in enumerate(ndimage.find_objects(lab), start=1):
+            blob = lab[sl] == i
+            if blob.sum() * res * res < min_area_m2:
+                continue
+            sub = tr @ Affine.translation(sl[1].start, sl[0].start)
+            parts = rasterio.features.shapes(
+                blob.astype(np.uint8), mask=blob, transform=sub, connectivity=8
+            )
+            geom = shapely.union_all([shape(p) for p, _ in parts])
+            dist = geom.distance(shapely.Point(x, y))
+            if dist <= MATCH_M and (best is None or dist < best[0]):
+                best = (dist, geom)
+        return None if best is None else best[1]
+
+    return find
+
+
+def apply_confirmed(
+    dsm_epoch, dem, candidates_gpkg, confirmations, out, floor_h, blob_at=None
+) -> dict:
     """dsm.tif = lidar-epoch building DSM with confirmed changes burnt in."""
     import shutil
 
@@ -210,15 +284,14 @@ def apply_confirmed(dsm_epoch, dem, candidates_gpkg, confirmations, out, floor_h
     if not conf:
         return {"applied": 0}
     cand = gpd.read_file(candidates_gpkg).set_index("id")
-    unknown = sorted(set(conf) - set(cand.index))
-    if unknown:
-        raise ValueError(f"confirmed ids not in the candidate list: {unknown}")
+    where = match_ids(conf, cand, blob_at)
     n = 0
     with rasterio.open(out, "r+") as d, rasterio.open(dem) as t:
         for cid, c in conf.items():
-            if c.get("status") not in ("added", "demolished"):
+            how, what = where[cid]
+            if c.get("status") not in ("added", "demolished") or how == "none":
                 continue
-            geom = cand.loc[cid, "geometry"]
+            geom = cand.loc[what, "geometry"] if how == "candidate" else what
             w = _window(d, geom.bounds)
             mask = rasterio.features.geometry_mask(
                 [geom], (w.height, w.width), d.window_transform(w), invert=True
@@ -232,7 +305,16 @@ def apply_confirmed(dsm_epoch, dem, candidates_gpkg, confirmations, out, floor_h
                 new = ground
             d.write(np.where(mask, new, z).astype(np.float32), 1, window=w)
             n += 1
-    return {"applied": n}
+    log = {
+        k: (
+            v[1]
+            if v[0] == "candidate"
+            else f"{v[0]}: " + (v[1] if v[0] == "none" else "lidar blob")
+        )
+        for k, v in where.items()
+        if v != ("candidate", k)
+    }
+    return {"applied": n, "remapped": log}
 
 
 def to_table(gdf) -> pd.DataFrame:

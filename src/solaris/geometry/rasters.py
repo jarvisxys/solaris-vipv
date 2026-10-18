@@ -159,7 +159,13 @@ def classify(ndsm, ndvi, inside, inside_buffered, p, px_area):
     with np.errstate(invalid="ignore"):
         too_tall = ndsm > t["ndsm_max_m"]
         tree = (ndsm > t["ndsm_min_m"]) & ~too_tall & (ndvi > t["ndvi_min"]) & ~inside_buffered
-        building = inside | too_tall | ((ndsm > b["ndsm_min_m"]) & (ndvi < b["ndvi_max"]))
+        by_height = (ndsm > b["ndsm_min_m"]) & (ndvi < b["ndvi_max"])
+    # Added to the guide: structures narrower than min_width_m (overhead power lines, poles,
+    # signal arms) are not buildings. An opening of (by_height | inside) removes them but
+    # keeps strips joined to a footprint (lidar/footprint misregistration at tower edges).
+    k = max(1, int(np.ceil(b["min_width_m"] / np.sqrt(px_area))))
+    wide = ndimage.binary_opening(by_height | inside, structure=np.ones((k, k), bool))
+    building = inside | too_tall | (by_height & wide)
     min_px = int(np.ceil(p["min_blob_m2"] / px_area))
     building = remove_small(building, min_px)
     tree = remove_small(tree & ~building, min_px)

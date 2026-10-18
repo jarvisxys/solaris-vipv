@@ -36,21 +36,38 @@ ROAD_TYPES = (
 )
 
 
-def fetch_osm(lonlat_bbox, out):
-    """OSM XML of the main road network (with signal nodes) in a lon/lat bbox."""
+def fetch_osm(lonlat_bbox, out, tiles=2, retries=5):
+    """OSM XML of the main road network (with signal nodes) in a lon/lat bbox, fetched as
+    tiles x tiles Overpass queries (one large query gets 502s); returns the tile files,
+    which netconvert reads together."""
+    import time
+
     out = Path(out)
-    if out.exists():
-        return out
-    w, s, e, n = lonlat_bbox
-    q = (
-        f'[out:xml][timeout:300];(way["highway"~"^({"|".join(ROAD_TYPES)})$"]'
-        f"({s},{w},{n},{e}););(._;>;);out body;"
-    )
-    r = requests.post(OVERPASS, data={"data": q}, timeout=600)
-    r.raise_for_status()
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_bytes(r.content)
-    return out
+    w, s, e, n = lonlat_bbox
+    xs, ys = np.linspace(w, e, tiles + 1), np.linspace(s, n, tiles + 1)
+    # Overpass refuses the default python-requests agent (HTTP 406)
+    headers = {"User-Agent": "SOLARIS-Twin/2.0 (github.com/jarvisxys/solaris-vipv)"}
+    files = []
+    for i in range(tiles):
+        for j in range(tiles):
+            f = out.with_name(f"{out.stem}_{i}{j}.xml")
+            files.append(f)
+            if f.exists():
+                continue
+            q = (
+                f'[out:xml][timeout:300];(way["highway"~"^({"|".join(ROAD_TYPES)})$"]'
+                f"({ys[j]},{xs[i]},{ys[j + 1]},{xs[i + 1]}););(._;>;);out body;"
+            )
+            for attempt in range(retries):
+                r = requests.post(OVERPASS, data={"data": q}, headers=headers, timeout=600)
+                if r.ok:
+                    break
+                if attempt == retries - 1:
+                    r.raise_for_status()
+                time.sleep(30 * (attempt + 1))
+            f.write_bytes(r.content)
+    return files
 
 
 def route_polylines(routes_dir, ids):
@@ -141,12 +158,13 @@ def build_traces(cfg, routes_dir, out_dir, table):
         for r in ROUTE_IDS
     ]
     bbox = lonlat_bounds(union_all([ln.buffer(s["corridor_buffer_m"]) for ln in lines]), pad_deg=0)
-    osm = fetch_osm(bbox, REPO_ROOT / "data" / "raw" / "osm" / "sumo_roads.osm.xml")
+    version = Path(routes_dir).name  # the corridor, network and demand belong to one route set
+    osm = fetch_osm(bbox, REPO_ROOT / "data" / "raw" / "osm" / f"sumo_roads_{version}.osm.xml")
     start = pd.Timestamp(f"2023-01-01 {s['sim_start_local']}")
     deps = [(pd.Timestamp(f"2023-01-01 {d}") - start).total_seconds() for d in s["departures"]]
-    work = D / "sumo"
+    work = D / "sumo" / version
     job = {
-        "osm": str(osm),
+        "osm": ",".join(str(p) for p in osm),
         "workdir": str(work),
         "routes": route_polylines(routes_dir, ROUTE_IDS),
         "departures_s": deps,

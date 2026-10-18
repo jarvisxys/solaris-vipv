@@ -1,0 +1,359 @@
+{
+  "F_park_year_base_tau": {
+    "P1-N": 0.9329,
+    "P1-E": 0.947,
+    "P1-S": 0.9331,
+    "P1-W": 0.9469,
+    "P2-N": 0.2934,
+    "P2-E": 0.3461,
+    "P2-S": 0.2947,
+    "P2-W": 0.3433,
+    "P3-N": 0.3879,
+    "P3-E": 0.4643,
+    "P3-S": 0.4636,
+    "P3-W": 0.487,
+    "P4-N": 0.8829,
+    "P4-E": 0.8854,
+    "P4-S": 0.88,
+    "P4-W": 0.8799,
+    "P5-N": 0.6446,
+    "P5-E": 0.6316,
+    "P5-S": 0.6588,
+    "P5-W": 0.6319
+  },
+  "F_park_year_mean_heading": {
+    "P1": 0.94,
+    "P2": 0.3194,
+    "P3": 0.4507,
+    "P4": 0.882,
+    "P5": 0.6417
+  },
+  "solweig": [
+    {
+      "site": "P1",
+      "time": "2023-03-20 08:00",
+      "sun_el": 17.44,
+      "agreement": 0.988475,
+      "shaded_ours": 0.3334,
+      "shaded_solweig": 0.3275,
+      "pass": true
+    },
+    {
+      "site": "P1",
+      "time": "2023-03-20 12:00",
+      "sun_el": 55.49,
+      "agreement": 0.9971,
+      "shaded_ours": 0.0778,
+      "shaded_solweig": 0.0757,
+      "pass": true
+    },
+    {
+      "site": "P1",
+      "time": "2023-03-20 16:00",
+      "sun_el": 31.65,
+      "agreement": 0.9897944444444444,
+      "shaded_ours": 0.228,
+      "shaded_solweig": 0.2199,
+      "pass": true
+    },
+    {
+      "site": "P1",
+      "time": "2023-06-21 08:00",
+      "sun_el": 30.82,
+      "agreement": 0.9942333333333333,
+      "shaded_ours": 0.218,
+      "shaded_solweig": 0.2158,
+      "pass": true
+    },
+    {
+      "site": "P1",
+      "time": "2023-06-21 12:00",
+      "sun_el": 78.02,
+      "agreement": 0.9917777777777778,
+      "shaded_ours": 0.0296,
+      "shaded_solweig": 0.0222,
+      "pass": true
+    },
+    {
+      "site": "P1",
+      "time": "2023-06-21 16:00",
+      "sun_el": 43.3,
+      "agreement": 0.9969,
+      "shaded_ours": 0.1628,
+      "shaded_solweig": 0.1617,
+      "pass": true
+    },
+    {
+      "site": "P1",
+      "time": "2023-09-22 08:00",
+      "sun_el": 20.63,
+      "agreement": 0.9859222222222223,
+      "shaded_ours": 0.2917,
+      "shaded_solweig": 0.287,
+      "pass": true
+    },
+    {
+      "site": "P1",
+      "time": "2023-09-22 12:00",
+      "sun_el": 56.39,
+      "agreement": 0.9952277777777778,
+      "shaded_ours": 0.0697,
+      "shaded_solweig": 0.07,
+      "pass": true
+    },
+    {
+      "site": "P1",
+      "time": "2023-09-22 16:00",
+      "sun_el": 28.88,
+      "agreement": 0.9893166666666666,
+      "shaded_ours": 0.2511,
+      "shaded_solweig": 0.2431,
+      "pass": true
+    },
+    {
+      "site": "P1",
+      "time": "2023-12-21 08:00",
+      "sun_el": 5.05,
+      "agreement": 0.9819138888888889,
+      "shaded_ours": 0.7242,
+      "shaded_solweig": 0.7168,
+      "pass": true
+    },
+    {
+      "site": "P1",
+      "time": "2023-12-21 12:00",
+      "sun_el": 32.8,
+      "agreement": 0.9950833333333333,
+      "shaded_ours": 0.1508,
+      "shaded_solweig": 0.15,
+      "pass": true
+    },
+    {
+      "site": "P1",
+      "time": "2023-12-21 16:00",
+      "sun_el": 13.79,
+      "agreement": 0.9777722222222223,
+      "shaded_ours": 0.4442,
+      "shaded_solweig": 0.4269,
+      "pass": true
+    },
+    {
+      "site": "P2",
+      "time": "2023-03-20 08:00",
+      "sun_el": 17.43,
+      "agreement": 0.9843027777777777,
+      "shaded_ours": 0.7545,
+      "shaded_solweig": 0.7501,
+      "pass": true
+    },
+    {
+      "site": "P2",
+      "time": "2023-03-20 12:00",
+      "sun_el": 55.48,
+      "agreement": 0.9917944444444444,
+      "shaded_ours": 0.3658,
+      "shaded_solweig": 0.364,
+      "pass": true
+    },
+    {
+      "site": "P2",
+      "time": "2023-03-20 16:00",
+      "sun_el": 31.65,
+      "agreement": 0.9842472222222223,
+      "shaded_ours": 0.6034,
+      "shaded_solweig": 0.5976,
+      "pass": true
+    },
+    {
+      "site": "P2",
+      "time": "2023-06-21 08:00",
+      "sun_el": 30.82,
+      "agreement": 0.9852694444444444,
+      "shaded_ours": 0.6145,
+      "shaded_solweig": 0.6171,
+      "pass": true
+    },
+    {
+      "site": "P2",
+      "time": "2023-06-21 12:00",
+      "sun_el": 78.01,
+      "agreement": 0.9905027777777777,
+      "shaded_ours": 0.1474,
+      "shaded_solweig": 0.14,
+      "pass": true
+    },
+    {
+      "site": "P2",
+      "time": "2023-06-21 16:00",
+      "sun_el": 43.31,
+      "agreement": 0.9894333333333334,
+      "shaded_ours": 0.3994,
+      "shaded_solweig": 0.3955,
+      "pass": true
+    },
+    {
+      "site": "P2",
+      "time": "2023-09-22 08:00",
+      "sun_el": 20.62,
+      "agreement": 0.9792027777777778,
+      "shaded_ours": 0.72,
+      "shaded_solweig": 0.7155,
+      "pass": true
+    },
+    {
+      "site": "P2",
+      "time": "2023-09-22 12:00",
+      "sun_el": 56.39,
+      "agreement": 0.9916444444444444,
+      "shaded_ours": 0.3469,
+      "shaded_solweig": 0.346,
+      "pass": true
+    },
+    {
+      "site": "P2",
+      "time": "2023-09-22 16:00",
+      "sun_el": 28.88,
+      "agreement": 0.9845083333333333,
+      "shaded_ours": 0.6157,
+      "shaded_solweig": 0.6111,
+      "pass": true
+    },
+    {
+      "site": "P2",
+      "time": "2023-12-21 08:00",
+      "sun_el": 5.04,
+      "agreement": 0.9938861111111111,
+      "shaded_ours": 0.9447,
+      "shaded_solweig": 0.9425,
+      "pass": true
+    },
+    {
+      "site": "P2",
+      "time": "2023-12-21 12:00",
+      "sun_el": 32.79,
+      "agreement": 0.9889527777777778,
+      "shaded_ours": 0.5229,
+      "shaded_solweig": 0.5239,
+      "pass": true
+    },
+    {
+      "site": "P2",
+      "time": "2023-12-21 16:00",
+      "sun_el": 13.79,
+      "agreement": 0.9869083333333334,
+      "shaded_ours": 0.8689,
+      "shaded_solweig": 0.8641,
+      "pass": true
+    },
+    {
+      "site": "P3",
+      "time": "2023-03-20 08:00",
+      "sun_el": 17.41,
+      "agreement": 0.9732194444444444,
+      "shaded_ours": 0.7175,
+      "shaded_solweig": 0.7128,
+      "pass": true
+    },
+    {
+      "site": "P3",
+      "time": "2023-03-20 12:00",
+      "sun_el": 55.46,
+      "agreement": 0.9830861111111111,
+      "shaded_ours": 0.343,
+      "shaded_solweig": 0.3441,
+      "pass": true
+    },
+    {
+      "site": "P3",
+      "time": "2023-03-20 16:00",
+      "sun_el": 31.66,
+      "agreement": 0.9772583333333333,
+      "shaded_ours": 0.5302,
+      "shaded_solweig": 0.5242,
+      "pass": true
+    },
+    {
+      "site": "P3",
+      "time": "2023-06-21 08:00",
+      "sun_el": 30.81,
+      "agreement": 0.981275,
+      "shaded_ours": 0.5228,
+      "shaded_solweig": 0.5232,
+      "pass": true
+    },
+    {
+      "site": "P3",
+      "time": "2023-06-21 12:00",
+      "sun_el": 77.98,
+      "agreement": 0.9690444444444445,
+      "shaded_ours": 0.2313,
+      "shaded_solweig": 0.2237,
+      "pass": true
+    },
+    {
+      "site": "P3",
+      "time": "2023-06-21 16:00",
+      "sun_el": 43.32,
+      "agreement": 0.9818777777777777,
+      "shaded_ours": 0.3939,
+      "shaded_solweig": 0.3978,
+      "pass": true
+    },
+    {
+      "site": "P3",
+      "time": "2023-09-22 08:00",
+      "sun_el": 20.61,
+      "agreement": 0.9676638888888889,
+      "shaded_ours": 0.6631,
+      "shaded_solweig": 0.6596,
+      "pass": true
+    },
+    {
+      "site": "P3",
+      "time": "2023-09-22 12:00",
+      "sun_el": 56.37,
+      "agreement": 0.9775416666666666,
+      "shaded_ours": 0.3354,
+      "shaded_solweig": 0.3385,
+      "pass": true
+    },
+    {
+      "site": "P3",
+      "time": "2023-09-22 16:00",
+      "sun_el": 28.89,
+      "agreement": 0.9743611111111111,
+      "shaded_ours": 0.5589,
+      "shaded_solweig": 0.5511,
+      "pass": true
+    },
+    {
+      "site": "P3",
+      "time": "2023-12-21 08:00",
+      "sun_el": 5.02,
+      "agreement": 0.9925111111111111,
+      "shaded_ours": 0.9828,
+      "shaded_solweig": 0.9824,
+      "pass": true
+    },
+    {
+      "site": "P3",
+      "time": "2023-12-21 12:00",
+      "sun_el": 32.77,
+      "agreement": 0.9790444444444445,
+      "shaded_ours": 0.4959,
+      "shaded_solweig": 0.4969,
+      "pass": true
+    },
+    {
+      "site": "P3",
+      "time": "2023-12-21 16:00",
+      "sun_el": 13.79,
+      "agreement": 0.9667472222222222,
+      "shaded_ours": 0.8128,
+      "shaded_solweig": 0.7964,
+      "pass": true
+    }
+  ],
+  "solweig_min_agreement": 0.9667,
+  "pass": true
+}

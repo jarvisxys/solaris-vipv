@@ -1,5 +1,5 @@
 """P6: route selection rules, trajectory helpers, facet poses, beam and sky-view kernels,
-the P5 canopy mask, and the frozen routes/v1 manifest."""
+the P5 canopy mask, and the frozen routes manifest."""
 
 import hashlib
 import importlib.util
@@ -212,18 +212,32 @@ def test_canopy_mask_blocks_overhead_not_low_sky():
 
 
 # ---------------------------------------------------------------- frozen routes
-MAN = ROOT / "routes" / "v1" / "MANIFEST.json"
+from solaris.site import site_config  # noqa: E402
+
+MAN = ROOT / "routes" / site_config()["routes"]["version"] / "MANIFEST.json"
 
 
 def test_frozen_routes_match_their_manifest():
     if not MAN.exists():
-        pytest.skip("routes/v1 not frozen yet (snakemake -c1 routes_select)")
+        pytest.skip("routes not frozen yet (snakemake -c1 routes_select)")
     man = json.loads(MAN.read_text())
     for name, digest in man["files"].items():
         assert hashlib.sha256((MAN.parent / name).read_bytes()).hexdigest() == digest, name
     sel = man["selection"]
     assert {sel[k]["orientation"] for k in sel} == {"N-S", "E-W"}
     assert sel["R-OPEN"]["svf_mean"] > sel["R-MIXED"]["svf_mean"] > sel["R-DENSE"]["svf_mean"]
+
+
+def test_e3_cases_are_ordered():
+    """On every trip: open sky (A) >= buildings (B) >= buildings + trees (C), and C grows
+    with the tree transmissivity."""
+    p = ROOT / "results" / "e3" / "table_e3_trips.csv"
+    if not p.exists():
+        pytest.skip("results/e3 not built (snakemake -c1 e3_driving)")
+    t = pd.read_csv(p).pivot_table(index=["trip", "day", "sky"], columns="case", values="pv_Wh")
+    eps = 1e-6
+    assert (t["A"] >= t["B"] - eps).all() and (t["B"] >= t["C0.3"] - eps).all()
+    assert (t["C0.3"] >= t["C0.1"] - eps).all() and (t["C0.1"] >= t["C0.03"] - eps).all()
 
 
 def test_e4_solweig_gate():

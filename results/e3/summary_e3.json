@@ -1,0 +1,49 @@
+{
+  "trips_in_matrix": 360,
+  "mean_ratio_B_to_A": {
+    "R-DENSE|clear": 0.6801,
+    "R-DENSE|tmy": 0.7198,
+    "R-MIXED|clear": 0.8802,
+    "R-MIXED|tmy": 0.9022,
+    "R-OPEN|clear": 0.9121,
+    "R-OPEN|tmy": 0.9304
+  },
+  "mean_ratio_C_to_A": {
+    "R-DENSE|clear": 0.6745,
+    "R-DENSE|tmy": 0.714,
+    "R-MIXED|clear": 0.8707,
+    "R-MIXED|tmy": 0.8947,
+    "R-OPEN|clear": 0.8904,
+    "R-OPEN|tmy": 0.9143
+  },
+  "tunnel_check": [
+    {
+      "trip": "R-TUNNEL_fwd_16200_medium",
+      "sky": "clear",
+      "covered_s": 62,
+      "duration_s": 199,
+      "ratio_to_A": 0.6730774621199231
+    },
+    {
+      "trip": "R-TUNNEL_fwd_16200_medium",
+      "sky": "tmy",
+      "covered_s": 62,
+      "duration_s": 199,
+      "ratio_to_A": 0.6736293059875528
+    },
+    {
+      "trip": "R-TUNNEL_rev_16200_medium",
+      "sky": "clear",
+      "covered_s": 71,
+      "duration_s": 381,
+      "ratio_to_A": 0.7865465417351647
+    },
+    {
+      "trip": "R-TUNNEL_rev_16200_medium",
+      "sky": "tmy",
+      "covered_s": 71,
+      "duration_s": 381,
+      "ratio_to_A": 0.7875573864804849
+    }
+  ]
+}

@@ -3,6 +3,88 @@
 Every decision that changes a number, claim or reference in the journal paper,
 newest first, with date and reason.
 
+## 2026-10-18 · P6 / E3, E4 routes, traffic, driving and parking shading
+
+Sources: `routes/select_routes.py`, `routes/v2/` (MANIFEST), `src/solaris/trajectory/`,
+`results/p6/`, `results/e3/`, `results/e4/`, `results/p3/freshness_applied.json`
+(rules `routes_select`, `sumo_traces`, `e3_driving`, `e4_parking`).
+
+- **Finding, power lines in the DSM (P3 corrected).** E3 showed 15–27 % beam shading on the
+  most open route at noon. The cause was overhead power lines, poles and signal arms along
+  the arterials. The lidar sees them as 1-pixel lines about 10 m up; joined into long blobs,
+  they passed the 4 m² filter and acted as walls. Height-rule structures narrower than
+  1.5 m are no longer buildings (morphological opening; footprint buildings and strips
+  joined to them are kept). Every P3 product, E1 and the routes were rebuilt. "Demolished"
+  freshness candidates fell from 102 to 57.
+  The author's 26 confirmations carry over:
+  - Most matched a candidate within 1–20 m.
+  - One rejection lost its candidate, so there is nothing to apply.
+  - Two demolitions use the lidar blob at the confirmed spot, because their candidates fell
+    below the thresholds once the wires were removed.
+
+  The re-mapping is logged in `results/p3/freshness_applied.json`. Reason: a classification
+  artefact that biased every shading result on arterials.
+- **Routes v2 (v1 superseded).** routes/v1 had been selected on the DSM with power-line
+  walls. routes/v2 applies the same rule to the corrected DSM: every named trunk / primary
+  / secondary arterial in the AOI, 45,601 points at 10 m, 128 candidate 8 km windows.
+  - **Open:** Southern Ave (E–W, mean SVF 0.961).
+  - **Dense:** Central Ave (N–S, 0.740; overlaps 57 % of the guide's seed loop).
+  - **Mixed:** 19th Ave (N–S, mean 0.902, highest variance in the median band).
+  - **R-TUNNEL:** the I-10 Deck Park Tunnel (5.6 km, 822 m covered), a covered-segment check
+    outside the E3 matrix.
+
+  v1 picked the same three streets, so the selection is robust to the fix. The guide's seeds
+  (Baseline Rd, Camelback Rd) were not the metric's extremes, and the paper uses the
+  measured choice.
+- **Parking sites** (chosen from SVF by the guide's criteria):
+
+  | Site | Description | SVF |
+  |---|---|---|
+  | P1 | open lot near Chase Field | 0.95 |
+  | P2 | Central Ave west curb between Adams and Monroe, a car-width off the building face | 0.336 |
+  | P3 | Encanto–Palmcroft driveway, canopy 2.5 m away | 0.48 |
+  | P4 | top deck of a 19 m downtown garage | 0.91 |
+  | P5 | the P1 stall under a modelled 4 m × 3 m × 6 m shade roof | — |
+
+  P2 needed three corrections: open ground only, a minimum 4 m off the building face, and
+  the avenue's own axis (OSM merges ways that jog onto couplets). Without them, the
+  minimum-SVF rule had picked points inside arcades and on sidewalks hugging walls.
+- **SUMO traces.** SUMO 1.28 runs in its own conda env. The network comes from OSM
+  (motorway to tertiary, guessed signals), with three demand seeds (randomTrips periods 6,
+  3 and 1.5 s) and 5 departures from 08:00 to 16:00, giving 120 ego traces at 1 Hz with 0
+  teleports. Ego routes chain shortest paths between via points every 400 m along the
+  frozen route. sumolib's map matching gave undrivable edge sequences through downtown
+  couplets: 70–90 min trips with 300 s teleports. Trip times vary only modestly across demand seeds
+  (a few percent to ~9 %), so the arterials stay below saturation even at high demand; the paper
+  states this.
+- **E3 driving (360 trips: 3 routes × 2 directions × 5 departures × 4 days × 3 demand seeds;
+  1 Hz).** PV energy relative to open sky, matching TMY day (clear sky in brackets):
+
+  | Route | Buildings (B / A) | Buildings + trees, τ = 0.03 (C / A) | Beam-shaded time (C) |
+  |---|---|---|---|
+  | R-OPEN | 0.93 (0.91) | 0.91 (0.89) | 10 % |
+  | R-MIXED | 0.90 (0.88) | 0.90 (0.87) | 12 % |
+  | R-DENSE | 0.72 (0.68) | 0.71 (0.67) | 32 % |
+
+  - Trees cost a further 0.5–2 %; raising τ to 0.3 recovers less than half of that.
+  - Shading peaks at the 08:00 and 16:00 departures and on 21 December. On R-OPEN at noon it
+    is 2–5 % (intersections, overpasses).
+  - R-TUNNEL's covered seconds (62–71 s) block beam and sky as designed.
+  - Correction during the run: case B had treated trees as opaque for the beam. It now
+    ignores trees (τ = 1), and a test asserts A ≥ B ≥ C on every trip.
+- **E4 parking passes.** SOLWEIG agreement at P1–P3 is ≥ 96.7 % (required ≥ 95 %). Annual
+  F_park, averaged over headings (τ = 0.03):
+
+  | Site | F_park |
+  |---|---|
+  | P1 open lot | 0.94 |
+  | P2 canyon curb | 0.32 |
+  | P3 tree-shaded driveway | 0.45 |
+  | P4 garage deck | 0.88 |
+  | P5 shade canopy | 0.64 |
+
+  Heading moves F_park by up to 0.05 at P2 and 0.10 at P3.
+
 ## 2026-10-18 · P5 / E2 facet orientation, open sky
 
 Sources: `configs/vehicle/solaris_p0.yaml`, `src/solaris/vehicle/`, `src/solaris/pv/`,

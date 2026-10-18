@@ -117,7 +117,7 @@ def main(out_dir=None):
     if (out_dir / "MANIFEST.json").exists():
         raise SystemExit(f"{out_dir} is frozen; write a new version (routes/v2) instead")
     edges = arterials(cfg)
-    pts_path = D / "routes" / "arterial_points.csv.gz"
+    pts_path = D / "routes" / f"arterial_points_{r['version']}.csv.gz"
     if pts_path.exists():  # horizons over every arterial point are the slow part
         pts = pd.read_csv(pts_path)
     else:

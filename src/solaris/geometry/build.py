@@ -244,15 +244,30 @@ def step_freshness(table_out, cfg=None):
 
 
 def step_dsm(cfg=None):
+    """dsm.tif with confirmed freshness changes; the remapping log goes to
+    results/p3/freshness_applied.json."""
     cfg = cfg or site_config()
-    return freshness.apply_confirmed(
+    g = cfg["geometry"]
+    blob_at = freshness.lidar_blob(
+        P["classes"],
+        P["dsm_epoch"],
+        P["dem"],
+        _footprints(),
+        g["freshness"]["footprint_tolerance_m"],
+        g["building"]["ndsm_min_m"],
+        g["freshness"]["min_area_m2"],
+    )
+    r = freshness.apply_confirmed(
         P["dsm_epoch"],
         P["dem"],
         P["candidates"],
         P["confirmations"],
         P["dsm"],
-        cfg["geometry"]["freshness"]["floor_height_m"],
+        g["freshness"]["floor_height_m"],
+        blob_at,
     )
+    write_json(REPO_ROOT / "results" / "p3" / "freshness_applied.json", r)
+    return r
 
 
 def step_enu_origin(cfg=None):

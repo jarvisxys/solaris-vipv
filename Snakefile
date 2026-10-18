@@ -17,6 +17,7 @@ CORE_SRC = sorted(str(f) for f in Path("src/solaris/core").glob("*.py"))
 E0_CFG = "configs/experiments/e0.yaml"
 E0 = yaml.safe_load(Path(E0_CFG).read_text(encoding="utf-8"))
 SITE_CFG = "configs/site/phoenix.yaml"
+ROUTES = "routes/" + yaml.safe_load(Path(SITE_CFG).read_text(encoding="utf-8"))["routes"]["version"]
 WEATHER_SRC = sorted(str(f) for f in Path("src/solaris/weather").glob("*.py"))
 DD = "data/derived"
 
@@ -447,14 +448,14 @@ RASTERS = [f"{DD}/dsm.tif", f"{DD}/dem.tif", f"{DD}/cdsm.tif", f"{DD}/classes.ti
 
 
 rule routes_select:
-    """Guide Sec. 3: routes by measured SVF; frozen in routes/v1 with SHA-256 MANIFEST.
+    """Guide Sec. 3: routes by measured SVF; frozen in routes/<version> with a SHA-256 MANIFEST.
     A frozen version is never rewritten (the script refuses); a change is routes/v2."""
     input:
         RASTERS,
         covered=f"{DD}/covered.gpkg",
         tmy=nsrdb_raw("tmy"),
     output:
-        "routes/v1/MANIFEST.json",
+        f"{ROUTES}/MANIFEST.json",
     run:
         script("routes/select_routes.py").main()
 
@@ -462,7 +463,7 @@ rule routes_select:
 rule sumo_traces:
     """SUMO (separate 'sumo' env): network from OSM, three demand seeds, 1 Hz ego traces."""
     input:
-        "routes/v1/MANIFEST.json",
+        f"{ROUTES}/MANIFEST.json",
         covered=f"{DD}/covered.gpkg",
     output:
         "results/p6/table_traces.csv",
@@ -470,7 +471,7 @@ rule sumo_traces:
         from solaris.site import site_config
         from solaris.trajectory.sumo import build_traces
 
-        build_traces(site_config(), "routes/v1", f"{DD}/trajectories", output[0])
+        build_traces(site_config(), ROUTES, f"{DD}/trajectories", output[0])
 
 
 rule e3_driving:
@@ -493,7 +494,7 @@ rule e4_parking:
     """E4: P1-P5 x 4 headings, 5-min daylight steps, F_park; SOLWEIG check at P1-P3."""
     input:
         RASTERS,
-        sites="routes/v1/MANIFEST.json",
+        sites=f"{ROUTES}/MANIFEST.json",
         cfg="configs/experiments/e4.yaml",
         vehicle=VEHICLE_CFG,
     output:

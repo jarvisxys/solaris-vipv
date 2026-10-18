@@ -39,7 +39,9 @@ geometry:                        # P3 build parameters (workflow guide Sec. 2, s
   tree: {ndsm_min_m: 2.0, ndsm_max_m: 35.0, ndvi_min: 0.2, footprint_buffer_m: 1.0}
   # ndsm_max_m: taller "green" pixels are tower walls (NAIP relief displacement), not trees;
   # the tallest Washingtonia palms here reach ~33 m.
-  building: {ndsm_min_m: 2.5, ndvi_max: 0.15}
+  building: {ndsm_min_m: 2.5, ndvi_max: 0.15, min_width_m: 1.5}
+  # min_width_m: narrower height-rule structures are overhead power lines, poles and signal
+  # arms (found in E3: they shaded the road like walls); footprint buildings are kept.
   min_blob_m2: 4.0               # cars, poles, signs
   covered_ndsm_m: 4.5            # road point under DSM - DTM above this is covered
   mesh: {max_error_m: 0.25, skirt_m: 1.0}
@@ -79,7 +81,7 @@ routes:                          # P6 route selection (workflow guide Sec. 3), r
   max_m: 10000
   min_coverage: 0.9              # share of a window's length that has road points
   mixed_band: [0.4, 0.6]         # Mixed = highest SVF variance with mean SVF in this quantile band
-  version: v1
+  version: v2                    # v1 (2026-10-18) was selected on a DSM with power-line walls
 
 sumo:                            # P6 traffic traces (separate 'sumo' conda env, SUMO 1.28)
   sim_start_local: "07:30"       # MST; departures are local standard time

@@ -11,6 +11,7 @@ the egos only, written as fcd_<seed>.csv (veh, t, x, y, lon, lat, angle, speed, 
 
 import csv
 import json
+import math
 import os
 import subprocess
 import sys
@@ -67,20 +68,73 @@ def build_net(osm, net, log):
     )
 
 
-def ego_routes(net, polylines, log_path):
-    """Edges for every route, forward and reverse, by map matching the polyline."""
+def resample(xy, step):
+    """Points every ``step`` m along a polyline, with the local travel bearing (deg)."""
+    segs = [(a, b) for a, b in zip(xy[:-1], xy[1:], strict=True) if a != b]
+    lens = [math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in segs]
+    total = sum(lens)
+    targets = [k * step for k in range(int(total // step) + 1)] + [total]
+    out, start, i = [], 0.0, 0
+    for t in targets:
+        while i < len(segs) - 1 and start + lens[i] < t:
+            start += lens[i]
+            i += 1
+        (x0, y0), (x1, y1) = segs[i]
+        f = min(1.0, (t - start) / lens[i])
+        out.append(
+            (
+                x0 + (x1 - x0) * f,
+                y0 + (y1 - y0) * f,
+                math.degrees(math.atan2(x1 - x0, y1 - y0)) % 360,
+            )
+        )
+    return out
+
+
+def edge_bearing(edge, x, y):
+    """Bearing (deg) of the edge's shape segment nearest (x, y)."""
+    shape = edge.getShape()
+    best = None
+    for (x0, y0), (x1, y1) in zip(shape[:-1], shape[1:], strict=True):
+        d = sumolib.geomhelper.distancePointToLine((x, y), (x0, y0), (x1, y1))
+        if best is None or d < best[0]:
+            best = (d, math.degrees(math.atan2(x1 - x0, y1 - y0)) % 360)
+    return best[1]
+
+
+def snap(net, x, y, bearing, radius=40.0):
+    """Nearest passenger edge running within 60 deg of the travel bearing."""
+    cands = []
+    for e, d in net.getNeighboringEdges(x, y, radius):
+        if not e.allows("passenger"):
+            continue
+        diff = abs((edge_bearing(e, x, y) - bearing + 180) % 360 - 180)
+        if diff <= 60:
+            cands.append((d + diff / 6.0, e))
+    return min(cands, key=lambda c: c[0])[1] if cands else None
+
+
+def ego_routes(net, polylines, log_path, via_m=400.0):
+    """Edges for every route, forward and reverse: via points every ``via_m`` along the
+    frozen polyline, each snapped to the nearest edge running in the travel direction,
+    chained with SUMO shortest paths (which follow real lane connections)."""
     out = {}
     with open(log_path, "a", encoding="utf-8") as log:
         for rid, ll in polylines.items():
             for d, pts in (("fwd", ll), ("rev", ll[::-1])):
-                trace = [net.convertLonLat2XY(lon, lat) for lon, lat in pts]
-                edges = sumolib.route.mapTrace(
-                    trace, net, delta=25.0, fillGaps=3000.0, direction=True, vClass="passenger"
-                )
-                ids = [e.getID() for e in edges]
-                log.write(f"{rid} {d}: {len(ids)} edges\n")
-                if not ids:
-                    raise SystemExit(f"map matching failed for {rid} {d}")
+                xy = [net.convertLonLat2XY(lon, lat) for lon, lat in pts]
+                vias = [snap(net, x, y, b) for x, y, b in resample(xy, via_m)]
+                vias = [
+                    v for i, v in enumerate(vias) if v is not None and (i == 0 or v != vias[i - 1])
+                ]
+                ids = [vias[0].getID()]
+                for a, b in zip(vias[:-1], vias[1:], strict=True):
+                    path, _ = net.getShortestPath(a, b, vClass="passenger")
+                    if path is None:
+                        log.write(f"{rid} {d}: no path {a.getID()} -> {b.getID()}, via skipped\n")
+                        continue
+                    ids += [e.getID() for e in path[1:]]
+                log.write(f"{rid} {d}: {len(vias)} vias, {len(ids)} edges\n")
                 out[f"{rid}_{d}"] = ids
     return out
 

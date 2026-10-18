@@ -1,0 +1,6 @@
+svf,heading_deg,criterion,id,deck,canopy,x,y
+0.950188,0,"SVF 0.950 >= 0.95, no canopy within 20 m, nearest the seed",P1,False,False,400928,3.70098e+06
+0.335639,180,"lowest curb SVF on Central Avenue between the lat range: 0.336 (<= 0.5 required), west curb",P2,False,False,400191,3.70153e+06
+0.480563,0,"open ground, canopy 2.5 m away (<= 5), building within 15 m, nearest the seed",P3,False,False,398714,3.70381e+06
+0.910362,0,"top deck of Overture 'parking' structure b8b477da-a97c-4950-b7b8-78c6d26b8be7 (19 m), highest-SVF point",P4,True,False,400416,3.70157e+06
+0.950188,0,the P1 stall under a 4.0 m x 3.0 x 6.0 m shade roof,P5,False,True,400928,3.70098e+06

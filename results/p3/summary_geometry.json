@@ -19,8 +19,8 @@
   },
   "dtm_ground_coverage_pct": 84.37,
   "classes_pct": {
-    "ground": 70.15,
-    "building": 25.43,
+    "ground": 71.63,
+    "building": 23.95,
     "tree": 4.42
   },
   "dsm_holes_pct": 0.748,
@@ -50,7 +50,7 @@
   },
   "meshes": {
     "tiles": 952,
-    "surface_faces": 192694711,
+    "surface_faces": 148537305,
     "tree_tiles": 940,
     "tree_faces": 55338106
   },
@@ -75,7 +75,7 @@
   },
   "freshness_candidates": {
     "added": 102,
-    "demolished": 102
+    "demolished": 57
   },
   "freshness_confirmed": {
     "rejected": 19,

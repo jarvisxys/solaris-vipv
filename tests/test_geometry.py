@@ -214,6 +214,21 @@ def test_green_tower_wall_is_building_not_tree():
     assert (c[2:8, 2:8] == rasters.TREE).all() and (c[12:18, 12:18] == rasters.BUILDING).all()
 
 
+def test_power_lines_are_not_buildings():
+    ndsm = np.zeros((40, 40), np.float32)
+    ndvi = np.full((40, 40), 0.05, np.float32)
+    ndsm[5, :] = 10.0  # 1-pixel overhead line, 20 m long, 10 m up
+    ndsm[20:30, 10:20] = 8.0  # a real 5 x 5 m building, no footprint
+    inside = np.zeros((40, 40), bool)
+    inside[20:30, 25:35] = True
+    ndsm[20:30, 24] = 30.0  # tower edge strip just outside its footprint (misregistration)
+    ndsm[20:30, 25:35] = 30.0
+    c = classify(ndsm, ndvi, inside, inside)
+    assert (c[5] == rasters.GROUND).all()
+    assert (c[20:30, 10:20] == rasters.BUILDING).all()
+    assert (c[20:30, 24] == rasters.BUILDING).all()
+
+
 def test_tree_next_to_footprint_is_not_a_tree():
     ndsm = np.full((20, 20), 6, np.float32)
     ndvi = np.full((20, 20), 0.5, np.float32)
@@ -414,7 +429,7 @@ def test_confirmed_changes_are_burnt_into_the_dsm(town, tmp_path):
     )
     with rasterio.open(out) as s:
         z = s.read(1)
-    assert r == {"applied": 2}
+    assert r == {"applied": 2, "remapped": {}}
     assert z[25, 85] == pytest.approx(340 + 8 * 3.5)  # new tower
     assert z[85, 25] == pytest.approx(340)  # demolished
     assert z[25, 25] == pytest.approx(352)  # untouched
@@ -441,14 +456,32 @@ def test_added_block_never_lowers_the_dsm(town, tmp_path):
     assert z[22, 82] == pytest.approx(400) and z[30, 90] == pytest.approx(347)
 
 
+def test_confirmation_follows_a_shifted_candidate():
+    cand = gpd.GeoDataFrame({"id": ["D-E1000-N2000", "A-E1004-N2003"]},
+                            geometry=[box(995, 1995, 1005, 2005), box(1000, 2000, 1008, 2006)],
+                            crs=crs.H_CRS).set_index("id")  # fmt: skip
+    conf = {
+        "D-E1010-N2000": {"status": "demolished"},
+        "A-E1004-N2003": {"status": "added"},
+        "D-E5000-N5000": {"status": "rejected"},  # candidate gone, nothing to apply
+        "D-E7000-N7000": {"status": "demolished"},
+    }  # candidate gone, lidar blob remains
+    blob = box(6990, 6990, 7010, 7010)
+    got = freshness.match_ids(conf, cand, blob_at=lambda x, y: blob if x == 7000 else None)
+    assert got["D-E1010-N2000"] == ("candidate", "D-E1000-N2000")  # centroid moved 10 m
+    assert got["A-E1004-N2003"] == ("candidate", "A-E1004-N2003")
+    assert got["D-E5000-N5000"][0] == "none"
+    assert got["D-E7000-N7000"] == ("blob", blob)
+
+
 def test_unknown_confirmation_id_is_rejected(town, tmp_path):
     paths, fp, tile = town
     gpd.GeoDataFrame({"id": ["A-E1-N1"]}, geometry=[box(0, 0, 1, 1)], crs=crs.H_CRS).to_file(
         tmp_path / "c.gpkg", layer="candidates"
     )
     conf = tmp_path / "conf.yaml"
-    conf.write_text("confirmed:\n  - {id: A-E9-N9, status: added, floors: 3}\n")
-    with pytest.raises(ValueError, match="not in the candidate list"):
+    conf.write_text("confirmed:\n  - {id: A-E900-N900, status: added, floors: 3}\n")
+    with pytest.raises(ValueError, match="no candidate within"):
         freshness.apply_confirmed(
             paths["dsm"], paths["dem"], tmp_path / "c.gpkg", conf, tmp_path / "o.tif", 3.5
         )
