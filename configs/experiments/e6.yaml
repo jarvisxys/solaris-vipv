@@ -1,0 +1,15 @@
+# E6 -- electrical partial shading (workflow guide Sec. 5). experiments/e6_mismatch/run.py.
+# String model: configs/vehicle/solaris_p0.yaml (electrical); src/solaris/pv/electrical.py.
+driving:                          # every R-DENSE trip of E3 (configs/experiments/e3.yaml)
+  routes: [R-DENSE]
+  skies: [clear, tmy]
+parking:                          # P2 and P3 at their E5 headings, every daylight 5-min step
+  sites: [P2, P3]
+  step_min: 5
+tree_transmissivity: 0.03
+fit_weights: equal_sources        # energy-weighted within driving and parking, sources weighted equally
+s_bins: 20
+uniform_gate:                     # "uniform light reproduces the averaged model"
+  irradiance: [50, 100, 200, 400, 700, 1000]
+  temperature: [10, 25, 40, 55, 70]
+  tol: 1.0e-3

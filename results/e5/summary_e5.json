@@ -1,0 +1,140 @@
+{
+  "days": 365,
+  "energy_balance": {
+    "max_rel": 9.584431492752805e-15,
+    "tol": 0.001,
+    "pass": true
+  },
+  "fss": {
+    "A1": {
+      "B0": 0.7787,
+      "schedule": 0.7797,
+      "chain": 0.7819,
+      "facets": 0.6335,
+      "parking": 0.517,
+      "buildings": 0.5085,
+      "trees": 0.5074,
+      "mismatch": 0.4793
+    },
+    "A2": {
+      "B0": 0.7787,
+      "schedule": 0.7797,
+      "chain": 0.7819,
+      "facets": 0.6342,
+      "parking": 0.2884,
+      "buildings": 0.2722,
+      "trees": 0.2714,
+      "mismatch": 0.2393
+    },
+    "A3": {
+      "B0": 0.7787,
+      "schedule": 0.7797,
+      "chain": 0.7819,
+      "facets": 0.6325,
+      "parking": 0.3932,
+      "buildings": 0.377,
+      "trees": 0.3763,
+      "mismatch": 0.3134
+    },
+    "A4": {
+      "B0": 0.3886,
+      "schedule": 0.3903,
+      "chain": 0.3939,
+      "facets": 0.3202,
+      "parking": 0.2518,
+      "buildings": 0.2434,
+      "trees": 0.2424,
+      "mismatch": 0.2386
+    }
+  },
+  "charges_per_yr": {
+    "A1": {
+      "B0": 6,
+      "schedule": 6,
+      "chain": 6,
+      "facets": 10,
+      "parking": 14,
+      "buildings": 14,
+      "trees": 14,
+      "mismatch": 15
+    },
+    "A2": {
+      "B0": 6,
+      "schedule": 6,
+      "chain": 6,
+      "facets": 10,
+      "parking": 20,
+      "buildings": 21,
+      "trees": 21,
+      "mismatch": 22
+    },
+    "A3": {
+      "B0": 6,
+      "schedule": 6,
+      "chain": 6,
+      "facets": 10,
+      "parking": 17,
+      "buildings": 18,
+      "trees": 18,
+      "mismatch": 20
+    },
+    "A4": {
+      "B0": 35,
+      "schedule": 35,
+      "chain": 35,
+      "facets": 40,
+      "parking": 44,
+      "buildings": 44,
+      "trees": 44,
+      "mismatch": 44
+    }
+  },
+  "fmm_fit": {
+    "form": "F_mm = 1 - k s^alpha (1 - s)^beta",
+    "k": 1.4902330715329113,
+    "alpha": 0.46176810167861193,
+    "beta": 0.5776200219812678,
+    "r2": 0.8365999728180153
+  },
+  "sensitivity_subhourly": {
+    "A1": {
+      "fss_final": {
+        "tmy": 0.4793,
+        "y2023_5min": 0.4771,
+        "y2023_hourly": 0.4763
+      },
+      "year_effect_tmy_minus_2023_hourly": 0.003,
+      "resolution_effect_5min_minus_hourly": 0.0008,
+      "resolution_effect_by_step": {
+        "B0": 0.0,
+        "buildings": 0.0012,
+        "chain": 0.0035,
+        "facets": 0.002,
+        "mismatch": 0.0008,
+        "parking": 0.0008,
+        "schedule": 0.0,
+        "trees": 0.0011
+      }
+    },
+    "A2": {
+      "fss_final": {
+        "tmy": 0.2393,
+        "y2023_5min": 0.2391,
+        "y2023_hourly": 0.2377
+      },
+      "year_effect_tmy_minus_2023_hourly": 0.0015,
+      "resolution_effect_5min_minus_hourly": 0.0014,
+      "resolution_effect_by_step": {
+        "B0": 0.0,
+        "buildings": 0.0018,
+        "chain": 0.0035,
+        "facets": 0.002,
+        "mismatch": 0.0014,
+        "parking": 0.001,
+        "schedule": 0.0,
+        "trees": 0.0018
+      }
+    }
+  },
+  "pass": true
+}

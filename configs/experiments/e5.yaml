@@ -1,0 +1,22 @@
+# E5 -- annual integration, the headline waterfall (workflow guide Sec. 5).
+# experiments/e5_annual/run.py; archetypes in configs/schedules/archetypes.yaml.
+archetypes: [A1, A2, A3, A4]
+weather: tmy                          # base: NSRDB TMY, hourly values held over each hour
+sensitivity:                          # sub-hourly check (guide: repeat A1 and A2 on 5-min 2023)
+  archetypes: [A1, A2]
+  weather: [y2023_hourly, y2023_5min] # 2023 averaged to hours (year effect) and 5-min (resolution)
+tree_transmissivity: 0.03             # E3 case C / E4 base
+step_min: 5                           # parked energy resolution; driving is 1 s
+day_stride: 1                         # every day of the year (larger values only for development)
+closure_tol: 1.0e-3                   # energy balance closes to 0.1 %
+
+# waterfall: each step changes the harvest only (demand is fixed per archetype after 'schedule')
+steps:
+  - {id: B0, label: "Table B0", drive: null, park: null}
+  - {id: schedule, label: "+ trip hours", drive: null, park: null}
+  - {id: chain, label: "+ Perez chain, Faiman", drive: flat, park: flat}
+  - {id: facets, label: "+ facets", drive: open, park: open}
+  - {id: parking, label: "+ parking shade", drive: open, park: site}
+  - {id: buildings, label: "+ driving buildings", drive: B, park: site}
+  - {id: trees, label: "+ driving trees", drive: C, park: site}
+  - {id: mismatch, label: "+ electrical mismatch", drive: Cmm, park: sitemm}

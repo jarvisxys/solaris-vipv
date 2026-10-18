@@ -1,0 +1,11 @@
+# SOLARIS P0 electrical layout for the P7 / E6 bishop88 string model. PLACEHOLDER, like the
+# skin in solaris_p0.yaml: each facet is one module on its own MPPT input (the conference's
+# multi-input architecture); a cell is one facet sample (0.25 m grid); cells in sample order
+# are cut into `substrings_per_module` near-equal series substrings, each across one bypass diode.
+
+cell_source: SunPower_SPR_X22_360   # pvlib CEC database; 22.1 % at STC (conference eta_pv 0.22)
+substrings_per_module: 3            # three bypass diodes per module (workflow guide E6)
+bypass_diode_vf: 0.5                # V, forward drop of a conducting bypass diode
+breakdown: {factor: 2.0e-3, voltage: -5.5, exp: 3.28}   # bishop88 reverse-bias model (pvlib defaults)
+current_points: 2000                # common current grid for series addition
+min_irradiance: 1.0                 # W/m2 floor (a dark cell keeps a finite shunt resistance)

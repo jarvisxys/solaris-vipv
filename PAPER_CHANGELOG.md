@@ -3,6 +3,82 @@
 Every decision that changes a number, claim or reference in the journal paper,
 newest first, with date and reason.
 
+## 2026-10-18 · P7 / E5, E6 annual waterfall and electrical mismatch
+
+Sources: `configs/schedules/archetypes.yaml`, `configs/experiments/e5.yaml`, `e6.yaml`,
+`configs/vehicle/electrical_p0.yaml`, `src/solaris/trajectory/schedules.py`, `src/solaris/annual.py`,
+`src/solaris/pv/{electrical,series}.py`, `src/solaris/shading/parked.py`, `results/e5/`,
+`results/e6/` (rules `e6_mismatch`, `e5_annual`).
+
+- **Archetypes (author decisions).** Each archetype keeps the demand of its B0 scenario, driven
+  every day, so the waterfall changes only the harvest:
+  - A1–A3 use Scenario II (50 km/day, WLTP city) with trips at 08:00 and 17:00, and start from
+    B0 II (f_ss 0.779).
+  - A4 uses Scenario I (100 km/day, WLTP combined) with trips at 08, 10, 12, 14 and 16 h, and
+    starts from B0 I (0.389).
+  - On weekends, daytime parking moves to the evening site.
+  - The 17:00 trip replays the frozen 16:00 SUMO traces one hour later (P6 stays frozen).
+  - Each trip hour drives the conference time split, drive_fraction × 3600 s, so driving and
+    parked seconds close to 3600 in every hour. The routes share that time in order; each
+    replays its medium-demand trace, out then back.
+  - Parked headings are averaged: P2 (curb) N/S, the other sites N/E/S/W.
+- **E6 string model (placeholder layout).**
+  - Each facet is one module on its own MPPT input. A cell is one 0.25 m facet sample, and the
+    cells form three bypass-diode substrings.
+  - Cell parameters: CEC SunPower SPR-X22-360 (22.1 %), per cell and area-scaled; pvlib
+    bishop88 with reverse-bias breakdown.
+  - **Gate passes:** under uniform light the string MPP equals n_cells × the cell MPP within
+    7 × 10⁻⁵ (limit 10⁻³).
+- **E6 result: mismatch is the steepest loss per shaded cell.**
+  - One shaded cell already sends its substring through the bypass diode: F_mm is about 0.73
+    at s ≈ 0.03 and falls to about 0.3 at s = 0.3–0.6.
+  - Fit (energy-weighted, driving and parking weighted equally; R² 0.84):
+    F_mm = 1 − 1.490 s^0.462 (1 − s)^0.578.
+  - A two-parameter polynomial, 1 − s(1 − s)(a + bs), was tried first and rejected. It missed
+    the shoulder at small s and understated the loss by 0.6 points (driving) and 1.2 points
+    (parking).
+  - Energy-weighted F_mm: R-DENSE trips 0.958; P2 curb 0.96; P3 tree-dappled driveway 0.56–0.73.
+  - **The size depends on the placeholder layout** (three bypass diodes per facet module,
+    0.25 m cells). The paper must state this. More diodes or per-substring MPPT would reduce it.
+- **E5 energy balance closes.** Three checks run for every archetype × weather × step:
+  1 s / 5 min energy vs hourly bins; driving + parked seconds = 3600 in every hour; and the SoC
+  loop's pack balance. The worst residual is 1 × 10⁻¹⁴ (limit 10⁻³). Step B0 reproduces Table B0
+  exactly.
+- **E5 headline waterfall (Phoenix, measured TMY), f_ss:**
+
+  | Step | A1 commuter | A2 downtown street | A3 downtown shade canopy | A4 fleet 100 km |
+  |---|---|---|---|---|
+  | Table B0 | 0.779 | 0.779 | 0.779 | 0.389 |
+  | + trip hours | 0.780 | 0.780 | 0.780 | 0.390 |
+  | + Perez chain, Faiman | 0.782 | 0.782 | 0.782 | 0.394 |
+  | + facets (schedule headings) | 0.634 | 0.634 | 0.632 | 0.320 |
+  | + parking shade | 0.517 | 0.288 | 0.393 | 0.252 |
+  | + driving buildings | 0.509 | 0.272 | 0.377 | 0.243 |
+  | + driving trees | 0.507 | 0.271 | 0.376 | 0.242 |
+  | + electrical mismatch | **0.479** | **0.239** | **0.313** | **0.239** |
+  | Charges/yr, B0 → final | 6 → 15 | 6 → 22 | 6 → 20 | 35 → 44 |
+  | Balanced relief, final | 47.9 % | 23.9 % | 31.3 % | 23.9 % |
+  | Grid energy, final (kWh/yr) | 2666 | 3908 | 3540 | 7779 |
+
+  - Facets (−0.15) and parking (−0.12 to −0.35) carry the loss, as the guide expected (risk
+    table: "facets and parking carry C1–C3").
+  - Driving shade costs 0.01–0.02 and trees under 0.002.
+  - Grid energy is not monotonic in harvest (A4: mismatch 7779 < trees 7797 kWh) because of
+    the recharge-to-80 % policy (see the B0 note).
+- **Sub-hourly sensitivity (A1, A2; final f_ss).**
+
+  | Run | A1 | A2 |
+  |---|---|---|
+  | TMY, hourly | 0.479 | 0.239 |
+  | NSRDB 2023 averaged to hours | 0.476 | 0.238 |
+  | NSRDB 2023 at 5 min | 0.477 | 0.239 |
+
+  - Year effect: +0.003 / +0.002.
+  - TMY interpolation limit: hourly data understates f_ss by 0.001 (final step) and by at most
+    0.004 at the open-sky chain step (0.5 %), because each hour's DNI is held while the sun
+    moves.
+  - Hourly TMY is adequate for the annual waterfall.
+
 ## 2026-10-18 · P6 / E3, E4 routes, traffic, driving and parking shading
 
 Sources: `routes/select_routes.py`, `routes/v2/` (MANIFEST), `src/solaris/trajectory/`,

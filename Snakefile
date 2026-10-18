@@ -63,6 +63,8 @@ rule all:
         "twin/exchange/facet_samples.csv",
         "results/e3/summary_e3.json",
         "results/e4/summary_e4.json",
+        "results/e6/summary_e6.json",
+        "results/e5/summary_e5.json",
 
 
 # ---------------------------------------------------------------- P0 bootstrap
@@ -505,7 +507,65 @@ rule e4_parking:
         experiment("e4_parking").main(output.table, output.sites, output.summary)
 
 
+# ---------------------------------------------------------------- P7 / E6, E5
+SCHED_CFG = "configs/schedules/archetypes.yaml"
+ELEC_CFG = "configs/vehicle/electrical_p0.yaml"
+PV_SRC = sorted(str(f) for f in Path("src/solaris/pv").glob("*.py"))
+
+
+rule e6_mismatch:
+    """E6: bishop88 strings with bypass diodes, one MPPT per facet; F_mm on all R-DENSE trips
+    and P2/P3 parked; fit F_mm(s) for the last E5 waterfall step."""
+    input:
+        RASTERS,
+        traces="results/p6/table_traces.csv",
+        e3="results/e3/summary_e3.json",
+        e4="results/e4/summary_e4.json",
+        cfg="configs/experiments/e6.yaml",
+        sched=SCHED_CFG,
+        vehicle=VEHICLE_CFG,
+        electrical=ELEC_CFG,
+        code=PV_SRC + ["src/solaris/shading/parked.py"],
+    output:
+        table="results/e6/table_e6.csv",
+        fit="results/e6/fit_fmm.json",
+        summary="results/e6/summary_e6.json",
+        fig="results/e6/fig11_fmm.png",
+    run:
+        experiment("e6_mismatch").main(output.table, output.fit, output.summary, output.fig)
+
+
+rule e5_annual:
+    """E5: archetypes A1-A4, driving at 1 s and parking at 5 min binned into the 8760-h SoC
+    loop (energy balance to 0.1 %), loss waterfall B0 -> ... -> mismatch; 2023 5-min check.
+    Long run (~2 h): launch detached."""
+    input:
+        RASTERS,
+        traces="results/p6/table_traces.csv",
+        e3="results/e3/summary_e3.json",
+        e4="results/e4/summary_e4.json",
+        fit="results/e6/fit_fmm.json",
+        b0=E0["b0"]["out_table"],
+        tmy=nsrdb_raw("tmy"),
+        conus=nsrdb_raw("conus_5min"),
+        cfg="configs/experiments/e5.yaml",
+        sched=SCHED_CFG,
+        vehicle=VEHICLE_CFG,
+        code=PV_SRC
+        + CORE_SRC
+        + ["src/solaris/annual.py", "src/solaris/shading/parked.py", "src/solaris/trajectory/schedules.py"],
+    output:
+        table="results/e5/table_e5.csv",
+        hourly="results/e5/table_e5_hourly.csv.gz",
+        summary="results/e5/summary_e5.json",
+        waterfall="results/e5/fig10_waterfall.png",
+        soc="results/e5/fig9_soc.png",
+    run:
+        experiment("e5_annual").main(
+            output.table, output.hourly, output.summary, output.waterfall, output.soc
+        )
+
+
 # ---------------------------------------------------------------- planned rules
-# P7  E5/6 e5_annual, e6_mismatch            -> waterfall figure
 # P8  E8   e8_twin_agreement, e8_mapillary_svf
 # P9  E7   e7_inversion, figures, paper

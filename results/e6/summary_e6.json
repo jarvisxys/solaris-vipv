@@ -1,0 +1,57 @@
+{
+  "uniform_gate": {
+    "max_abs_dev": 7.264184040089994e-05,
+    "tol": 0.001,
+    "pass": true
+  },
+  "fit": {
+    "form": "F_mm = 1 - k s^alpha (1 - s)^beta",
+    "k": 1.49023,
+    "alpha": 0.46177,
+    "beta": 0.57762,
+    "r2": 0.8366,
+    "s": "beam-shaded area fraction of the facet, 1 - mean(v_b), while the beam reaches it",
+    "weights": "equal_sources"
+  },
+  "by_source": {
+    "driving": {
+      "k": 1.29185,
+      "alpha": 0.38773,
+      "beta": 0.43941,
+      "r2": 0.8628,
+      "rows": 707498,
+      "nonuniform_rows": 57120,
+      "F_mm_energy_weighted": 0.95842,
+      "F_fit_energy_weighted": 0.95955
+    },
+    "parking": {
+      "k": 1.52157,
+      "alpha": 0.47654,
+      "beta": 0.593,
+      "r2": 0.7979,
+      "rows": 1140007,
+      "nonuniform_rows": 394285,
+      "F_mm_energy_weighted": 0.72819,
+      "F_fit_energy_weighted": 0.72516
+    },
+    "parking|P2-N": {
+      "F_mm_energy_weighted": 0.95825
+    },
+    "parking|P2-S": {
+      "F_mm_energy_weighted": 0.95609
+    },
+    "parking|P3-E": {
+      "F_mm_energy_weighted": 0.56404
+    },
+    "parking|P3-N": {
+      "F_mm_energy_weighted": 0.67297
+    },
+    "parking|P3-S": {
+      "F_mm_energy_weighted": 0.73285
+    },
+    "parking|P3-W": {
+      "F_mm_energy_weighted": 0.64283
+    }
+  },
+  "pass": true
+}
