@@ -1,0 +1,775 @@
+{
+  "route": "R-DENSE",
+  "days": [
+    "2023-03-21",
+    "2023-06-21",
+    "2023-09-21",
+    "2023-12-21"
+  ],
+  "trajectories": [
+    {
+      "trip": "R-DENSE_fwd_16200_high",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_fwd_16200_high_2023-03-21.csv",
+      "records": 824
+    },
+    {
+      "trip": "R-DENSE_fwd_16200_high",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_fwd_16200_high_2023-06-21.csv",
+      "records": 824
+    },
+    {
+      "trip": "R-DENSE_fwd_16200_high",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_fwd_16200_high_2023-09-21.csv",
+      "records": 824
+    },
+    {
+      "trip": "R-DENSE_fwd_16200_high",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_fwd_16200_high_2023-12-21.csv",
+      "records": 824
+    },
+    {
+      "trip": "R-DENSE_fwd_16200_low",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_fwd_16200_low_2023-03-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_fwd_16200_low",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_fwd_16200_low_2023-06-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_fwd_16200_low",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_fwd_16200_low_2023-09-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_fwd_16200_low",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_fwd_16200_low_2023-12-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_fwd_16200_medium",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_fwd_16200_medium_2023-03-21.csv",
+      "records": 913
+    },
+    {
+      "trip": "R-DENSE_fwd_16200_medium",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_fwd_16200_medium_2023-06-21.csv",
+      "records": 913
+    },
+    {
+      "trip": "R-DENSE_fwd_16200_medium",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_fwd_16200_medium_2023-09-21.csv",
+      "records": 913
+    },
+    {
+      "trip": "R-DENSE_fwd_16200_medium",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_fwd_16200_medium_2023-12-21.csv",
+      "records": 913
+    },
+    {
+      "trip": "R-DENSE_fwd_1800_high",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_fwd_1800_high_2023-03-21.csv",
+      "records": 913
+    },
+    {
+      "trip": "R-DENSE_fwd_1800_high",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_fwd_1800_high_2023-06-21.csv",
+      "records": 913
+    },
+    {
+      "trip": "R-DENSE_fwd_1800_high",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_fwd_1800_high_2023-09-21.csv",
+      "records": 913
+    },
+    {
+      "trip": "R-DENSE_fwd_1800_high",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_fwd_1800_high_2023-12-21.csv",
+      "records": 913
+    },
+    {
+      "trip": "R-DENSE_fwd_1800_low",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_fwd_1800_low_2023-03-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_fwd_1800_low",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_fwd_1800_low_2023-06-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_fwd_1800_low",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_fwd_1800_low_2023-09-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_fwd_1800_low",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_fwd_1800_low_2023-12-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_fwd_1800_medium",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_fwd_1800_medium_2023-03-21.csv",
+      "records": 1097
+    },
+    {
+      "trip": "R-DENSE_fwd_1800_medium",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_fwd_1800_medium_2023-06-21.csv",
+      "records": 1097
+    },
+    {
+      "trip": "R-DENSE_fwd_1800_medium",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_fwd_1800_medium_2023-09-21.csv",
+      "records": 1097
+    },
+    {
+      "trip": "R-DENSE_fwd_1800_medium",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_fwd_1800_medium_2023-12-21.csv",
+      "records": 1097
+    },
+    {
+      "trip": "R-DENSE_fwd_23400_high",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_fwd_23400_high_2023-03-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_fwd_23400_high",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_fwd_23400_high_2023-06-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_fwd_23400_high",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_fwd_23400_high_2023-09-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_fwd_23400_high",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_fwd_23400_high_2023-12-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_fwd_23400_low",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_fwd_23400_low_2023-03-21.csv",
+      "records": 822
+    },
+    {
+      "trip": "R-DENSE_fwd_23400_low",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_fwd_23400_low_2023-06-21.csv",
+      "records": 822
+    },
+    {
+      "trip": "R-DENSE_fwd_23400_low",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_fwd_23400_low_2023-09-21.csv",
+      "records": 822
+    },
+    {
+      "trip": "R-DENSE_fwd_23400_low",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_fwd_23400_low_2023-12-21.csv",
+      "records": 822
+    },
+    {
+      "trip": "R-DENSE_fwd_23400_medium",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_fwd_23400_medium_2023-03-21.csv",
+      "records": 823
+    },
+    {
+      "trip": "R-DENSE_fwd_23400_medium",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_fwd_23400_medium_2023-06-21.csv",
+      "records": 823
+    },
+    {
+      "trip": "R-DENSE_fwd_23400_medium",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_fwd_23400_medium_2023-09-21.csv",
+      "records": 823
+    },
+    {
+      "trip": "R-DENSE_fwd_23400_medium",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_fwd_23400_medium_2023-12-21.csv",
+      "records": 823
+    },
+    {
+      "trip": "R-DENSE_fwd_30600_high",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_fwd_30600_high_2023-03-21.csv",
+      "records": 1004
+    },
+    {
+      "trip": "R-DENSE_fwd_30600_high",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_fwd_30600_high_2023-06-21.csv",
+      "records": 1004
+    },
+    {
+      "trip": "R-DENSE_fwd_30600_high",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_fwd_30600_high_2023-09-21.csv",
+      "records": 1004
+    },
+    {
+      "trip": "R-DENSE_fwd_30600_high",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_fwd_30600_high_2023-12-21.csv",
+      "records": 1004
+    },
+    {
+      "trip": "R-DENSE_fwd_30600_low",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_fwd_30600_low_2023-03-21.csv",
+      "records": 823
+    },
+    {
+      "trip": "R-DENSE_fwd_30600_low",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_fwd_30600_low_2023-06-21.csv",
+      "records": 823
+    },
+    {
+      "trip": "R-DENSE_fwd_30600_low",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_fwd_30600_low_2023-09-21.csv",
+      "records": 823
+    },
+    {
+      "trip": "R-DENSE_fwd_30600_low",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_fwd_30600_low_2023-12-21.csv",
+      "records": 823
+    },
+    {
+      "trip": "R-DENSE_fwd_30600_medium",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_fwd_30600_medium_2023-03-21.csv",
+      "records": 823
+    },
+    {
+      "trip": "R-DENSE_fwd_30600_medium",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_fwd_30600_medium_2023-06-21.csv",
+      "records": 823
+    },
+    {
+      "trip": "R-DENSE_fwd_30600_medium",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_fwd_30600_medium_2023-09-21.csv",
+      "records": 823
+    },
+    {
+      "trip": "R-DENSE_fwd_30600_medium",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_fwd_30600_medium_2023-12-21.csv",
+      "records": 823
+    },
+    {
+      "trip": "R-DENSE_fwd_9000_high",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_fwd_9000_high_2023-03-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_fwd_9000_high",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_fwd_9000_high_2023-06-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_fwd_9000_high",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_fwd_9000_high_2023-09-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_fwd_9000_high",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_fwd_9000_high_2023-12-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_fwd_9000_low",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_fwd_9000_low_2023-03-21.csv",
+      "records": 915
+    },
+    {
+      "trip": "R-DENSE_fwd_9000_low",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_fwd_9000_low_2023-06-21.csv",
+      "records": 915
+    },
+    {
+      "trip": "R-DENSE_fwd_9000_low",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_fwd_9000_low_2023-09-21.csv",
+      "records": 915
+    },
+    {
+      "trip": "R-DENSE_fwd_9000_low",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_fwd_9000_low_2023-12-21.csv",
+      "records": 915
+    },
+    {
+      "trip": "R-DENSE_fwd_9000_medium",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_fwd_9000_medium_2023-03-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_fwd_9000_medium",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_fwd_9000_medium_2023-06-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_fwd_9000_medium",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_fwd_9000_medium_2023-09-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_fwd_9000_medium",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_fwd_9000_medium_2023-12-21.csv",
+      "records": 914
+    },
+    {
+      "trip": "R-DENSE_rev_16200_high",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_rev_16200_high_2023-03-21.csv",
+      "records": 720
+    },
+    {
+      "trip": "R-DENSE_rev_16200_high",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_rev_16200_high_2023-06-21.csv",
+      "records": 720
+    },
+    {
+      "trip": "R-DENSE_rev_16200_high",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_rev_16200_high_2023-09-21.csv",
+      "records": 720
+    },
+    {
+      "trip": "R-DENSE_rev_16200_high",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_rev_16200_high_2023-12-21.csv",
+      "records": 720
+    },
+    {
+      "trip": "R-DENSE_rev_16200_low",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_rev_16200_low_2023-03-21.csv",
+      "records": 618
+    },
+    {
+      "trip": "R-DENSE_rev_16200_low",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_rev_16200_low_2023-06-21.csv",
+      "records": 618
+    },
+    {
+      "trip": "R-DENSE_rev_16200_low",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_rev_16200_low_2023-09-21.csv",
+      "records": 618
+    },
+    {
+      "trip": "R-DENSE_rev_16200_low",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_rev_16200_low_2023-12-21.csv",
+      "records": 618
+    },
+    {
+      "trip": "R-DENSE_rev_16200_medium",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_rev_16200_medium_2023-03-21.csv",
+      "records": 717
+    },
+    {
+      "trip": "R-DENSE_rev_16200_medium",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_rev_16200_medium_2023-06-21.csv",
+      "records": 717
+    },
+    {
+      "trip": "R-DENSE_rev_16200_medium",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_rev_16200_medium_2023-09-21.csv",
+      "records": 717
+    },
+    {
+      "trip": "R-DENSE_rev_16200_medium",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_rev_16200_medium_2023-12-21.csv",
+      "records": 717
+    },
+    {
+      "trip": "R-DENSE_rev_1800_high",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_rev_1800_high_2023-03-21.csv",
+      "records": 713
+    },
+    {
+      "trip": "R-DENSE_rev_1800_high",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_rev_1800_high_2023-06-21.csv",
+      "records": 713
+    },
+    {
+      "trip": "R-DENSE_rev_1800_high",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_rev_1800_high_2023-09-21.csv",
+      "records": 713
+    },
+    {
+      "trip": "R-DENSE_rev_1800_high",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_rev_1800_high_2023-12-21.csv",
+      "records": 713
+    },
+    {
+      "trip": "R-DENSE_rev_1800_low",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_rev_1800_low_2023-03-21.csv",
+      "records": 712
+    },
+    {
+      "trip": "R-DENSE_rev_1800_low",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_rev_1800_low_2023-06-21.csv",
+      "records": 712
+    },
+    {
+      "trip": "R-DENSE_rev_1800_low",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_rev_1800_low_2023-09-21.csv",
+      "records": 712
+    },
+    {
+      "trip": "R-DENSE_rev_1800_low",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_rev_1800_low_2023-12-21.csv",
+      "records": 712
+    },
+    {
+      "trip": "R-DENSE_rev_1800_medium",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_rev_1800_medium_2023-03-21.csv",
+      "records": 709
+    },
+    {
+      "trip": "R-DENSE_rev_1800_medium",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_rev_1800_medium_2023-06-21.csv",
+      "records": 709
+    },
+    {
+      "trip": "R-DENSE_rev_1800_medium",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_rev_1800_medium_2023-09-21.csv",
+      "records": 709
+    },
+    {
+      "trip": "R-DENSE_rev_1800_medium",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_rev_1800_medium_2023-12-21.csv",
+      "records": 709
+    },
+    {
+      "trip": "R-DENSE_rev_23400_high",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_rev_23400_high_2023-03-21.csv",
+      "records": 717
+    },
+    {
+      "trip": "R-DENSE_rev_23400_high",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_rev_23400_high_2023-06-21.csv",
+      "records": 717
+    },
+    {
+      "trip": "R-DENSE_rev_23400_high",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_rev_23400_high_2023-09-21.csv",
+      "records": 717
+    },
+    {
+      "trip": "R-DENSE_rev_23400_high",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_rev_23400_high_2023-12-21.csv",
+      "records": 717
+    },
+    {
+      "trip": "R-DENSE_rev_23400_low",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_rev_23400_low_2023-03-21.csv",
+      "records": 636
+    },
+    {
+      "trip": "R-DENSE_rev_23400_low",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_rev_23400_low_2023-06-21.csv",
+      "records": 636
+    },
+    {
+      "trip": "R-DENSE_rev_23400_low",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_rev_23400_low_2023-09-21.csv",
+      "records": 636
+    },
+    {
+      "trip": "R-DENSE_rev_23400_low",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_rev_23400_low_2023-12-21.csv",
+      "records": 636
+    },
+    {
+      "trip": "R-DENSE_rev_23400_medium",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_rev_23400_medium_2023-03-21.csv",
+      "records": 729
+    },
+    {
+      "trip": "R-DENSE_rev_23400_medium",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_rev_23400_medium_2023-06-21.csv",
+      "records": 729
+    },
+    {
+      "trip": "R-DENSE_rev_23400_medium",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_rev_23400_medium_2023-09-21.csv",
+      "records": 729
+    },
+    {
+      "trip": "R-DENSE_rev_23400_medium",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_rev_23400_medium_2023-12-21.csv",
+      "records": 729
+    },
+    {
+      "trip": "R-DENSE_rev_30600_high",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_rev_30600_high_2023-03-21.csv",
+      "records": 613
+    },
+    {
+      "trip": "R-DENSE_rev_30600_high",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_rev_30600_high_2023-06-21.csv",
+      "records": 613
+    },
+    {
+      "trip": "R-DENSE_rev_30600_high",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_rev_30600_high_2023-09-21.csv",
+      "records": 613
+    },
+    {
+      "trip": "R-DENSE_rev_30600_high",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_rev_30600_high_2023-12-21.csv",
+      "records": 613
+    },
+    {
+      "trip": "R-DENSE_rev_30600_low",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_rev_30600_low_2023-03-21.csv",
+      "records": 719
+    },
+    {
+      "trip": "R-DENSE_rev_30600_low",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_rev_30600_low_2023-06-21.csv",
+      "records": 719
+    },
+    {
+      "trip": "R-DENSE_rev_30600_low",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_rev_30600_low_2023-09-21.csv",
+      "records": 719
+    },
+    {
+      "trip": "R-DENSE_rev_30600_low",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_rev_30600_low_2023-12-21.csv",
+      "records": 719
+    },
+    {
+      "trip": "R-DENSE_rev_30600_medium",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_rev_30600_medium_2023-03-21.csv",
+      "records": 612
+    },
+    {
+      "trip": "R-DENSE_rev_30600_medium",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_rev_30600_medium_2023-06-21.csv",
+      "records": 612
+    },
+    {
+      "trip": "R-DENSE_rev_30600_medium",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_rev_30600_medium_2023-09-21.csv",
+      "records": 612
+    },
+    {
+      "trip": "R-DENSE_rev_30600_medium",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_rev_30600_medium_2023-12-21.csv",
+      "records": 612
+    },
+    {
+      "trip": "R-DENSE_rev_9000_high",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_rev_9000_high_2023-03-21.csv",
+      "records": 723
+    },
+    {
+      "trip": "R-DENSE_rev_9000_high",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_rev_9000_high_2023-06-21.csv",
+      "records": 723
+    },
+    {
+      "trip": "R-DENSE_rev_9000_high",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_rev_9000_high_2023-09-21.csv",
+      "records": 723
+    },
+    {
+      "trip": "R-DENSE_rev_9000_high",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_rev_9000_high_2023-12-21.csv",
+      "records": 723
+    },
+    {
+      "trip": "R-DENSE_rev_9000_low",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_rev_9000_low_2023-03-21.csv",
+      "records": 730
+    },
+    {
+      "trip": "R-DENSE_rev_9000_low",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_rev_9000_low_2023-06-21.csv",
+      "records": 730
+    },
+    {
+      "trip": "R-DENSE_rev_9000_low",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_rev_9000_low_2023-09-21.csv",
+      "records": 730
+    },
+    {
+      "trip": "R-DENSE_rev_9000_low",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_rev_9000_low_2023-12-21.csv",
+      "records": 730
+    },
+    {
+      "trip": "R-DENSE_rev_9000_medium",
+      "day": "2023-03-21",
+      "file": "trajectory_R-DENSE_rev_9000_medium_2023-03-21.csv",
+      "records": 619
+    },
+    {
+      "trip": "R-DENSE_rev_9000_medium",
+      "day": "2023-06-21",
+      "file": "trajectory_R-DENSE_rev_9000_medium_2023-06-21.csv",
+      "records": 619
+    },
+    {
+      "trip": "R-DENSE_rev_9000_medium",
+      "day": "2023-09-21",
+      "file": "trajectory_R-DENSE_rev_9000_medium_2023-09-21.csv",
+      "records": 619
+    },
+    {
+      "trip": "R-DENSE_rev_9000_medium",
+      "day": "2023-12-21",
+      "file": "trajectory_R-DENSE_rev_9000_medium_2023-12-21.csv",
+      "records": 619
+    }
+  ],
+  "geometry_tiles": 280,
+  "geometry_bounds_utm": [
+    399069.2,
+    3697292.3,
+    402022.4,
+    3706996.2
+  ],
+  "ground_control": [
+    {
+      "id": "DV0532",
+      "u_lidar": -2.252,
+      "u_mesh": -2.391,
+      "mesh_minus_lidar_m": -0.14
+    },
+    {
+      "id": "DV0644",
+      "u_lidar": 0.97,
+      "u_mesh": 0.989,
+      "mesh_minus_lidar_m": 0.019
+    },
+    {
+      "id": "DV0682",
+      "u_lidar": -0.988,
+      "u_mesh": -1.066,
+      "mesh_minus_lidar_m": -0.079
+    },
+    {
+      "id": "DV0646",
+      "u_lidar": 2.365,
+      "u_mesh": 2.339,
+      "mesh_minus_lidar_m": -0.027
+    },
+    {
+      "id": "DV0647",
+      "u_lidar": 2.358,
+      "u_mesh": 2.466,
+      "mesh_minus_lidar_m": 0.108
+    }
+  ],
+  "render_overlay": {
+    "file": "twin/exchange/render/pv_R-DENSE_fwd_1800_medium_2023-12-21.csv",
+    "mean_W": 46.3,
+    "max_W": 77.5
+  }
+}

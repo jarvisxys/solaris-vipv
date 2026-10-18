@@ -3,6 +3,63 @@
 Every decision that changes a number, claim or reference in the journal paper,
 newest first, with date and reason.
 
+## 2026-10-19 · P8 / E8 Unity twin and validation
+
+Sources: `twin/unity/SOLARIS-Twin/Assets/SolarisTwin/`, `twin/unity/README.md` (Section 6
+walkthrough), `src/solaris/twin_io/`, `src/solaris/imagery/mapillary.py`,
+`configs/experiments/e8.yaml`, `results/e8/` (rules `e8_export`, `e8_unity`,
+`e8_twin_agreement`, `e8_mapillary_fetch`, `e8_mapillary_svf`).
+
+- **Unity twin built headless (author decision).** Unity 6000.3.6f1 from the Universal 3D
+  (URP) template, with Cesium for Unity 1.26.0, glTFast 6.20.0 and Recorder 5.1.7.
+  - The P3 tiles are imported as assets with glTFast (author decision, guide step 5): 140
+    surface + 140 tree tiles around R-DENSE plus the 1 km shading reach.
+  - glTFast mirrors the x axis on import; the scene root undoes it with a 180° turn. The
+    flip is detected from the tile bounding boxes, not assumed.
+  - `Library/` is a junction outside OneDrive.
+  - PhysX warns about Delatin triangles longer than 500 m on 8 flat tiles. The Embree
+    comparison below shows it does not affect the rays.
+- **Ground control passes.** At five NGS pavement marks in the corridor, Unity's surface
+  lies within 0.14 m of the lidar DSM (limit 0.5 m). It equals the Embree height of the
+  same meshes to the millimetre.
+- **E8 Unity vs Python (120 R-DENSE trip-dates, 15.5 M sample-seconds valid in both).**
+
+  | Pair | Per-sample agreement | Trips within 2 pp | Max lit-fraction difference |
+  |---|---|---|---|
+  | Python raster vs Unity | **99.14 %** (gate ≥ 97 %) | 119 / 120 | 2.37 pp |
+  | Embree on the same meshes vs Unity | 99.994 % | 120 / 120 | 0.02 pp |
+  | Python raster vs Unity, beyond ±1° of the horizon line | 99.69 % | 120 / 120 | 0.65 pp |
+
+  - **The one trip outside 2 pp is explained.** R-DENSE southbound at 14:00 on 21 March
+    differs by 2.37 pp; three more southbound 14:00 trips sit at 1.5–2.0 pp.
+  - The cause is surface representation, not Unity: Embree on the same meshes reproduces
+    Unity to 0.02 pp.
+  - Mechanism: the raster engine treats each 0.5 m pixel as a flat-topped column, while the
+    mesh interpolates between pixel centres and so rounds roof edges by up to half a pixel.
+  - Rays that graze a roof edge change state between the two. Mostly the raster says
+    building and the mesh says lit (58 % of disagreements, against 25 % the other way), so
+    Unity's lit fraction is on average 0.38 pp higher.
+  - The ±1° horizon-line band (E1's convention) is 3.2 % of sample-seconds but holds 65 %
+    of the disagreements. On the afternoon southbound trips the car drives along building
+    shadow edges for long stretches, which doubles its share of the band.
+  - Outside the band every trip is within 0.65 pp.
+  - The paper should report both rows and this mechanism. **Proposed:** "Unity and Python
+    agree on 99.1 % of sample-seconds; trip lit fractions agree within 2.4 pp, and within
+    0.65 pp outside ±1° of the horizon line."
+- **Mapillary SVF comparison: built, not yet run.** The module, rules and tests exist.
+  - Panoramas come from Graph API v4, 15 per route on R-DENSE and R-MIXED.
+  - The sky mask comes from Mapillary's own `nature--sky` segmentation (vector tiles, decoded
+    in-repo).
+  - SVF is computed with the same cosine-weighted definition as the engine.
+  - The live fetch needs `MAPILLARY_TOKEN` (open). E8's "SVF error reported" item is
+    pending until then.
+- **Open author items (not computable here).** The literature bracket (Hoth et al., Berlin;
+  San José et al.; refs [12], [14]); and asking ASU's heat-research groups for a mobile
+  radiation transect in the AOI. Until measured data exist the paper says "cross-verified,
+  simulation-based digital twin", not "physically validated".
+- **Render inputs exported.** The HUD PV for R-DENSE 08:00 on 21 December (TMY, case C) has
+  a mean of 46 W and a peak of 78 W. Display only.
+
 ## 2026-10-18 · P7 / E5, E6 annual waterfall and electrical mismatch
 
 Sources: `configs/schedules/archetypes.yaml`, `configs/experiments/e5.yaml`, `e6.yaml`,

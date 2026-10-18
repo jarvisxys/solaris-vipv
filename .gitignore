@@ -35,7 +35,16 @@ twin/unity/**/[Uu]ser[Ss]ettings/
 twin/unity/**/[Mm]emoryCaptures/
 twin/unity/**/*.csproj
 twin/unity/**/*.sln
+twin/unity/**/*.slnx
 twin/unity/**/*.user
+twin/unity/**/.vscode/
+twin/unity/SOLARIS-Twin/Assets/Geometry/
+twin/unity/SOLARIS-Twin/Assets/Geometry.meta
+twin/unity/SOLARIS-Twin/Recordings/
+
+# Exchange files rebuilt by rule e8_export
+twin/exchange/trajectories/
+twin/exchange/render/
 
 # LaTeX build products
 paper/**/*.aux

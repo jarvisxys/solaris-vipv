@@ -1,0 +1,21 @@
+# E8 -- validate the twin (workflow guide Sec. 5). experiments/e8_validation/run.py.
+unity:
+  route: R-DENSE                  # every R-DENSE trace on the four E3 days (120 trip-dates)
+  editor: "C:/Program Files/Unity/Hub/Editor/6000.3.6f1/Editor/Unity.exe"   # env UNITY_EDITOR wins
+  gate_agreement: 0.97            # per-sample beam state, Unity vs Python
+  gate_lit_pp: 2.0                # trip-integrated beam (lit) fraction, percentage points
+  cluster_cell_m: 5.0
+render:                           # chase-camera video (guide Sec. 6 step 11), display only
+  trip: R-DENSE_fwd_1800_medium   # 08:00 departure
+  day: "2023-12-21"
+  sky: tmy
+mapillary:
+  routes: [R-DENSE, R-MIXED]
+  per_route: 15                   # 30 points in total
+  max_offset_m: 10.0              # panorama within this distance of the route line
+  min_separation_m: 250.0
+  search_step_m: 250.0            # bbox queries along the route
+  search_half_deg: 0.0015         # bbox half-size (~150 m); Mapillary wants small boxes
+  camera_height_m: 2.0            # above the DEM; vehicle-mounted 360 cameras
+  height_sweep_m: [1.5, 2.5]
+  mask_size: [1024, 512]          # equirectangular sky mask, width x height

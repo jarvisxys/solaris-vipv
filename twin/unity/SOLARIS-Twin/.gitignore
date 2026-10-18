@@ -1,0 +1,52 @@
+# Unity (github/gitignore Unity.gitignore, trimmed) + SOLARIS-Twin derived data
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+/Assets/Plugins/Editor/JetBrains*
+
+# P3 tiles copied by rule e8_export (rebuilt from data/derived/tiles; ~700 MB), and the
+# scenes that reference them by GUID (rebuilt by SOLARIS -> 2 / 5 or rule e8_unity)
+/Assets/Geometry/
+/Assets/Geometry.meta
+/Assets/Scenes/E8.unity
+/Assets/Scenes/E8.unity.meta
+/Assets/Scenes/Playback.unity
+/Assets/Scenes/Playback.unity.meta
+
+# Cesium ion access tokens are written here after sign-in: never commit them
+/Assets/CesiumSettings/
+/Assets/CesiumSettings.meta
+
+# IDE and generated project files
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+sysinfo.txt
+crashlytics-build.properties
+*.apk
+*.aab
+*.unitypackage

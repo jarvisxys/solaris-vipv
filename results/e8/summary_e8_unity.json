@@ -1,0 +1,161 @@
+{
+  "route": "R-DENSE",
+  "trip_dates": 120,
+  "python_raster_vs_embree_mesh": {
+    "pair": "raster vs embree",
+    "trips": 120,
+    "sample_records": 15459816,
+    "agreement": 0.99138,
+    "agreement_buildings": 0.99253,
+    "confusion_rows_a_cols_b": {
+      "lit": {
+        "lit": 10491593,
+        "tree": 2372,
+        "building": 32609
+      },
+      "tree": {
+        "lit": 15435,
+        "tree": 78177,
+        "building": 1134
+      },
+      "building": {
+        "lit": 77693,
+        "tree": 4003,
+        "building": 4756800
+      }
+    },
+    "lit_diff_pp_max_abs": 2.381,
+    "lit_diff_pp_mean": 0.381,
+    "trips_within_2pp": 119,
+    "pass_agreement": true,
+    "pass_lit_fraction": false
+  },
+  "disagreement_kinds_raster_vs_unity": {
+    "building->lit": 77139,
+    "lit->building": 32790,
+    "tree->lit": 15396,
+    "building->tree": 3970,
+    "lit->tree": 2380,
+    "tree->building": 1142
+  },
+  "horizon_band_1deg": {
+    "definition": "raster state changes when the sun moves 1 deg in elevation or azimuth",
+    "share_of_valid_sample_records": 0.0322,
+    "share_of_disagreements": 0.6534
+  },
+  "ground_control": {
+    "marks": [
+      {
+        "id": "DV0532",
+        "delta_m": -0.14
+      },
+      {
+        "id": "DV0644",
+        "delta_m": 0.019
+      },
+      {
+        "id": "DV0682",
+        "delta_m": -0.079
+      },
+      {
+        "id": "DV0646",
+        "delta_m": -0.027
+      },
+      {
+        "id": "DV0647",
+        "delta_m": 0.108
+      }
+    ],
+    "max_abs_delta_m": 0.14,
+    "pass": true
+  },
+  "python_raster_vs_unity": {
+    "pair": "raster vs unity",
+    "trips": 120,
+    "sample_records": 15459816,
+    "agreement": 0.99141,
+    "agreement_buildings": 0.99256,
+    "confusion_rows_a_cols_b": {
+      "lit": {
+        "lit": 10491404,
+        "tree": 2380,
+        "building": 32790
+      },
+      "tree": {
+        "lit": 15396,
+        "tree": 78208,
+        "building": 1142
+      },
+      "building": {
+        "lit": 77139,
+        "tree": 3970,
+        "building": 4757387
+      }
+    },
+    "lit_diff_pp_max_abs": 2.373,
+    "lit_diff_pp_mean": 0.376,
+    "trips_within_2pp": 119,
+    "pass_agreement": true,
+    "pass_lit_fraction": false
+  },
+  "embree_vs_unity": {
+    "pair": "embree vs unity",
+    "trips": 120,
+    "sample_records": 15459816,
+    "agreement": 0.99994,
+    "agreement_buildings": 0.99995,
+    "confusion_rows_a_cols_b": {
+      "lit": {
+        "lit": 10583931,
+        "tree": 66,
+        "building": 724
+      },
+      "tree": {
+        "lit": 5,
+        "tree": 84492,
+        "building": 55
+      },
+      "building": {
+        "lit": 3,
+        "tree": 0,
+        "building": 4790540
+      }
+    },
+    "lit_diff_pp_max_abs": 0.021,
+    "lit_diff_pp_mean": -0.005,
+    "trips_within_2pp": 120,
+    "pass_agreement": true,
+    "pass_lit_fraction": true
+  },
+  "python_raster_vs_unity_beyond_1deg": {
+    "pair": "raster vs unity",
+    "trips": 120,
+    "sample_records": 14962717,
+    "agreement": 0.99692,
+    "agreement_buildings": 0.99751,
+    "confusion_rows_a_cols_b": {
+      "lit": {
+        "lit": 10269069,
+        "tree": 1920,
+        "building": 22117
+      },
+      "tree": {
+        "lit": 6918,
+        "tree": 66413,
+        "building": 541
+      },
+      "building": {
+        "lit": 13867,
+        "tree": 674,
+        "building": 4581198
+      }
+    },
+    "lit_diff_pp_max_abs": 0.647,
+    "lit_diff_pp_mean": -0.027,
+    "trips_within_2pp": 120,
+    "pass_agreement": true,
+    "pass_lit_fraction": true
+  },
+  "pass": false,
+  "pass_beyond_1deg": true
+}

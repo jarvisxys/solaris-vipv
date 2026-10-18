@@ -65,6 +65,8 @@ rule all:
         "results/e4/summary_e4.json",
         "results/e6/summary_e6.json",
         "results/e5/summary_e5.json",
+        "results/e8/summary_e8_unity.json",
+        "results/e8/summary_e8_svf.json",
 
 
 # ---------------------------------------------------------------- P0 bootstrap
@@ -566,6 +568,91 @@ rule e5_annual:
         )
 
 
+# ---------------------------------------------------------------- P8 / E8
+# Unity runs headless (twin/unity/README.md); the editor path comes from env UNITY_EDITOR or
+# configs/experiments/e8.yaml. Mapillary needs MAPILLARY_TOKEN (user environment).
+E8_CFG = "configs/experiments/e8.yaml"
+UNITY_PROJ = "twin/unity/SOLARIS-Twin"
+UNITY_SRC = sorted(str(f) for f in Path(UNITY_PROJ, "Assets", "SolarisTwin").rglob("*.cs"))
+TWIN_IO_SRC = sorted(str(f) for f in Path("src/solaris/twin_io").glob("*.py"))
+
+
+rule e8_export:
+    """Python -> Unity: 120 R-DENSE trajectories in ENU, tiles into Assets/Geometry, five
+    ground-control marks, the PV overlay for the render."""
+    input:
+        RASTERS,
+        traces="results/p6/table_traces.csv",
+        samples="twin/exchange/facet_samples.csv",
+        tiles=f"{DD}/tiles/MANIFEST.json",
+        gcp="results/p3/table_ground_control.csv",
+        cfg=E8_CFG,
+        e3="configs/experiments/e3.yaml",
+        code=TWIN_IO_SRC,
+    output:
+        "twin/exchange/export_manifest.json",
+    run:
+        experiment("e8_validation").export(output[0])
+
+
+rule e8_unity:
+    """Unity batch: import tiles, build E8.unity, ground-control gate, probe every record."""
+    input:
+        export="twin/exchange/export_manifest.json",
+        packages=f"{UNITY_PROJ}/Packages/manifest.json",
+        code=UNITY_SRC,
+    output:
+        f"{DD}/e8/unity/unity_run.txt",
+    run:
+        experiment("e8_validation").run_unity(output[0])
+
+
+rule e8_twin_agreement:
+    """E8: Unity vs Python raster engine (and Embree on the same meshes); gates 97 % / 2 pp."""
+    input:
+        RASTERS,
+        unity=f"{DD}/e8/unity/unity_run.txt",
+        export="twin/exchange/export_manifest.json",
+        cfg=E8_CFG,
+        code=TWIN_IO_SRC,
+    output:
+        trips="results/e8/table_e8_trips.csv",
+        clusters="results/e8/table_e8_clusters.csv",
+        summary="results/e8/summary_e8_unity.json",
+        fig="results/e8/fig13a_twin_agreement.png",
+    run:
+        experiment("e8_validation").twin_agreement(
+            output.trips, output.clusters, output.summary, output.fig
+        )
+
+
+rule e8_mapillary_fetch:
+    """Mapillary panoramas near R-DENSE and R-MIXED and their sky segmentation (cached)."""
+    input:
+        f"{ROUTES}/MANIFEST.json",
+        cfg=E8_CFG,
+    output:
+        "data/raw/mapillary/MANIFEST.json",
+    run:
+        experiment("e8_validation").mapillary_fetch(output[0])
+
+
+rule e8_mapillary_svf:
+    """E8: panorama sky view factor vs the engine (MAE, RMSE, R2)."""
+    input:
+        RASTERS,
+        manifest="data/raw/mapillary/MANIFEST.json",
+        cfg=E8_CFG,
+        code="src/solaris/imagery/mapillary.py",
+    output:
+        table="results/e8/table_e8_svf.csv",
+        summary="results/e8/summary_e8_svf.json",
+        fig="results/e8/fig13b_svf.png",
+    run:
+        experiment("e8_validation").mapillary_svf(
+            input.manifest, output.table, output.summary, output.fig
+        )
+
+
 # ---------------------------------------------------------------- planned rules
-# P8  E8   e8_twin_agreement, e8_mapillary_svf
 # P9  E7   e7_inversion, figures, paper
