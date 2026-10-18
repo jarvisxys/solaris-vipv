@@ -57,6 +57,7 @@ rule all:
         E0["b0"]["out_pareto"],
         "results/p2/summary_weather.json",
         "results/p3/summary_geometry.json",
+        "results/e1/table_e1.csv",
 
 
 # ---------------------------------------------------------------- P0 bootstrap
@@ -371,8 +372,29 @@ rule geom_summary:
         step_summary(input.gcp, input.fresh, output[0])
 
 
+# ---------------------------------------------------------------- P4 / E1
+rule e1_verification:
+    """E1: sun position, transposition, shadow length, canyon SVF, raster vs mesh engine on
+    1,000 downtown points, SOLWEIG shadow maps (UMEP via qgis_process, external)."""
+    input:
+        cfg="configs/experiments/e1.yaml",
+        site=SITE_CFG,
+        dsm=f"{DD}/dsm.tif",
+        dem=f"{DD}/dem.tif",
+        cdsm=f"{DD}/cdsm.tif",
+        classes=f"{DD}/classes.tif",
+        holes=f"{DD}/dsm_holes.tif",
+        meshes=f"{DD}/tiles/MANIFEST.json",
+        origin="twin/exchange/enu_origin.json",
+        code=sorted(str(f) for f in Path("src/solaris/shading").glob("*.py")),
+    output:
+        table="results/e1/table_e1.csv",
+        summary="results/e1/summary_e1.json",
+    run:
+        experiment("e1_verify").main(output.table, output.summary)
+
+
 # ---------------------------------------------------------------- planned rules
-# P4  E1   e1_verification                   -> results/e1/
 # P5  E2   e2_facets                         -> results/e2/
 # P6  E3/4 routes_select, sumo_traces, e3_driving, e4_parking
 # P7  E5/6 e5_annual, e6_mismatch            -> waterfall figure

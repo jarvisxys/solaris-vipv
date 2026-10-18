@@ -1,0 +1,41 @@
+check,case,engine,metric,value,threshold,op,pass
+sun,SPA reference zenith,pvlib SPA,abs error deg,2.02404e-06,0.01,<=,True
+sun,SPA reference azimuth,pvlib SPA,abs error deg,5.1024e-07,0.01,<=,True
+sun,NOAA Phoenix 2023-03-20 08:00,pvlib SPA,angle deg,0.00511888,0.01,<=,True
+sun,NOAA Phoenix 2023-06-21 12:00,pvlib SPA,angle deg,0.00437953,0.01,<=,True
+sun,NOAA Phoenix 2023-09-22 16:00,pvlib SPA,angle deg,0.00772043,0.01,<=,True
+sun,NOAA Phoenix 2023-12-21 10:30,pvlib SPA,angle deg,0.00287334,0.01,<=,True
+sun,NOAA Phoenix 2023-07-15 17:15,pvlib SPA,angle deg,0.00140238,0.01,<=,True
+transposition,horizontal = GHI,facet model,max abs W/m2,1.13687e-13,1e-06,<=,True
+transposition,vertical south = pvlib Perez,facet model,max abs W/m2,3.41061e-13,1e-06,<=,True
+shadow_length,"alpha 15 deg, L 74.6 m +/- 1 m",raster horizon,points misclassified,0,0,<=,True
+shadow_length,"alpha 15 deg, L 74.6 m +/- 1 m",raster shadow map,points misclassified,0,0,<=,True
+shadow_length,"alpha 15 deg, L 74.6 m +/- 1 m",mesh,points misclassified,0,0,<=,True
+shadow_length,"alpha 30 deg, L 34.6 m +/- 1 m",raster horizon,points misclassified,0,0,<=,True
+shadow_length,"alpha 30 deg, L 34.6 m +/- 1 m",raster shadow map,points misclassified,0,0,<=,True
+shadow_length,"alpha 30 deg, L 34.6 m +/- 1 m",mesh,points misclassified,0,0,<=,True
+shadow_length,"alpha 60 deg, L 11.5 m +/- 1 m",raster horizon,points misclassified,0,0,<=,True
+shadow_length,"alpha 60 deg, L 11.5 m +/- 1 m",raster shadow map,points misclassified,0,0,<=,True
+shadow_length,"alpha 60 deg, L 11.5 m +/- 1 m",mesh,points misclassified,0,0,<=,True
+canyon_svf,"H/W 0.5 (exact 0.707, printed 0.707)",raster,abs error,0.00198073,0.01,<=,True
+canyon_svf,"H/W 0.5 (exact 0.707, printed 0.707)",mesh,abs error,0.00421197,0.01,<=,True
+canyon_svf,"H/W 1 (exact 0.447, printed 0.447)",raster,abs error,0.00199162,0.01,<=,True
+canyon_svf,"H/W 1 (exact 0.447, printed 0.447)",mesh,abs error,0.00423909,0.01,<=,True
+canyon_svf,"H/W 2 (exact 0.243, printed 0.243)",raster,abs error,0.000546642,0.01,<=,True
+canyon_svf,"H/W 2 (exact 0.243, printed 0.243)",mesh,abs error,0.00317145,0.01,<=,True
+cross_engine,"beam, buildings",raster vs mesh,agreement,0.995924,0.98,>=,True
+cross_engine,"SVF, buildings",raster vs mesh,mean |dSVF|,0.00754988,0.02,<=,True
+cross_engine,"beam, buildings+trees",raster vs mesh,agreement,0.995708,0.98,>=,True
+cross_engine,"SVF, buildings+trees",raster vs mesh,mean |dSVF|,0.0080506,0.02,<=,True
+solweig,2023-03-20 08:00 MST,raster vs SOLWEIG,pixel agreement,0.983342,0.95,>=,True
+solweig,2023-03-20 12:00 MST,raster vs SOLWEIG,pixel agreement,0.992931,0.95,>=,True
+solweig,2023-03-20 16:00 MST,raster vs SOLWEIG,pixel agreement,0.984057,0.95,>=,True
+solweig,2023-06-21 08:00 MST,raster vs SOLWEIG,pixel agreement,0.988589,0.95,>=,True
+solweig,2023-06-21 12:00 MST,raster vs SOLWEIG,pixel agreement,0.989039,0.95,>=,True
+solweig,2023-06-21 16:00 MST,raster vs SOLWEIG,pixel agreement,0.992886,0.95,>=,True
+solweig,2023-09-22 08:00 MST,raster vs SOLWEIG,pixel agreement,0.979795,0.95,>=,True
+solweig,2023-09-22 12:00 MST,raster vs SOLWEIG,pixel agreement,0.991834,0.95,>=,True
+solweig,2023-09-22 16:00 MST,raster vs SOLWEIG,pixel agreement,0.982866,0.95,>=,True
+solweig,2023-12-21 08:00 MST,raster vs SOLWEIG,pixel agreement,0.992687,0.95,>=,True
+solweig,2023-12-21 12:00 MST,raster vs SOLWEIG,pixel agreement,0.989705,0.95,>=,True
+solweig,2023-12-21 16:00 MST,raster vs SOLWEIG,pixel agreement,0.982332,0.95,>=,True

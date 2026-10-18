@@ -61,6 +61,13 @@ nsrdb:                           # fetched by src/solaris/weather (P2) into data
   conus_5min: {dataset: GOES CONUS v4, years: [2018, 2024], sensitivity_year: 2023,
                interval_min: 5}
 
+shading:                         # P4 raster horizon engine (src/solaris/shading)
+  n_azimuth: 360                 # horizon masks: 360 azimuth bins x 0.5 deg elevation bins
+  elevation_step_deg: 0.5
+  max_distance_m: 1000           # = AOI buffer: 150 m tower at 10 deg casts ~850 m
+  near_m: 50                     # march at half-pixel steps out to here,
+  growth: 0.005                  # then grow each step by 0.5 % of the distance
+
 lidar:
   project: AZ_MaricopaPinal_2020_B20   # USGS 3DEP, public domain, flown 2020-10-02 to 2021-12-18
   ept: https://s3-us-west-2.amazonaws.com/usgs-lidar-public/AZ_MaricopaPinal_1_2020/ept.json

@@ -3,6 +3,51 @@
 Every decision that changes a number, claim or reference in the journal paper,
 newest first, with date and reason.
 
+## 2026-10-18 · P4 / E1 shading engines verified
+
+Sources: `src/solaris/shading/`, `src/solaris/pv/irradiance.py`, `configs/experiments/e1.yaml`,
+`tests/test_shading.py`, `results/e1/table_e1.csv`, `results/e1/summary_e1.json`
+(rule `e1_verification`).
+
+- **E1 passes: 40 of 40 checks.** The guide's E1 thresholds are all met (Sec. 5):
+  - **Sun position.** pvlib SPA is within 2 × 10⁻⁶° of the NREL SPA reference vector. Against
+    NOAA's solar-calculator algorithm at five Phoenix times it is within 0.008° (angle
+    between the sun vectors).
+  - **Transposition.** An unshaded horizontal facet returns GHI to 1 × 10⁻¹³ W/m², and a
+    vertical south facet matches pvlib's Perez total to 3 × 10⁻¹³ W/m².
+  - **Shadow length.** At α = 15°, 30° and 60°, points at H/tan α ± 1 m from a 20 m box are
+    classified correctly by the raster horizon engine, the raster shadow map and the mesh engine.
+  - **Canyon SVF.** At H/W = 0.5, 1 and 2 the raster engine is within 0.002 of
+    cos(arctan(2H/W)) and the mesh engine within 0.004 (tolerance 0.01).
+  - **Raster vs mesh**, on 1,000 random downtown points (1 km², Central Ave towers) under 43 sun
+    positions across the solstices and equinoxes: beam agreement is 99.6 %, against ≥ 98 %
+    required, after excluding 3 % of cases within 1° of a horizon line. Mean |ΔSVF| is 0.008
+    (median 0.005, p95 0.023), against < 0.02 required.
+  - **SOLWEIG** (UMEP 3.0 Shadow Generator) on the same 1 km² at 08:00, 12:00 and 16:00 on the
+    four days: pixel agreement is 98.0–99.3 %, against ≥ 95 % required. Our engine shades
+    −0.03 to +1.0 percentage points more pixels than SOLWEIG.
+
+  Reason: the E1 gate; annual runs may now start (CLAUDE.md).
+- **Method: raster engine.** The engine marches horizons over dsm.tif (buildings, terrain,
+  bridges) and over max(dsm, dem + cdsm) (trees opaque). It uses 360 azimuth bins with a
+  0.5° elevation mask, out to 1,000 m, in half-pixel steps to 50 m and then steps of 0.5 % of
+  the distance. Azimuths are rotated per point by the meridian convergence (−0.59° downtown).
+  The mesh engine casts Embree rays against the P3 .glb tiles in the true-north ENU frame. It
+  needs no convergence correction, so the cross-engine agreement checks the correction independently.
+- **Interpretation of "|ΔSVF| < 0.02".** It is applied to the mean over the 1,000 points.
+  Individual points differ by up to 0.16. Reason: the guide does not say whether the
+  threshold is per point or on average.
+- **Cross-engine sample: points 1 m or more from any building.** A point within 0.5 m of a
+  facade sits inside the mesh's wall slope: heightfield vertices lie at pixel centres, so
+  every upward ray hits the wall and the mesh reports SVF 0 where the raster gives up to
+  0.39. No vehicle roof can be that close to a wall. The same exclusion must apply in E8
+  (Unity uses these meshes). Reason: a mesh-representation artefact, not a shading difference.
+- **SOLWEIG setup.** `solweig` is not on PyPI, so the reference is UMEP for Processing 3.0 in
+  QGIS 3.44, run through `qgis_process`. UMEP's daily-shading routine fails under QGIS's
+  numpy 2.4.6; two lines were patched locally, as recorded in `shading/solweig.py`. SOLWEIG
+  uses 3 % canopy transmissivity and a 25 % trunk zone, and our shadow map uses the same
+  trunk zone for this comparison.
+
 ## 2026-10-18 · P3 freshness confirmed
 
 Sources: `configs/site/freshness_v1.yaml`, `results/p3/summary_geometry.json` (rule `geom_dsm`).

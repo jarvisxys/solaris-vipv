@@ -1,0 +1,123 @@
+{
+  "cross_engine_buildings": {
+    "cases": 43000,
+    "kept_after_horizon_exclusion": 41703,
+    "beam_agreement": 0.9959,
+    "dsvf_mean": 0.0075,
+    "dsvf_median": 0.0051,
+    "dsvf_p95": 0.0222,
+    "dsvf_max": 0.1587,
+    "svf_raster_mean": 0.624
+  },
+  "cross_engine_buildings+trees": {
+    "cases": 43000,
+    "kept_after_horizon_exclusion": 41705,
+    "beam_agreement": 0.9957,
+    "dsvf_mean": 0.0081,
+    "dsvf_median": 0.0053,
+    "dsvf_p95": 0.0232,
+    "dsvf_max": 0.1587,
+    "svf_raster_mean": 0.6182
+  },
+  "cross_engine": {
+    "points": 1000,
+    "suns": 43,
+    "mesh_faces": 13573828,
+    "raster_s": 2.1,
+    "mesh_s": 78.0,
+    "tile_utm": [
+      399700,
+      3701100,
+      400700,
+      3702100
+    ]
+  },
+  "solweig": [
+    {
+      "time": "2023-03-20 08:00",
+      "sun_el": 17.43,
+      "agreement": 0.9833,
+      "shaded_ours": 0.6837,
+      "shaded_solweig": 0.6777
+    },
+    {
+      "time": "2023-03-20 12:00",
+      "sun_el": 55.48,
+      "agreement": 0.9929,
+      "shaded_ours": 0.2806,
+      "shaded_solweig": 0.2775
+    },
+    {
+      "time": "2023-03-20 16:00",
+      "sun_el": 31.65,
+      "agreement": 0.9841,
+      "shaded_ours": 0.5154,
+      "shaded_solweig": 0.5062
+    },
+    {
+      "time": "2023-06-21 08:00",
+      "sun_el": 30.82,
+      "agreement": 0.9886,
+      "shaded_ours": 0.487,
+      "shaded_solweig": 0.4858
+    },
+    {
+      "time": "2023-06-21 12:00",
+      "sun_el": 78.01,
+      "agreement": 0.989,
+      "shaded_ours": 0.1131,
+      "shaded_solweig": 0.1045
+    },
+    {
+      "time": "2023-06-21 16:00",
+      "sun_el": 43.31,
+      "agreement": 0.9929,
+      "shaded_ours": 0.3387,
+      "shaded_solweig": 0.3377
+    },
+    {
+      "time": "2023-09-22 08:00",
+      "sun_el": 20.62,
+      "agreement": 0.9798,
+      "shaded_ours": 0.6382,
+      "shaded_solweig": 0.6327
+    },
+    {
+      "time": "2023-09-22 12:00",
+      "sun_el": 56.39,
+      "agreement": 0.9918,
+      "shaded_ours": 0.2647,
+      "shaded_solweig": 0.2634
+    },
+    {
+      "time": "2023-09-22 16:00",
+      "sun_el": 28.88,
+      "agreement": 0.9829,
+      "shaded_ours": 0.5424,
+      "shaded_solweig": 0.5341
+    },
+    {
+      "time": "2023-12-21 08:00",
+      "sun_el": 5.04,
+      "agreement": 0.9927,
+      "shaded_ours": 0.9225,
+      "shaded_solweig": 0.9198
+    },
+    {
+      "time": "2023-12-21 12:00",
+      "sun_el": 32.79,
+      "agreement": 0.9897,
+      "shaded_ours": 0.4635,
+      "shaded_solweig": 0.4638
+    },
+    {
+      "time": "2023-12-21 16:00",
+      "sun_el": 13.79,
+      "agreement": 0.9823,
+      "shaded_ours": 0.7767,
+      "shaded_solweig": 0.767
+    }
+  ],
+  "passed": 40,
+  "total": 40
+}

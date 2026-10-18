@@ -53,3 +53,6 @@ Thumbs.db
 desktop.ini
 .vscode/
 .idea/
+
+# UMEP/SuPy writes a log into the working directory when SOLWEIG runs
+SuPy.log

@@ -1,0 +1,43 @@
+# E1 -- verify every shading component (workflow guide Sec. 5). Pass conditions are the
+# guide's; experiments/e1_verify/run.py writes results/e1/table_e1.csv (one row per check)
+# and tests/test_shading.py asserts every row passes.
+
+seed: 0
+downtown_tile_utm: [399700, 3701100, 400700, 3702100]   # 1 km2: Central Ave towers, Jefferson-Van Buren
+
+sun:
+  tol_deg: 0.01                  # SPA reference vector and NOAA Phoenix spot checks
+  noaa_spot_checks: ["2023-03-20 08:00", "2023-06-21 12:00", "2023-09-22 16:00",
+                     "2023-12-21 10:30", "2023-07-15 17:15"]
+
+transposition:
+  tol_wm2: 1.0e-6                # horizontal = GHI; vertical south = pvlib Perez
+
+shadow_length:
+  box_height_m: 20.0
+  offset_m: 1.0
+  alphas_deg: [15, 30, 60]
+
+canyon:
+  floor_width_m: 40.0
+  cases: [[0.5, 0.707], [1.0, 0.447], [2.0, 0.243]]   # H/W, printed SVF
+  tol: 0.01
+
+cross_engine:                    # raster (numba) vs mesh (trimesh + Embree) on the city model
+  n_points: 1000
+  eye_height_m: 1.8              # vehicle roof
+  min_wall_distance_m: 1.0       # closer, a point sits inside the mesh's wall slope
+  days: ["2023-03-20", "2023-06-21", "2023-09-22", "2023-12-21"]
+  hours: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+  min_sun_elevation_deg: 2.0
+  horizon_exclusion_deg: 1.0     # cases within 1 deg of either engine's horizon line
+  min_beam_agreement: 0.98
+  max_mean_abs_dsvf: 0.02        # mean |SVF_raster - SVF_mesh| over the points
+
+solweig:                         # UMEP for Processing Shadow Generator, external process
+  buffer_m: 250                  # both engines run on the same clipped rasters
+  days: ["2023-03-20", "2023-06-21", "2023-09-22", "2023-12-21"]
+  hours: [8, 12, 16]
+  transmissivity_pct: 3.0
+  trunk_zone_pct: 25.0
+  min_pixel_agreement: 0.95
