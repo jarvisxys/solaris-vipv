@@ -3,6 +3,47 @@
 Every decision that changes a number, claim or reference in the journal paper,
 newest first, with date and reason.
 
+## 2026-10-18 · P5 / E2 facet orientation, open sky
+
+Sources: `configs/vehicle/solaris_p0.yaml`, `src/solaris/vehicle/`, `src/solaris/pv/`,
+`tests/test_vehicle.py`, `results/e2/table_e2.csv`, `results/e2/table_e2_facets.csv`,
+`results/e2/summary_e2.json`, `twin/exchange/facet_samples.csv` (rules `e2_facets`, `facet_samples`).
+
+- **Skin layout: the guide's placeholder (author decision).** Roof 4.4 m² at 2°, hood 1.6 m²
+  at 10°, tailgate glass 0.6 m² at 60°, two side panels of 2.5 m² at 85°, sampled on a
+  0.25 m grid. The intended layout is unconfirmed, so the paper must label this layout a
+  placeholder and report case 2d (roof only) as the bound.
+- **E2 gate passes.** Case 2b, the 11.6 m² skin laid horizontal through the new irradiance
+  chain, equals 2a within −0.031 % PV energy and −0.030 % f_ss in both scenarios (limit
+  ±0.5 %). The chain is pvlib Perez G_f at the TMY's own stamps, with solar position from SPA.
+- **Definition of 2b (author decision).** 2b keeps the conference cell-temperature rule
+  (T + 25 K per kW/m²). Faiman cell temperature enters as its own step, 2b+F: +0.55 %
+  (Scenario II) and +0.60 % (Scenario I) PV energy, because pvlib's open-rack coefficients
+  (u0 25, u1 6.84) plus vehicle speed cool the cells more than the conference rule. With
+  Faiman inside 2b the gate would be missed by 0.02–0.06 points. Reason: the gate tests the
+  irradiance chain, and the E5 waterfall must show the thermal change separately.
+- **The headline correction: facet orientation.** On the measured TMY, with the
+  heading-averaged placeholder skin (case 2c):
+
+  | Scenario | f_ss, conference flat GHI (2a) | f_ss, facet skin (2c) | f_ss, roof only (2d) | Charges/yr (2a → 2c → 2d) |
+  |---|---|---|---|---|
+  | II, 50 km/day | 0.779 | **0.635** | 0.314 | 6 → 10 → 20 |
+  | I, 100 km/day | 0.389 | **0.317** | 0.157 | 35 → 39 → 48 |
+
+  F_geo = E_facets / E_flat = 0.805. Balanced grid relief (Scenario II) falls from 77.9 % to
+  63.5 %. Each facet's incident irradiation relative to GHI, averaged over headings:
+  roof 1.00, hood 0.99, tailgate 0.74, side panels 0.56. Parked or driven facing N or S, f_ss
+  is 0.652; facing E or W, 0.616. Reason: workflow guide Sec. 0, item 2 (a vertical panel is
+  not GHI).
+- **Thermal sensitivity.** Body-bonded coefficients lower 2c's f_ss (Scenario II) to 0.627
+  (close-mount, u0 20, u1 6) or 0.591 (semi-integrated, u0 20, u1 0). The journal default
+  stays pvlib's Faiman default, as the guide specifies.
+- **Headings in 2c.** 2c averages 36 headings because schedules A1–A4 arrive in P7, which
+  will replace this with schedule headings (author decision).
+- **Core extension.** `core.simulate` gained `pv_kwh=`, an 8760-h PV series that replaces
+  the flat-GHI model. Without it the core is unchanged: Table B0 regenerates byte-identical,
+  and a test checks the hook bit-identical against the conference formula.
+
 ## 2026-10-18 · P4 / E1 shading engines verified
 
 Sources: `src/solaris/shading/`, `src/solaris/pv/irradiance.py`, `configs/experiments/e1.yaml`,

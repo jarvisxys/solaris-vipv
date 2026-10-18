@@ -1,1 +1,5 @@
-"""Vehicle facet model and facet sample points (P5/E2)."""
+"""Vehicle PV skin: facets, sample points (P5)."""
+
+from .facets import Facet, facets, flat_skin, samples, vehicle_config
+
+__all__ = ["Facet", "facets", "flat_skin", "samples", "vehicle_config"]

@@ -58,6 +58,8 @@ rule all:
         "results/p2/summary_weather.json",
         "results/p3/summary_geometry.json",
         "results/e1/table_e1.csv",
+        "results/e2/summary_e2.json",
+        "twin/exchange/facet_samples.csv",
 
 
 # ---------------------------------------------------------------- P0 bootstrap
@@ -394,8 +396,40 @@ rule e1_verification:
         experiment("e1_verify").main(output.table, output.summary)
 
 
+# ---------------------------------------------------------------- P5 / E2
+VEHICLE_CFG = "configs/vehicle/solaris_p0.yaml"
+
+
+rule facet_samples:
+    """twin/exchange/facet_samples.csv: facet sample points on a 0.25 m grid (body frame)."""
+    input:
+        VEHICLE_CFG,
+    output:
+        "twin/exchange/facet_samples.csv",
+    run:
+        experiment("e2_facets").write_facet_samples(output[0])
+
+
+rule e2_facets:
+    """E2: facet orientation, open sky. Cases 2a-2d on the measured TMY; 2b = 2a +/- 0.5 %."""
+    input:
+        vehicle=VEHICLE_CFG,
+        base="configs/base.yaml",
+        tmy=nsrdb_raw("tmy"),
+        e0_tmy=E0["inputs"]["tmy_phoenix"]["path"],
+        b0=E0["b0"]["out_table"],
+        code=sorted(str(f) for f in Path("src/solaris/pv").glob("*.py"))
+        + sorted(str(f) for f in Path("src/solaris/vehicle").glob("*.py"))
+        + CORE_SRC,
+    output:
+        table="results/e2/table_e2.csv",
+        facets="results/e2/table_e2_facets.csv",
+        summary="results/e2/summary_e2.json",
+    run:
+        experiment("e2_facets").main(output.table, output.facets, output.summary)
+
+
 # ---------------------------------------------------------------- planned rules
-# P5  E2   e2_facets                         -> results/e2/
 # P6  E3/4 routes_select, sumo_traces, e3_driving, e4_parking
 # P7  E5/6 e5_annual, e6_mismatch            -> waterfall figure
 # P8  E8   e8_twin_agreement, e8_mapillary_svf

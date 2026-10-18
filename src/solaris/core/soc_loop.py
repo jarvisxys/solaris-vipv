@@ -59,11 +59,14 @@ def simulate(
     site: Site | None = None,
     P_susp=None,
     p: Params = BASE,
+    pv_kwh=None,
 ):
     """Run one year hour by hour and return f_ss, grid energy, charge events and the SoC trace.
 
     ``climate`` is a measured (GHI W/m2, T C) series; otherwise the synthetic climate of
     ``site`` (default: the conference site for ``loc``) is generated with ``seed``.
+    ``pv_kwh`` (journal extension, P5) replaces the conference flat-GHI PV model with an
+    8760-h PV energy series (kWh per hour, before ``pv_scale``), e.g. the facet model.
     """
     kappa = p.kappa_pv if kappa is None else kappa
     floor = p.floor if floor is None else floor
@@ -81,7 +84,10 @@ def simulate(
     E_prop_h = np.where(drive, wh * trip_km / 1000.0, 0.0)
     E_susp_h = np.where(drive, P_susp * frac / 1000.0, 0.0)
     Pcell = Tamb + p.cell_temp_rise * (ghi / 1000.0)
-    E_pv_h = pv_scale * A * p.eta_pv * (ghi / 1000.0) * kappa * (1 + p.beta * (Pcell - 25))
+    if pv_kwh is None:
+        E_pv_h = pv_scale * A * p.eta_pv * (ghi / 1000.0) * kappa * (1 + p.beta * (Pcell - 25))
+    else:
+        E_pv_h = pv_scale * np.asarray(pv_kwh, float)
     E_aux_h = aux_power_W(Tamb, daily_km, city, p) / 1000.0
     E_teg_h = e_teg(p) / 24.0
     harv = E_pv_h + E_susp_h + E_teg_h

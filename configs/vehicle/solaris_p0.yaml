@@ -1,0 +1,33 @@
+# SOLARIS P0 PV skin (P5 / E2). PLACEHOLDER LAYOUT: the intended panel layout is unconfirmed,
+# so this is the workflow guide's placeholder (Sec. 5, E2), totalling the conference 11.6 m2.
+# Case 2d (roof only, 4.4 m2) is the bound reported with it. Author decision 2026-10-18.
+#
+# Body frame: x forward, y left, z up (m), origin on the ground under the body centre.
+# azimuth_body_deg: where the facet faces, clockwise from the vehicle's forward direction
+# (0 front, 90 right, 180 rear, 270 left); compass azimuth = heading + azimuth_body.
+# Each facet is a rectangle: `across_m` along its horizontal edge, `slope_m` up its slope.
+
+name: SOLARIS P0, seven-seat SUV (conference variant P0)
+status: placeholder
+body: {length_m: 5.0, width_m: 2.0, height_m: 1.85}
+sample_spacing_m: 0.25            # facet sampling grid
+
+pv:                               # electrical constants come from configs/base.yaml
+  temperature_model: faiman       # pvlib.temperature.faiman, wind = ambient + vehicle speed
+  faiman: {u0: 25.0, u1: 6.84}    # pvlib defaults (W/m2/K, W/m2/K per m/s), open rack
+  faiman_sensitivity:             # body-bonded skins run hotter (E2 sensitivity rows)
+    close_mount: {u0: 20.0, u1: 6.0}
+    semi_integrated: {u0: 20.0, u1: 0.0}
+  albedo: 0.20                    # guide base value; sweep 0.12-0.30
+
+facets:
+  - {id: roof,      area_m2: 4.4, tilt_deg: 2,  azimuth_body_deg: 0,
+     centre_m: [-0.10,  0.00, 1.85], across_m: 1.6, slope_m: 2.75}
+  - {id: hood,      area_m2: 1.6, tilt_deg: 10, azimuth_body_deg: 0,
+     centre_m: [ 1.75,  0.00, 1.05], across_m: 1.6, slope_m: 1.0}
+  - {id: tailgate,  area_m2: 0.6, tilt_deg: 60, azimuth_body_deg: 180,
+     centre_m: [-2.35,  0.00, 1.45], across_m: 1.2, slope_m: 0.5}
+  - {id: side_left, area_m2: 2.5, tilt_deg: 85, azimuth_body_deg: 270,
+     centre_m: [ 0.00,  1.00, 1.00], across_m: 4.0, slope_m: 0.625}
+  - {id: side_right, area_m2: 2.5, tilt_deg: 85, azimuth_body_deg: 90,
+     centre_m: [ 0.00, -1.00, 1.00], across_m: 4.0, slope_m: 0.625}

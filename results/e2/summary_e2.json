@@ -1,0 +1,58 @@
+{
+  "layout": "placeholder",
+  "area_m2": 11.6,
+  "ghi_kWh_m2_yr": 2110.0,
+  "scenario_II": {
+    "check_2b_vs_2a": {
+      "pv_rel": -0.00031,
+      "fss_rel": -0.0003,
+      "tol": 0.005,
+      "pass": true
+    },
+    "thermal_step_2bF_vs_2b": 0.00545,
+    "F_geo_2c": 0.8047,
+    "F_geo_2d": 0.3795,
+    "fss": {
+      "2a": 0.7787,
+      "2b": 0.7785,
+      "2b+F": 0.7826,
+      "2c": 0.635,
+      "2d": 0.3136
+    },
+    "charges_per_yr": {
+      "2a": 6,
+      "2c": 10,
+      "2d": 20
+    },
+    "delta_fss_2c_vs_2a": -0.1437,
+    "drive_fraction_in_trip_hours": 0.9079,
+    "drive_speed_mps": 7.649
+  },
+  "scenario_I": {
+    "check_2b_vs_2a": {
+      "pv_rel": -0.00031,
+      "fss_rel": -0.0003,
+      "tol": 0.005,
+      "pass": true
+    },
+    "thermal_step_2bF_vs_2b": 0.00595,
+    "F_geo_2c": 0.8048,
+    "F_geo_2d": 0.3795,
+    "fss": {
+      "2a": 0.3886,
+      "2b": 0.3885,
+      "2b+F": 0.3907,
+      "2c": 0.3173,
+      "2d": 0.1573
+    },
+    "charges_per_yr": {
+      "2a": 35,
+      "2c": 39,
+      "2d": 48
+    },
+    "delta_fss_2c_vs_2a": -0.0713,
+    "drive_fraction_in_trip_hours": 1.0,
+    "drive_speed_mps": 12.904
+  },
+  "pass": true
+}
