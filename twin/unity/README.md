@@ -161,16 +161,33 @@ its facet normal. Select the SUV to see the samples as gizmos. Right-click the
 1. **SOLARIS → 5 Build playback scene (render)** creates `Assets/Scenes/Playback.unity`:
    E8 geometry, the SUV, a *TrajectoryPlayer*, the *Sun* light, a *ChaseCamera* and a
    *PvHud*.
+   For a scene built before this option existed, open it and run **SOLARIS → 7** instead.
+   That adds the controls below without touching your Cesium setup.
 2. *TrajectoryPlayer* fields:
    - *Trajectory Path* defaults to the render trip,
      `../../exchange/trajectories/trajectory_R-DENSE_fwd_1800_medium_2023-12-21.csv`
      (R-DENSE, 08:00, 21 December). Any exported file works.
-   - *Records Per Frame*: 1 means one second of trajectory per rendered frame, i.e. 30× real
-     time at 30 fps.
-3. Press **Play**. The player steps record by record, never by frame time, so every run is
-   identical. Car yaw = heading (Unity +Z is north; positive rotation about +Y turns it east).
-   The *Sun* light follows the record's pvlib sun angles and switches off when the sun is
-   below the horizon.
+   - *Speed*: trajectory seconds per second; 1 = real time.
+   - *Fixed Fps*: 0 for viewing. For Unity Recorder, set it to the recording frame rate so
+     every frame advances the same amount and the video is deterministic.
+   - *Wait For Tiles*: the clock stops while Cesium tiles in view load, so roads and
+     buildings are drawn before the car moves on.
+3. Press **Play**. The pose is interpolated between the 1 Hz records. Car yaw = heading
+   (Unity +Z is north; positive rotation about +Y turns it east). The *Sun* light follows the
+   pvlib sun angles and switches off when the sun is below the horizon.
+
+   Keys:
+   - Space: play/pause
+   - ← / →: back / forward 10 s
+   - [ / ]: half / double speed
+   - R: restart
+   - **Tab**: drive the car yourself (W/S throttle, A/D steer; the sun stays at the moment you
+     took over; Tab again returns to the trajectory)
+   - **M**: show/hide the shade dots on the skin (yellow lit, green tree, blue building, grey
+     sun behind the facet, with the lit share per facet at the bottom right)
+   - Right-drag: orbit the camera; scroll: zoom; C: reset the view
+
+   All of this is display only; reported numbers come from the batch run.
 
 ## 10. Visibility probe (what the batch run does)
 
@@ -253,9 +270,9 @@ Then `e8_twin_agreement` writes `results/e8/summary_e8_unity.json`, `table_e8_tr
    - *Format*: MP4 (H.264), quality High.
    - *Recording Mode*: Manual. *Playback*: **Constant**, 30 fps, *Cap FPS* on.
    - *Path*: `Recordings/rdense_0800_1221` (inside the project; gitignored).
-4. Press **Start Recording** (it enters Play mode). Stop when the trip ends; at
-   *Records Per Frame* = 1 that is about 30 s of video. Lower it for slow motion by using a
-   higher frame rate instead; never drive playback from frame time.
+   - On *TrajectoryPlayer* set **Fixed Fps = 30** (the recording rate) and *Speed* as wanted
+     (e.g. 4 gives a 15-min trip in about 4 min).
+4. Press **Start Recording** (it enters Play mode). Stop when the trip ends.
 5. The video is display only. Its numbers (HUD) come from Python.
 
 ## 15. Troubleshooting

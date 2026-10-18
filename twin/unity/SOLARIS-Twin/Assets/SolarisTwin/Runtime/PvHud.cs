@@ -39,11 +39,19 @@ namespace SolarisTwin
                 fontSize = fontSize, alignment = TextAnchor.UpperLeft, richText = true,
             };
             var r = player.Current;
-            string pv = _pv.TryGetValue(r.tUtc, out float w) ? $"{w:F0} W" : "n/a";
+            string pv = player.externalControl
+                ? "n/a (drive mode)"
+                : _pv.TryGetValue(r.tUtc, out float w) ? $"{w:F0} W" : "n/a";
+            string state = player.TilesLoading
+                ? $"loading tiles {player.TileProgress:F0} %"
+                : player.Playing ? $"playing x{player.speed:0.###}" : "paused";
             string text =
                 $"<b>PV power  {pv}</b>\n{r.tUtc}   sun el {r.sunElDeg:F1}°   {r.speedMps * 3.6f:F0} km/h" +
-                (r.covered ? "   <b>covered</b>" : "");
-            GUI.Box(new Rect(24, 24, 700, 2.6f * fontSize + 24), text, _style);
+                (r.covered ? "   <b>covered</b>" : "") +
+                $"\n{state}   {100f * player.Time01:F0} % of trip" +
+                "\n<size=14>Space play/pause · ←/→ ∓10 s · [ ] speed · R restart · Tab drive · " +
+                "M dots · right-drag orbit · scroll zoom · C reset view</size>";
+            GUI.Box(new Rect(24, 24, 760, 3.8f * fontSize + 40), text, _style);
         }
     }
 }

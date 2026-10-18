@@ -12,6 +12,7 @@
 //   5 Playback scene   E8 scene + SUV + TrajectoryPlayer + sun + chase camera + PV overlay,
 //                      saved as Assets/Scenes/Playback.unity (renders; display only).
 //   6 Display mode     AnalysisGeometry visible / shadows only / hidden (colliders kept).
+//   7 Controls         real-time playback, drive mode and shade dots on an existing scene.
 // Batch entries: SolarisTwin.Editor.TwinSetup.BuildAnalysisSceneBatch, PlaybackSceneBatch.
 using System;
 using System.IO;
@@ -181,8 +182,39 @@ namespace SolarisTwin.Editor
             c.farClipPlane = 6000f;
             cam.AddComponent<ChaseCamera>().target = suv.transform;
             cam.AddComponent<PvHud>().player = player;
+            AddControls(player, suv.transform);
             EditorSceneManager.SaveScene(scene, PlaybackScene);
             Debug.Log($"[TwinSetup] saved {PlaybackScene}");
+        }
+
+        /// Real-time playback settings, manual driving and live shade dots on the skin.
+        static void AddControls(TrajectoryPlayer player, Transform suv)
+        {
+            player.speed = 1f;
+            player.fixedFps = 0;
+            player.waitForTiles = true;
+            var drv = player.GetComponent<VehicleDriver>();
+            if (drv == null) drv = player.gameObject.AddComponent<VehicleDriver>();
+            drv.player = player;
+            drv.car = suv;
+            var dots = suv.GetComponent<ShadeMarkers>();
+            if (dots == null) dots = suv.gameObject.AddComponent<ShadeMarkers>();
+            dots.player = player;
+        }
+
+        [MenuItem("SOLARIS/7 Add playback and driving controls to the open scene")]
+        public static void AddControlsToOpenScene()
+        {
+            var player = Object.FindFirstObjectByType<TrajectoryPlayer>();
+            if (player == null || player.car == null)
+            {
+                Debug.LogError("[TwinSetup] open Playback.unity first (needs a TrajectoryPlayer with its car)");
+                return;
+            }
+            AddControls(player, player.car);
+            EditorSceneManager.MarkSceneDirty(player.gameObject.scene);
+            EditorSceneManager.SaveScene(player.gameObject.scene);
+            Debug.Log("[TwinSetup] added real-time playback, drive mode (Tab) and shade dots (M); scene saved");
         }
 
         public static void PlaybackSceneBatch() => Batch(BuildPlaybackScene);
