@@ -13,6 +13,7 @@
 //                      saved as Assets/Scenes/Playback.unity (renders; display only).
 //   6 Display mode     AnalysisGeometry visible / shadows only / hidden (colliders kept).
 //   7 Controls         real-time playback, drive mode and shade dots on an existing scene.
+//   8 SOLARIS model    the Blender-built SOLARIS P0 body replaces the box on the SUV prefab.
 // Batch entries: SolarisTwin.Editor.TwinSetup.BuildAnalysisSceneBatch, PlaybackSceneBatch.
 using System;
 using System.IO;
@@ -45,6 +46,7 @@ namespace SolarisTwin.Editor
         public const string AnalysisScene = "Assets/Scenes/E8.unity";
         public const string PlaybackScene = "Assets/Scenes/Playback.unity";
         public const string SuvPrefab = "Assets/SolarisTwin/Prefabs/SUV.prefab";
+        public const string SuvModel = "Assets/SolarisTwin/Models/SOLARIS_P0.glb";
         static readonly string[] Layers = { "Buildings", "Trees" };
 
         static string Exchange(string name) => Path.Combine(TwinPaths.Exchange, name);
@@ -147,8 +149,63 @@ namespace SolarisTwin.Editor
             var prefab = PrefabUtility.SaveAsPrefabAsset(suv, SuvPrefab);
             Object.DestroyImmediate(suv);
             Debug.Log($"[TwinSetup] saved {SuvPrefab}");
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(SuvModel) != null)
+                prefab = UseSolarisModel();
             return prefab;
         }
+
+        /// The SOLARIS P0 body (twin/blender/build_solaris_p0.py, PV facets exactly as in
+        /// configs/vehicle/solaris_p0.yaml) replaces the box. Visual only: no colliders.
+        [MenuItem("SOLARIS/8 Use SOLARIS P0 model on the SUV prefab")]
+        public static GameObject UseSolarisModel()
+        {
+            var model = AssetDatabase.LoadAssetAtPath<GameObject>(SuvModel);
+            if (model == null)
+                throw new FileNotFoundException($"not imported: {SuvModel}");
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(SuvPrefab) == null)
+                return CreateVehiclePrefab();
+            var root = PrefabUtility.LoadPrefabContents(SuvPrefab);
+            try
+            {
+                var old = root.transform.Find("Model");
+                if (old != null) Object.DestroyImmediate(old.gameObject);
+                var inst = (GameObject)PrefabUtility.InstantiatePrefab(model);
+                inst.name = "Model";
+                inst.transform.SetParent(root.transform, false);
+                inst.transform.localPosition = Vector3.zero;
+                inst.transform.localRotation = Quaternion.identity;
+                inst.transform.localScale = Vector3.one;
+                foreach (var c in inst.GetComponentsInChildren<Collider>(true))
+                    Object.DestroyImmediate(c); // rays must never hit the car
+                var body = root.transform.Find("Body");
+                if (body != null) body.gameObject.SetActive(false);
+
+                // orientation check: front lights ahead (+Z), roof panel on top, wheels on y = 0
+                Vector3 Centre(string n)
+                {
+                    foreach (var t in inst.GetComponentsInChildren<Transform>(true))
+                        if (t.name.StartsWith(n) && t.TryGetComponent<Renderer>(out var r))
+                            return root.transform.InverseTransformPoint(r.bounds.center);
+                    return new Vector3(float.NaN, float.NaN, float.NaN);
+                }
+                Vector3 front = Centre("LED_Front_Bar"), roof = Centre("PV_roof"), mirror = Centre("Mirror_L");
+                var all = new Bounds(root.transform.position, Vector3.zero);
+                foreach (var r in inst.GetComponentsInChildren<Renderer>(true)) all.Encapsulate(r.bounds);
+                Debug.Log($"[TwinSetup] SOLARIS model: front bar {front}, roof panel {roof}, left mirror {mirror}, " +
+                          $"bounds min {all.min} max {all.max}");
+                if (!(front.z > 2f && roof.y > 1.7f && mirror.x < 0f && Mathf.Abs(all.min.y) < 0.05f))
+                    throw new InvalidOperationException("SOLARIS model is not oriented x right, y up, z forward");
+                var prefab = PrefabUtility.SaveAsPrefabAsset(root, SuvPrefab);
+                Debug.Log($"[TwinSetup] {SuvPrefab}: SOLARIS P0 model in, box hidden");
+                return prefab;
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        public static void UseSolarisModelBatch() => Batch(() => UseSolarisModel());
 
         [MenuItem("SOLARIS/4 Ground-control check")]
         public static bool RunGroundControl()

@@ -19,6 +19,10 @@
 /Assets/Scenes/Playback.unity
 /Assets/Scenes/Playback.unity.meta
 
+# Unity's crash backups of unsaved scenes
+/Assets/_Recovery/
+/Assets/_Recovery.meta
+
 # Cesium ion access tokens are written here after sign-in: never commit them
 /Assets/CesiumSettings/
 /Assets/CesiumSettings.meta

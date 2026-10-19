@@ -152,7 +152,14 @@ one mark means local mesh decimation; check the mark in the Scene view.
   (`FacetSampleLoader.cs`).
 
 Body frame x forward, y left, z up maps to Unity local (−y, z, x). Each child's blue axis is
-its facet normal. Select the SUV to see the samples as gizmos. Right-click the
+its facet normal.
+
+**The SOLARIS P0 body** (`Assets/SolarisTwin/Models/SOLARIS_P0.glb`) replaces the box: run
+**SOLARIS → 8 Use SOLARIS P0 model on the SUV prefab** (step 3 does it automatically when the
+model exists). It was built in Blender by `twin/blender/build_solaris_p0.py` around the exact
+PV facets of `configs/vehicle/solaris_p0.yaml` (a test keeps the two equal) and exported by
+`twin/blender/export_solaris_p0.py`. Visual only: no colliders, and the results use the yaml
+facets, never this mesh. To change the design: run both scripts in Blender, then SOLARIS → 8. Select the SUV to see the samples as gizmos. Right-click the
 *FacetSampleLoader* component → *Load facet samples* reloads them after the skin changes
 (re-run `snakemake -c1 facet_samples` first).
 
