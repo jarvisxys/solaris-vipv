@@ -119,6 +119,32 @@ namespace SolarisTwin.Visual.Editor
 
         public static void InstallDashboardBatch() => Batch(InstallDashboard);
 
+        [MenuItem("SOLARIS Visual/2 Install street banner (Playback)")]
+        public static void InstallStreetBanner()
+        {
+            OpenPlayback();
+            int visual = EnsureVisualLayer();
+            var player = Object.FindFirstObjectByType<TrajectoryPlayer>();
+            if (player == null)
+                throw new InvalidOperationException("Playback.unity has no TrajectoryPlayer");
+            var go = GameObject.Find("Visual_StreetBanner");
+            if (go == null) go = new GameObject("Visual_StreetBanner");
+            var doc = go.GetComponent<UIDocument>();
+            if (doc == null) doc = go.AddComponent<UIDocument>();
+            doc.panelSettings = HudPanelSettings();
+            doc.sortingOrder = 11;
+            var banner = go.GetComponent<StreetBanner>();
+            if (banner == null) banner = go.AddComponent<StreetBanner>();
+            banner.player = player;
+            SetLayer(go, visual);
+            var scene = player.gameObject.scene;
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log("[VisualSetup] street banner installed in Playback.unity");
+        }
+
+        public static void InstallStreetBannerBatch() => Batch(InstallStreetBanner);
+
         static void Batch(Action a)
         {
             int code = 0;

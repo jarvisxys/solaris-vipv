@@ -1,13 +1,15 @@
 """Visual-only data for the Unity Playback scene (P8-visual). Never feeds a reported number.
 
 Writes twin/exchange/visual/hud_<trip>_<date>.csv (gitignored) for every exported trajectory:
-    t_utc, pv_W, trip_Wh, pv_<facet>_W ...
+    t_utc, pv_W, trip_Wh, pv_<facet>_W ..., street
 Per-second PV is E3 case C (buildings + trees, tau base) on the matching TMY day, the same
-arithmetic as the E8 render overlay (experiments/e8_validation/run.py: render_overlay). This
+arithmetic as the E8 render overlay (experiments/e8_validation/run.py: render_overlay). Street
+names come from the trace's OSM way ids and the raw OSM tiles of the SUMO network. This
 script only reads the frozen code and data.
 
     python twin/visual/export_visual.py            # all 120 R-DENSE trip-dates
     python twin/visual/export_visual.py --trip R-DENSE_fwd_1800_medium
+    python twin/visual/export_visual.py --streets  # street names only, into existing files
 """
 
 import argparse
@@ -93,8 +95,10 @@ def main(route="R-DENSE", only=None):
     for i, trip in enumerate(trips):
         f = data[trip]
         geo = e3m.TripGeometry(f, hz[trip], e3, cfg, vcfg)
+        streets = trip_streets(f, osm_street_names())
         for day in e3["days"]:
             df = trip_day_pv(e3m, geo, f, day, e3, vcfg, wx, meta)
+            df["street"] = streets
             df.to_csv(
                 OUT / f"hud_{trip}_{day}.csv", index=False, lineterminator="\n", float_format="%.3f"
             )
@@ -102,9 +106,61 @@ def main(route="R-DENSE", only=None):
         print(f"[visual] {i + 1}/{len(trips)} {trip} ({time.time() - t0:.0f} s)", flush=True)
 
 
+# ---------------------------------------------------------------- street names (feature 2)
+_NAMES = None
+
+
+def osm_street_names():
+    """OSM way id -> street name, from the raw OSM tiles behind the frozen SUMO network."""
+    global _NAMES
+    if _NAMES is None:
+        import xml.etree.ElementTree as ET
+
+        _NAMES = {}
+        for fn in sorted((REPO / "data" / "raw" / "osm").glob("sumo_roads_v2.osm_*.xml")):
+            for _, el in ET.iterparse(fn):
+                if el.tag == "way":
+                    tags = {t.get("k"): t.get("v") for t in el.findall("tag")}
+                    name = tags.get("name") or tags.get("ref") or ""
+                    _NAMES[el.get("id")] = name.replace(",", " ").strip()
+                    el.clear()
+    return _NAMES
+
+
+def trip_streets(f, names):
+    """Street name per trace second; junction seconds (no OSM way) keep the last street."""
+    way = f["way"].astype(str).str.replace(r"\.0$", "", regex=True)
+    s = way.map(lambda w: names.get(w, "")).replace("", np.nan)
+    return s.ffill().bfill().fillna("").to_numpy()
+
+
+def add_streets(route="R-DENSE"):
+    """Add or refresh the street column of existing HUD files without recomputing PV."""
+    e3 = yaml.safe_load((REPO / "configs" / "experiments" / "e3.yaml").read_text(encoding="utf-8"))
+    names = osm_street_names()
+    n = 0
+    for trip in ex.trip_names(route):
+        streets = trip_streets(ex.load_trip(trip), names)
+        for day in e3["days"]:
+            p = OUT / f"hud_{trip}_{day}.csv"
+            df = pd.read_csv(p, dtype={"t_utc": str})
+            if len(df) != len(streets):
+                raise ValueError(f"{p}: {len(df)} rows, trace has {len(streets)}")
+            df["street"] = streets
+            df.to_csv(p, index=False, lineterminator="\n", float_format="%.3f")
+            n += 1
+    print(f"[visual] street names added to {n} HUD files")
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--route", default="R-DENSE")
     ap.add_argument("--trip", default=None)
+    ap.add_argument(
+        "--streets", action="store_true", help="only add street names to existing files"
+    )
     a = ap.parse_args()
-    main(a.route, a.trip)
+    if a.streets:
+        add_streets(a.route)
+    else:
+        main(a.route, a.trip)

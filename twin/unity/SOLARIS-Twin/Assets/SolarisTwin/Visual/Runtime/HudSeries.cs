@@ -16,6 +16,7 @@ namespace SolarisTwin.Visual
         public float[] PvW { get; private set; } = new float[0];
         public float[] TripWh { get; private set; } = new float[0];
         public Dictionary<string, float[]> FacetW { get; } = new Dictionary<string, float[]>();
+        public string[] Street { get; private set; } = new string[0];
         public string Path { get; private set; }
         public bool Loaded => PvW.Length > 0;
 
@@ -39,17 +40,19 @@ namespace SolarisTwin.Visual
             var lines = File.ReadAllLines(path);
             var head = lines[0].Split(',');
             int Col(string c) => System.Array.IndexOf(head, c);
-            int iT = Col("t_utc"), iP = Col("pv_W"), iE = Col("trip_Wh");
+            int iT = Col("t_utc"), iP = Col("pv_W"), iE = Col("trip_Wh"), iS = Col("street");
             var fi = new Dictionary<string, int>();
             foreach (var f in Facets) fi[f] = Col($"pv_{f}_W");
             int n = lines.Length - 1;
             s.PvW = new float[n];
             s.TripWh = new float[n];
             foreach (var f in Facets) s.FacetW[f] = new float[n];
+            s.Street = new string[n];
             for (int k = 0; k < n; k++)
             {
                 var c = lines[k + 1].Split(',');
                 s._row[c[iT]] = k;
+                s.Street[k] = iS >= 0 && iS < c.Length ? c[iS] : "";
                 s.PvW[k] = float.Parse(c[iP], inv);
                 s.TripWh[k] = float.Parse(c[iE], inv);
                 foreach (var f in Facets)
