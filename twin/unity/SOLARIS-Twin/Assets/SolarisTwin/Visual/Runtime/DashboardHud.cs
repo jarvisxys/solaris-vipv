@@ -3,8 +3,8 @@
 // trajectory's pvlib values (TrajectoryPlayer); lit shares from FacetLitShare's rays.
 //   top left   clock (MST), date, trip, speed, progress, play state
 //   top centre covered/tunnel badge
-//   top right  sun compass, car-relative (car points up)
-//   right      car diagram: lit share per facet + Python W per facet
+//   right      car diagram under the mini-map (MiniMap shows the sun): lit share per facet +
+//              Python W per facet
 //   bottom     PV gauge, trip Wh, 60 s sparkline
 // Key H shows/hides the HUD.
 using System;
@@ -44,10 +44,10 @@ namespace SolarisTwin.Visual
 
         HudSeries _series = new HudSeries();
         string _seriesFor;
-        VisualElement _root, _gauge, _spark, _compass, _car, _tunnel, _progressFill, _northTag;
-        Label _pv, _pvUnit, _tripWh, _avg, _clock, _date, _trip, _speed, _state, _sun;
+        VisualElement _root, _gauge, _spark, _car, _tunnel, _progressFill;
+        Label _pv, _pvUnit, _tripWh, _avg, _clock, _date, _trip, _speed, _state;
         readonly Dictionary<string, (VisualElement swatch, Label text)> _rows = new();
-        float _pvNow = float.NaN, _sunAz, _sunEl, _heading;
+        float _pvNow = float.NaN;
         readonly float[] _sparkBuf = new float[60];
         int _sparkN;
 
@@ -163,27 +163,8 @@ namespace SolarisTwin.Visual
             _tunnel.style.display = DisplayStyle.None;
             root.Add(_tunnel);
 
-            // top right: sun compass
-            var tr = Box(-1, 24, 24, -1, 236, 0);
-            tr.Add(Text("SUN, car-relative", 12, Muted, true));
-            var compassWrap = new VisualElement { pickingMode = PickingMode.Ignore };
-            compassWrap.style.width = 200;
-            compassWrap.style.height = 200;
-            compassWrap.style.marginTop = 6;
-            _compass = Canvas(200, 200, DrawCompass);
-            _compass.style.position = Position.Absolute;
-            compassWrap.Add(_compass);
-            _northTag = Text("N", 13, Ink2, true);
-            _northTag.style.position = Position.Absolute;
-            compassWrap.Add(_northTag);
-            tr.Add(compassWrap);
-            _sun = Text("", 14, Ink);
-            _sun.style.marginTop = 6;
-            tr.Add(_sun);
-            root.Add(tr);
-
-            // right: car diagram with per-facet rows
-            var cr = Box(-1, 330, 24, -1, 236, 0);
+            // right, under the mini-map (MiniMap shows the sun): car diagram with per-facet rows
+            var cr = Box(-1, 24 + MiniMap.MiniSize + 26 + 12, 24, -1, MiniMap.MiniSize, 0);
             cr.Add(Text("PANELS · direct sun · PV power", 12, Muted, true));
             var carWrap = new VisualElement { pickingMode = PickingMode.Ignore };
             carWrap.style.alignItems = Align.Center;
@@ -254,7 +235,7 @@ namespace SolarisTwin.Visual
             bl.Add(right);
             root.Add(bl);
 
-            var keys = Text("H HUD · M dots · Space pause · ←/→ 10 s · [ ] speed · Tab drive · C view",
+            var keys = Text("H HUD · M dots · N map · B map background · Space pause · ←/→ 10 s · [ ] speed · Tab drive · C view",
                 12, new Color(1, 1, 1, 0.55f));
             keys.style.position = Position.Absolute;
             keys.style.right = 24;
@@ -297,18 +278,6 @@ namespace SolarisTwin.Visual
                 : player.Playing ? $"playing ×{player.speed:0.###}" : "paused";
             _tunnel.style.display = player.Covered && !driving ? DisplayStyle.Flex : DisplayStyle.None;
 
-            // sun (from the trajectory's pvlib angles) relative to the car
-            var d = player.SunDirection;
-            _sunAz = (Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg + 360f) % 360f;
-            _sunEl = player.SunElevation;
-            _heading = player.car != null ? player.car.eulerAngles.y : 0f;
-            _sun.text = _sunEl > 0f
-                ? $"elevation {_sunEl:0.0}°   azimuth {_sunAz:0}°"
-                : $"sun below the horizon ({_sunEl:0.0}°)";
-            float nAng = (-_heading - 90f) * Mathf.Deg2Rad; // dial: up = car forward
-            _northTag.style.left = 100 + 88 * Mathf.Cos(nAng) - 5;
-            _northTag.style.top = 100 + 88 * Mathf.Sin(nAng) - 8;
-
             // PV and trip energy from Python
             int row = driving ? -1 : _series.RowOf(r.tUtc);
             if (row >= 0)
@@ -349,7 +318,6 @@ namespace SolarisTwin.Visual
 
             _gauge.MarkDirtyRepaint();
             _spark.MarkDirtyRepaint();
-            _compass.MarkDirtyRepaint();
             _car.MarkDirtyRepaint();
         }
 
@@ -437,55 +405,6 @@ namespace SolarisTwin.Visual
             p.MoveTo(P(0));
             for (int i = 1; i < _sparkN; i++) p.LineTo(P(i));
             p.Stroke();
-        }
-
-        void DrawCompass(MeshGenerationContext mgc)
-        {
-            var p = mgc.painter2D;
-            var c = new Vector2(100, 100);
-            const float R = 78f;
-            p.lineWidth = 2;
-            p.strokeColor = Track;
-            p.BeginPath();
-            p.Arc(c, R, Angle.Degrees(0), Angle.Degrees(360));
-            p.Stroke();
-            p.BeginPath();
-            p.Arc(c, R * 2f / 3f, Angle.Degrees(0), Angle.Degrees(360)); // 30 deg elevation ring
-            p.Stroke();
-            p.BeginPath();
-            p.Arc(c, R / 3f, Angle.Degrees(0), Angle.Degrees(360)); //      60 deg
-            p.Stroke();
-            // car in the middle, pointing up
-            p.fillColor = Ink2;
-            p.BeginPath();
-            p.MoveTo(c + new Vector2(0, -12));
-            p.LineTo(c + new Vector2(8, 10));
-            p.LineTo(c + new Vector2(0, 5));
-            p.LineTo(c + new Vector2(-8, 10));
-            p.ClosePath();
-            p.Fill();
-            // sun: angle relative to the heading, radius from elevation (zenith in the centre)
-            float rel = (_sunAz - _heading - 90f) * Mathf.Deg2Rad;
-            float rr = _sunEl > 0f ? R * (1f - _sunEl / 90f) : R;
-            var s = c + new Vector2(Mathf.Cos(rel), Mathf.Sin(rel)) * rr;
-            if (_sunEl > 0f)
-            {
-                p.fillColor = new Color(Amber.r, Amber.g, Amber.b, 0.25f);
-                p.BeginPath();
-                p.Arc(s, 15, Angle.Degrees(0), Angle.Degrees(360));
-                p.Fill();
-                p.fillColor = Amber;
-                p.BeginPath();
-                p.Arc(s, 8, Angle.Degrees(0), Angle.Degrees(360));
-                p.Fill();
-            }
-            else
-            {
-                p.strokeColor = Muted;
-                p.BeginPath();
-                p.Arc(s, 7, Angle.Degrees(0), Angle.Degrees(360));
-                p.Stroke();
-            }
         }
 
         void DrawCar(MeshGenerationContext mgc)

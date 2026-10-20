@@ -30,6 +30,9 @@ namespace SolarisTwin
         public float probeUp = 2.5f; // m above the wheels; lower so bridge decks are not climbed
         public float probeDown = 6f;
 
+        [Tooltip("Draw the drive-mode box (off when the visual dashboard shows drive mode)")]
+        public bool showGui = true;
+
         public bool Driving { get; private set; }
         public float Speed { get; private set; }
 
@@ -77,7 +80,7 @@ namespace SolarisTwin
 
         void OnGUI()
         {
-            if (!Driving) return;
+            if (!Driving || !showGui) return;
             var r = new Rect(Screen.width - 380, 24, 356, 74);
             GUI.Box(r, $"DRIVE MODE   {Speed * 3.6f:F0} km/h\n" +
                        "W/S throttle, A/D steer, Tab back to replay\n" +

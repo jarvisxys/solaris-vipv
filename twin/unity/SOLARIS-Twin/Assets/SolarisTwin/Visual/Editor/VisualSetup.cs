@@ -58,7 +58,7 @@ namespace SolarisTwin.Visual.Editor
             ps.scaleMode = PanelScaleMode.ScaleWithScreenSize;
             ps.referenceResolution = new Vector2Int(1920, 1080);
             ps.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
-            ps.match = 0.5f;
+            ps.match = 1f; // scale with screen height: the side columns always fit vertically
             EditorUtility.SetDirty(ps);
             AssetDatabase.SaveAssets();
             return ps;
@@ -109,6 +109,7 @@ namespace SolarisTwin.Visual.Editor
             hud.player = player;
             hud.litShare = lit;
             hud.driver = driver;
+            if (driver != null) driver.showGui = false; // the HUD shows drive mode itself
             SetLayer(go, visual);
 
             var scene = player.gameObject.scene;
@@ -144,6 +145,42 @@ namespace SolarisTwin.Visual.Editor
         }
 
         public static void InstallStreetBannerBatch() => Batch(InstallStreetBanner);
+
+        [MenuItem("SOLARIS Visual/3 Install mini-map (Playback)")]
+        public static void InstallMiniMap()
+        {
+            OpenPlayback();
+            int visual = EnsureVisualLayer();
+            var player = Object.FindFirstObjectByType<TrajectoryPlayer>();
+            if (player == null)
+                throw new InvalidOperationException("Playback.unity has no TrajectoryPlayer");
+            var go = GameObject.Find("Visual_MiniMap");
+            if (go == null) go = new GameObject("Visual_MiniMap");
+            var doc = go.GetComponent<UIDocument>();
+            if (doc == null) doc = go.AddComponent<UIDocument>();
+            doc.panelSettings = HudPanelSettings();
+            doc.sortingOrder = 12;
+            var map = go.GetComponent<MiniMap>();
+            if (map == null) map = go.AddComponent<MiniMap>();
+            map.player = player;
+            SetLayer(go, visual);
+            var scene = player.gameObject.scene;
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log("[VisualSetup] mini-map installed in Playback.unity");
+        }
+
+        public static void InstallMiniMapBatch() => Batch(InstallMiniMap);
+
+        [MenuItem("SOLARIS Visual/All: re-install every visual feature (Playback)")]
+        public static void InstallAll()
+        {
+            InstallDashboard();
+            InstallStreetBanner();
+            InstallMiniMap();
+        }
+
+        public static void InstallAllBatch() => Batch(InstallAll);
 
         static void Batch(Action a)
         {

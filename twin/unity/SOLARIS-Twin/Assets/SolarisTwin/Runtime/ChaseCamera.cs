@@ -18,12 +18,15 @@ namespace SolarisTwin
         [Range(0f, 1f)] public float smoothing = 0.15f;
         public float minDistance = 4f, maxDistance = 400f;
 
+        /// Set each frame by UI that owns the mouse (the full map under the cursor): no orbit/zoom.
+        public static bool MouseBlocked;
+
         void LateUpdate()
         {
             if (target == null) return;
 #if ENABLE_INPUT_SYSTEM
             var m = Mouse.current;
-            if (m != null)
+            if (m != null && !MouseBlocked)
             {
                 if (m.rightButton.isPressed)
                 {
