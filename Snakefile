@@ -573,7 +573,18 @@ rule e5_annual:
 # configs/experiments/e8.yaml. Mapillary needs MAPILLARY_TOKEN (user environment).
 E8_CFG = "configs/experiments/e8.yaml"
 UNITY_PROJ = "twin/unity/SOLARIS-Twin"
-UNITY_SRC = sorted(str(f) for f in Path(UNITY_PROJ, "Assets", "SolarisTwin").rglob("*.cs"))
+# Only the C# that can change E8 numbers (scene build, I/O, probe, ground control, batch);
+# display scripts (Runtime/* playback, Visual/**) never re-trigger the Unity run.
+UNITY_SRC = [
+    f"{UNITY_PROJ}/Assets/SolarisTwin/{f}"
+    for f in (
+        "Editor/TwinBatch.cs",
+        "Editor/TwinSetup.cs",
+        "Runtime/TwinIO.cs",
+        "Runtime/VisibilityProbe.cs",
+        "Runtime/GroundControlCheck.cs",
+    )
+]
 TWIN_IO_SRC = sorted(str(f) for f in Path("src/solaris/twin_io").glob("*.py"))
 
 

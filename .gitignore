@@ -45,6 +45,8 @@ twin/unity/SOLARIS-Twin/Recordings/
 # Exchange files rebuilt by rule e8_export
 twin/exchange/trajectories/
 twin/exchange/render/
+# Visual-only data for the Playback scene (twin/visual/export_visual.py)
+twin/exchange/visual/
 
 # LaTeX build products
 paper/**/*.aux
