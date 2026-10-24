@@ -172,12 +172,55 @@ namespace SolarisTwin.Visual.Editor
 
         public static void InstallMiniMapBatch() => Batch(InstallMiniMap);
 
+        [MenuItem("SOLARIS Visual/4 Install SUMO traffic + signals (Playback)")]
+        public static void InstallTraffic()
+        {
+            OpenPlayback();
+            int visual = EnsureVisualLayer();
+            var player = Object.FindFirstObjectByType<TrajectoryPlayer>();
+            if (player == null)
+                throw new InvalidOperationException("Playback.unity has no TrajectoryPlayer");
+            var go = GameObject.Find("Visual_Traffic");
+            if (go == null) go = new GameObject("Visual_Traffic");
+            var tp = go.GetComponent<TrafficPlayer>();
+            if (tp == null) tp = go.AddComponent<TrafficPlayer>();
+            tp.player = player;
+            // models (twin/unity/CREDITS.md): cars from the CC-BY pack, signal kit built in Blender
+            const string models = "Assets/SolarisTwin/Visual/Models";
+            var cars = new System.Collections.Generic.List<GameObject>();
+            if (Directory.Exists(models + "/Cars"))
+            {
+                var files = Directory.GetFiles(models + "/Cars", "*.glb");
+                Array.Sort(files, StringComparer.Ordinal);
+                foreach (var f in files)
+                {
+                    var g = AssetDatabase.LoadAssetAtPath<GameObject>(f.Replace('\\', '/'));
+                    if (g != null) cars.Add(g);
+                }
+            }
+            tp.carPrefabs = cars.ToArray();
+            GameObject Kit(string n) => AssetDatabase.LoadAssetAtPath<GameObject>($"{models}/Signals/{n}.glb");
+            tp.signalHeadPrefab = Kit("SignalHead");
+            tp.signalPolePrefab = Kit("SignalPole");
+            tp.signalArmPrefab = Kit("SignalArm");
+            tp.leftTurnSignPrefab = Kit("LeftTurnSign");
+            Debug.Log($"[VisualSetup] traffic models: {cars.Count} cars, signal kit {(tp.signalHeadPrefab != null ? "ok" : "missing")}");
+            SetLayer(go, visual);
+            var scene = player.gameObject.scene;
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log("[VisualSetup] SUMO traffic + signals installed in Playback.unity");
+        }
+
+        public static void InstallTrafficBatch() => Batch(InstallTraffic);
+
         [MenuItem("SOLARIS Visual/All: re-install every visual feature (Playback)")]
         public static void InstallAll()
         {
             InstallDashboard();
             InstallStreetBanner();
             InstallMiniMap();
+            InstallTraffic();
         }
 
         public static void InstallAllBatch() => Batch(InstallAll);

@@ -1,5 +1,5 @@
-// SOLARIS-Twin visual: north-up mini-map with the sun (top right) and a full map of the study
-// area (key N). Display only. Data from Python (twin/exchange/visual): map.json (routes, parking
+// SOLARIS-Twin visual: heading-up mini-map with the sun (top right; the map turns so the car
+// always points up, N marks north on the rim) and a north-up full map of the study area (key N). Display only. Data from Python (twin/exchange/visual): map.json (routes, parking
 // sites, Overture footprints, OpenStreetMap landmarks, ENU) and map_naip.jpg (USDA NAIP aerial,
 // north-up ENU square). The trip path comes from the exported trajectory; the sun direction from
 // the trajectory's pvlib angles (TrajectoryPlayer). Unity computes nothing physical here.
@@ -62,6 +62,7 @@ namespace SolarisTwin.Visual
         public bool showFull, aerial = true;
 
         public const float MiniSize = 260f;
+        const float MiniDraw = MiniSize * 1.45f; // rotating layer: covers the panel at any angle
         const float FullSize = 940f;
         static readonly Color Bg = new Color(0.035f, 0.05f, 0.075f, 0.90f);
         static readonly Color Bldg = new Color(0.30f, 0.33f, 0.38f, 0.95f);
@@ -102,8 +103,8 @@ namespace SolarisTwin.Visual
         bool _dragging;
         Vector2 _lastPointer;
 
-        VisualElement _mini, _miniImg, _miniCanvas, _full, _fullImg, _fullCanvas;
-        Label _sunText, _bgHint, _scaleText;
+        VisualElement _mini, _miniRot, _miniImg, _miniCanvas, _full, _fullImg, _fullCanvas;
+        Label _sunText, _bgHint, _scaleText, _north;
         readonly List<Tag> _miniTags = new(), _fullTags = new();
         readonly List<Label> _gridCols = new(), _gridRows = new();
 
@@ -137,15 +138,21 @@ namespace SolarisTwin.Visual
             _mini = Panel(MiniSize, MiniSize + 26);
             _mini.style.right = 24;
             _mini.style.top = 24;
+            // map layer, larger than the panel, turned about the panel centre (heading-up)
+            _miniRot = new VisualElement { pickingMode = PickingMode.Ignore };
+            _miniRot.style.position = Position.Absolute;
+            _miniRot.style.width = _miniRot.style.height = MiniDraw;
+            _miniRot.style.left = _miniRot.style.top = (MiniSize - MiniDraw) / 2f;
+            _miniRot.style.overflow = Overflow.Hidden;
+            _miniRot.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
             _miniImg = Image();
-            _mini.Add(_miniImg);
-            _miniCanvas = Canvas(MiniSize, MiniSize, mgc => DrawMap(mgc, MiniSize, MiniSize, _car, MiniScale, true));
-            _mini.Add(_miniCanvas);
-            var n = Text("N", 14, Ink, true);
-            n.style.position = Position.Absolute;
-            n.style.left = MiniSize / 2f - 5;
-            n.style.top = 3;
-            _mini.Add(n);
+            _miniRot.Add(_miniImg);
+            _miniCanvas = Canvas(MiniDraw, MiniDraw, mgc => DrawMap(mgc, MiniDraw, MiniDraw, _car, MiniScale, true));
+            _miniRot.Add(_miniCanvas);
+            _mini.Add(_miniRot);
+            _north = Text("N", 14, Ink, true);
+            _north.style.position = Position.Absolute;
+            _mini.Add(_north);
             _sunText = Text("", 13, Ink);
             _sunText.style.position = Position.Absolute;
             _sunText.style.left = 10;
@@ -346,8 +353,13 @@ namespace SolarisTwin.Visual
                 ? $"SUN  elevation {_sunEl:0.0}°  ·  azimuth {_sunAz:0}°"
                 : $"SUN  below the horizon ({_sunEl:0.0}°)";
 
-            PlaceImage(_miniImg, MiniSize, MiniSize, _car, MiniScale);
-            PlaceTags(_miniTags, MiniSize, MiniSize, _car, MiniScale, 11);
+            // heading-up: turn the map layer by -heading; labels and N stay upright
+            _miniRot.style.rotate = new Rotate(Angle.Degrees(-_heading));
+            PlaceImage(_miniImg, MiniDraw, MiniDraw, _car, MiniScale);
+            PlaceTags(_miniTags, MiniSize, MiniSize, _car, MiniScale, 11, -_heading);
+            var nd = Turn(new Vector2(0f, -1f), -_heading) * (MiniSize / 2f - 13f);
+            _north.style.left = MiniSize / 2f + nd.x - 5f;
+            _north.style.top = MiniSize / 2f + nd.y - 8f;
             _miniCanvas.MarkDirtyRepaint();
 
             _full.style.display = showFull ? DisplayStyle.Flex : DisplayStyle.None;
@@ -356,6 +368,7 @@ namespace SolarisTwin.Visual
                 PlaceImage(_fullImg, FullSize, FullSize, _fullCentre, FullScale);
                 PlaceTags(_fullTags, FullSize, FullSize, _fullCentre, FullScale, 13);
                 PlaceGrid();
+                PlaceScaleText(FullScale);
                 _bgHint.text = aerial ? "B: aerial photo (USDA NAIP)" : "B: dark map";
                 _fullCanvas.MarkDirtyRepaint();
             }
@@ -415,14 +428,24 @@ namespace SolarisTwin.Visual
             img.style.height = _world.height * scale;
         }
 
+        /// Screen vector turned by deg (positive = clockwise on screen, whose y points down).
+        static Vector2 Turn(Vector2 v, float deg)
+        {
+            float a = deg * Mathf.Deg2Rad, c = Mathf.Cos(a), s = Mathf.Sin(a);
+            return new Vector2(v.x * c - v.y * s, v.x * s + v.y * c);
+        }
+
         /// Labels in priority order (parking sites, then landmarks largest first); one that would
-        /// overlap a label already placed is hidden, so zooming in reveals more names.
-        static void PlaceTags(List<Tag> tags, float sw, float sh, Vector2 centre, float scale, float font)
+        /// overlap a label already placed is hidden, so zooming in reveals more names. `turnDeg`
+        /// turns the anchor points about the panel centre (the heading-up mini-map).
+        static void PlaceTags(List<Tag> tags, float sw, float sh, Vector2 centre, float scale, float font,
+            float turnDeg = 0f)
         {
             var placed = new List<Rect>();
+            var mid = new Vector2(sw / 2f, sh / 2f);
             foreach (var t in tags)
             {
-                var s = ToScreen(new Vector2(t.point.x, t.point.y), sw, sh, centre, scale);
+                var s = mid + Turn(ToScreen(new Vector2(t.point.x, t.point.y), sw, sh, centre, scale) - mid, turnDeg);
                 var r = new Rect(s.x + 7, s.y - font * 0.6f, t.point.label.Length * font * 0.52f + 4, font + 4);
                 bool ok = r.xMin > 2 && r.xMax < sw - 2 && r.yMin > 32 && r.yMax < sh - 34;
                 if (ok)
@@ -502,10 +525,48 @@ namespace SolarisTwin.Visual
                 p.Arc(s, mini ? 3.5f : 4.5f, Angle.Degrees(0), Angle.Degrees(360));
                 p.Fill();
             }
+            DrawTraffic(p, sw, sh, centre, scale, reach, mini);
             var car = ToScreen(_car, sw, sh, centre, scale);
-            if (mini) DrawSun(p, car, sw);
+            if (mini) DrawSun(p, car, sw, MiniSize / 2f - 16f);
             else DrawScaleBar(p, sh, scale);
             DrawCar(p, car, mini ? 1f : 1.3f);
+        }
+
+        /// SUMO background cars (white dots) and signal heads (state colour), from TrafficPlayer.
+        void DrawTraffic(Painter2D p, float sw, float sh, Vector2 centre, float scale, float reach, bool mini)
+        {
+            if (!TrafficPlayer.Visible) return;
+            if (mini || scale >= 0.5f)
+                foreach (var (pos, state) in TrafficPlayer.SignalsEnu)
+                {
+                    if ((pos - centre).magnitude > reach) continue;
+                    var s = ToScreen(pos, sw, sh, centre, scale);
+                    float r = mini ? 2.5f : 3f;
+                    p.fillColor = Color.black;
+                    p.BeginPath();
+                    p.MoveTo(s + new Vector2(-r - 1, -r - 1));
+                    p.LineTo(s + new Vector2(r + 1, -r - 1));
+                    p.LineTo(s + new Vector2(r + 1, r + 1));
+                    p.LineTo(s + new Vector2(-r - 1, r + 1));
+                    p.ClosePath();
+                    p.Fill();
+                    p.fillColor = state == 'G' ? VisualModels.Green : state == 'Y' ? VisualModels.Amber : VisualModels.Red;
+                    p.BeginPath();
+                    p.MoveTo(s + new Vector2(-r, -r));
+                    p.LineTo(s + new Vector2(r, -r));
+                    p.LineTo(s + new Vector2(r, r));
+                    p.LineTo(s + new Vector2(-r, r));
+                    p.ClosePath();
+                    p.Fill();
+                }
+            p.fillColor = new Color(1f, 1f, 1f, 0.9f);
+            foreach (var c in TrafficPlayer.CarsEnu)
+            {
+                if ((c - centre).magnitude > reach) continue;
+                p.BeginPath();
+                p.Arc(ToScreen(c, sw, sh, centre, scale), mini ? 2.2f : 2.6f, Angle.Degrees(0), Angle.Degrees(360));
+                p.Fill();
+            }
         }
 
         void DrawGridLines(Painter2D p, float sw, float sh, Vector2 centre, float scale)
@@ -531,30 +592,43 @@ namespace SolarisTwin.Visual
             }
         }
 
-        void DrawScaleBar(Painter2D p, float sh, float scale)
+        static float ScaleBarMetres(float scale)
         {
             float[] nice = { 50, 100, 200, 500, 1000, 2000, 5000 };
             float m = nice[0];
             foreach (var v in nice)
                 if (v * scale <= 140f) m = v;
-            float len = m * scale, x0 = 18, y = sh - 46;
+            return m;
+        }
+
+        /// Painting only: no element may change while generateVisualContent runs.
+        static void DrawScaleBar(Painter2D p, float sh, float scale)
+        {
+            float len = ScaleBarMetres(scale) * scale, x0 = 18, y = sh - 46;
             p.strokeColor = Color.white;
             p.lineWidth = 3f;
             p.BeginPath();
             p.MoveTo(new Vector2(x0, y));
             p.LineTo(new Vector2(x0 + len, y));
             p.Stroke();
+        }
+
+        /// The scale bar's label, set from Update (never during drawing).
+        void PlaceScaleText(float scale)
+        {
+            float m = ScaleBarMetres(scale);
             _scaleText.text = m >= 1000 ? $"{m / 1000:0} km" : $"{m:0} m";
-            _scaleText.style.left = x0 + len + 8;
+            _scaleText.style.left = 18 + m * scale + 8;
             _scaleText.style.bottom = 39;
         }
 
-        void DrawSun(Painter2D p, Vector2 car, float size)
+        void DrawSun(Painter2D p, Vector2 car, float size, float radius)
         {
-            // sun on the rim at its compass azimuth (map north-up), ray from the car toward it
+            // sun on the visible rim at its compass azimuth (drawn north-up; the layer turns with
+            // the map), ray from the car toward it
             Vector2 c = new Vector2(size / 2f, size / 2f);
             Vector2 dir = new Vector2(_sunDir.x, -_sunDir.y); // screen y points down
-            Vector2 rim = c + dir * (size / 2f - 16f);
+            Vector2 rim = c + dir * radius;
             bool up = _sunEl > 0f;
             Color amber = new Color(1f, 0.78f, 0.15f);
             if (up)

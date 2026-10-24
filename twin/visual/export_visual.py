@@ -10,6 +10,8 @@ script only reads the frozen code and data.
     python twin/visual/export_visual.py            # all 120 R-DENSE trip-dates
     python twin/visual/export_visual.py --trip R-DENSE_fwd_1800_medium
     python twin/visual/export_visual.py --streets  # street names only, into existing files
+    python twin/visual/export_visual.py --traffic  # background cars + signals, from the
+        visual SUMO re-run (twin/visual/sumo_visual_job.py -> data/derived/visual/sumo)
 """
 
 import argparse
@@ -357,6 +359,204 @@ def map_landmarks(lines, tf, h0, n_max=16):
     return out
 
 
+# visual-only SUMO re-run (twin/visual/sumo_visual_job.py)
+VSUMO = REPO / "data" / "derived" / "visual" / "sumo"
+MODELS = 10  # visual car models (all SUMO background vehicles are 5 m passenger cars)
+
+
+def _ways(edges):
+    """OSM way per FCD row; None on a junction-internal lane (':...'), filled per vehicle by
+    the caller from the edge driven before it, so cars on a bridge junction stay on the deck."""
+    from solaris.trajectory.sumo import osm_way
+
+    return pd.Series([None if str(e).startswith(":") else osm_way(e) for e in edges], dtype=object)
+
+
+def export_traffic(route="R-DENSE"):
+    """Background cars around each R-DENSE ego, per trip, in the ego trace's own seconds.
+
+    Rows come from the visual SUMO re-run, which reproduces the frozen ego FCD exactly (checked
+    here again for every trip). Coordinates go through the frozen trace pipeline: lon/lat ->
+    to_utm -> ENU, heading from the SUMO angle via enu_heading, z = DEM (DSM on bridge ways);
+    vehicles on tunnel ways are dropped. Position = SUMO's front-bumper point, the convention
+    the ego car uses in Unity, so gaps and queues match SUMO.
+
+    twin/exchange/visual/traffic/traffic_<trip>.csv: k (s since the trace start), v (vehicle
+    number), x_e, y_n, z_u, heading_deg, model (0..3)."""
+    import zlib
+
+    from solaris.geometry.crs import to_utm
+    from solaris.shading.city import ground
+    from solaris.trajectory.sumo import bridge_way_ids, covered_layer
+
+    polys = covered_layer()
+    bridges = bridge_way_ids(polys)
+    tunnels = set(polys.loc[polys["kind"] == "tunnel", "osm_id"].astype(str))
+    tf = ex.enu()
+    out_dir = OUT / "traffic"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    egos = {}
+    cols = ["k", "v", "x_e", "y_n", "z_u", "heading_deg", "model"]
+    for trip in ex.trip_names(route):
+        veh, seed = trip.rsplit("_", 1)
+        f = ex.load_trip(trip)
+        t0, t1 = float(f["t"].iloc[0]), float(f["t"].iloc[-1])
+        if seed not in egos:
+            egos[seed] = pd.read_csv(VSUMO / f"ego_{seed}.csv")
+        ego = egos[seed][egos[seed]["veh"] == veh].set_index("t")
+        if not np.array_equal(ego.loc[f["t"], ["x", "y"]].to_numpy(), f[["x", "y"]].to_numpy()):
+            raise RuntimeError(f"{trip}: the visual SUMO re-run does not reproduce the frozen ego")
+        src = VSUMO / f"traffic_{veh}_{seed}.csv"
+        g = pd.read_csv(src) if src.exists() else pd.DataFrame(columns=["veh", "t", "edge"])
+        g = g[(g["t"] >= t0) & (g["t"] <= t1)].sort_values(["veh", "t"]).reset_index(drop=True)
+        if len(g):
+            way = (
+                _ways(g["edge"]).groupby(g["veh"].to_numpy()).transform(lambda s: s.ffill().bfill())
+            )
+            g = g.assign(way=way.to_numpy())
+            g = g[~g["way"].isin(tunnels)].reset_index(drop=True)
+        if len(g):
+            x, y = to_utm(g["lat"].to_numpy(), g["lon"].to_numpy())
+            on_bridge = g["way"].isin(bridges).to_numpy()
+            z = np.where(on_bridge, ground(x, y, layer="dsm.tif"), ground(x, y))
+            e, n, u = ex.to_enu(tf, x, y, z)
+            num = {v: i for i, v in enumerate(pd.unique(g["veh"]))}
+            t = pd.DataFrame(
+                {
+                    "k": (g["t"] - t0).round().astype(int),
+                    "v": g["veh"].map(num),
+                    "x_e": e.round(2),
+                    "y_n": n.round(2),
+                    "z_u": u.round(2),
+                    "heading_deg": ex.enu_heading(tf, x, y, z, g["angle"].to_numpy()).round(1),
+                    "model": [zlib.crc32(v.encode()) % MODELS for v in g["veh"]],
+                }
+            ).sort_values(["k", "v"])
+        else:
+            t = pd.DataFrame(columns=cols)
+        t[cols].to_csv(out_dir / f"traffic_{trip}.csv", index=False, lineterminator="\n")
+        at_once = int(t.groupby("k").size().max()) if len(t) else 0
+        print(f"[visual] {trip}: {t['v'].nunique()} cars, up to {at_once} at once")
+
+
+def export_signals(route="R-DENSE"):
+    """Traffic-signal heads of every signalised approach and their SUMO states per trip.
+
+    traffic/signals.json: heads at the stop-line point of each approach's rightmost lane (ENU,
+    z = DEM) with the lane heading, lane width, the SUMO link the head shows and `over`, the
+    head's position across the approach in lanes from the rightmost lane centre. Every approach
+    gets a head for its straight movement (or its only movement) and, where the left turn has
+    its own phase (its state differs from straight at some instant), a left-turn head over the
+    leftmost lane. `mast` marks the head that carries the pole and arm (the farthest left).
+    traffic/signals_<trip>.csv: k, head, state (G/Y/R) at every change, from the visual SUMO
+    run's SaveTLSSwitchStates."""
+    import json
+    import xml.etree.ElementTree as ET
+
+    from solaris.geometry.crs import to_utm
+    from solaris.shading.city import ground
+
+    colour = {"G": "G", "g": "G", "y": "Y", "Y": "Y"}  # red, red-yellow, off: red
+    switches = {}
+    for seed in ("low", "medium", "high"):
+        rows = [
+            (float(el.get("time")), el.get("id"), el.get("state"))
+            for el in ET.parse(VSUMO / f"tls_{seed}.xml").getroot()
+            if el.tag == "tlsState"
+        ]
+        switches[seed] = pd.DataFrame(rows, columns=["t", "tls", "state"])
+    states = pd.concat(switches.values())
+
+    def seq(tls, link):
+        s = states.loc[states["tls"] == tls, "state"].str[link]
+        return "".join(colour.get(ch, "R") for ch in s)
+
+    tf = ex.enu()
+    meta = json.loads((VSUMO / "tls_meta.json").read_text(encoding="utf-8"))
+    heads = []
+    for tls in meta:
+        by_edge = {}
+        for ln in tls["links"]:
+            by_edge.setdefault(ln["edge"], []).append(ln)
+        for edge, links in sorted(by_edge.items()):
+            right = min(links, key=lambda ln: ln["lane"])
+            lanes = right["lanes"]
+            main = min(links, key=lambda ln: (ln["dir"] != "s", ln["lane"]))
+            lefts = [ln for ln in links if ln["dir"] == "l"]
+            left = max(lefts, key=lambda ln: ln["lane"]) if lefts else None
+            if left is not None and seq(tls["id"], left["link"]) == seq(tls["id"], main["link"]):
+                left = None  # turns with the straight phase: one head says it all
+            x, y = to_utm(np.array([right["lat"]]), np.array([right["lon"]]))
+            z = ground(x, y)
+            e, n, u = ex.to_enu(tf, x, y, z)
+            heading = float(ex.enu_heading(tf, x, y, z, right["bearing"])[0])
+            # far side of the junction: where the shown movement's outgoing lane starts,
+            # measured along the approach (US mast arms stand on the far-side corner)
+            fx, fy = to_utm(np.array([main["far"][1]]), np.array([main["far"][0]]))
+            fe, fn, _ = ex.to_enu(tf, fx, fy, z)
+            hr = np.radians(heading)
+            far = float((fe[0] - e[0]) * np.sin(hr) + (fn[0] - n[0]) * np.cos(hr))
+            base = {
+                "tls": tls["id"],
+                "edge": edge,
+                "x": round(float(e[0]), 2),
+                "y": round(float(n[0]), 2),
+                "z": round(float(u[0]), 2),
+                "heading": round(heading, 1),
+                "width": right["width"],
+                "far": round(min(max(far, 0.0), 60.0), 2),
+            }
+            if left is None:
+                heads.append(
+                    {
+                        **base,
+                        "link": main["link"],
+                        "turn": "s",
+                        "over": (lanes - 1) / 2,
+                        "mast": True,
+                    }
+                )
+            else:
+                heads.append(
+                    {
+                        **base,
+                        "link": main["link"],
+                        "turn": "s",
+                        "over": max(0, lanes - 2) / 2,
+                        "mast": False,
+                    }
+                )
+                heads.append(
+                    {**base, "link": left["link"], "turn": "l", "over": lanes - 1, "mast": True}
+                )
+    out_dir = OUT / "traffic"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "signals.json").write_text(json.dumps({"heads": heads}), encoding="utf-8")
+    for trip in ex.trip_names(route):
+        seed = trip.rsplit("_", 1)[1]
+        f = ex.load_trip(trip)
+        t0, t1 = float(f["t"].iloc[0]), float(f["t"].iloc[-1])
+        sw = switches[seed]
+        rows = []
+        for i, h in enumerate(heads):
+            s = sw[sw["tls"] == h["tls"]]
+            c = s["state"].str[h["link"]].map(lambda ch: colour.get(ch, "R")).to_numpy()
+            t = s["t"].to_numpy()
+            before = np.nonzero(t <= t0)[0]
+            last = None
+            for j in range(before[-1] if len(before) else 0, len(t)):
+                if t[j] > t1:
+                    break
+                if c[j] != last:
+                    rows.append((max(0, int(round(t[j] - t0))), i, c[j]))
+                    last = c[j]
+        pd.DataFrame(rows, columns=["k", "head", "state"]).sort_values(["k", "head"]).to_csv(
+            out_dir / f"signals_{trip}.csv", index=False, lineterminator="\n"
+        )
+    n_left = sum(h["turn"] == "l" for h in heads)
+    print(f"[visual] signals: {len(heads)} heads ({n_left} left-turn) on {len(meta)} signals")
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--route", default="R-DENSE")
@@ -365,8 +565,14 @@ if __name__ == "__main__":
         "--streets", action="store_true", help="only add street names to existing files"
     )
     ap.add_argument("--map", action="store_true", help="only write map.json (routes, sites)")
+    ap.add_argument(
+        "--traffic", action="store_true", help="only background cars and signals (SUMO re-run)"
+    )
     a = ap.parse_args()
-    if a.map:
+    if a.traffic:
+        export_traffic(a.route)
+        export_signals(a.route)
+    elif a.map:
         export_map()
         export_map_image()
     elif a.streets:
