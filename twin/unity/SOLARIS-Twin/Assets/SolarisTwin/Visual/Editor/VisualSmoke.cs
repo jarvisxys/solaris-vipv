@@ -71,6 +71,68 @@ namespace SolarisTwin.Visual.Editor
             finally { EditorApplication.Exit(code); }
         }
 
+        /// Renders the EV sound of the first `-seconds` of the Playback trajectory to smoke_sound.wav
+        /// (mono 48 kHz, 16 bit) plus smoke_sound_speed.csv, for listening and a spectrogram.
+        public static void SoundBatch()
+        {
+            int code = 0;
+            try
+            {
+                EditorSceneManager.OpenScene(VisualSetup.PlaybackScene, OpenSceneMode.Single);
+                var player = Object.FindFirstObjectByType<TrajectoryPlayer>();
+                player.Load();
+                int seconds = Mathf.Min(int.Parse(Arg("-seconds", "120")), player.Count - 1);
+                string dir = Arg("-shots", Path.GetTempPath());
+                const int rate = 48000, block = 480; // 10 ms blocks, like the audio thread
+                var synth = new EvSound.Synth();
+                var pcm = new short[seconds * rate];
+                var buf = new float[block];
+                var speeds = new System.Text.StringBuilder("t,speed_mps\n");
+                float last = 0f;
+                for (int s = 0; s < seconds; s++)
+                {
+                    player.Seek(s);
+                    float v = player.Current.speedMps;
+                    synth.accel = s > 0 ? Mathf.Clamp(v - last, -4f, 4f) : 0f;
+                    synth.speed = v;
+                    synth.gain = 0.6f;
+                    last = v;
+                    speeds.Append($"{s},{v:0.00}\n");
+                    for (int b = 0; b < rate / block; b++)
+                    {
+                        synth.Fill(buf, 1, rate);
+                        for (int i = 0; i < block; i++)
+                            pcm[s * rate + b * block + i] = (short)Mathf.Clamp(buf[i] * 32767f, -32768f, 32767f);
+                    }
+                }
+                string wav = Path.Combine(dir, "smoke_sound.wav");
+                using (var w = new BinaryWriter(File.Create(wav)))
+                {
+                    w.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"));
+                    w.Write(36 + pcm.Length * 2);
+                    w.Write(System.Text.Encoding.ASCII.GetBytes("WAVEfmt "));
+                    w.Write(16);
+                    w.Write((short)1);
+                    w.Write((short)1);
+                    w.Write(rate);
+                    w.Write(rate * 2);
+                    w.Write((short)2);
+                    w.Write((short)16);
+                    w.Write(System.Text.Encoding.ASCII.GetBytes("data"));
+                    w.Write(pcm.Length * 2);
+                    foreach (var x in pcm) w.Write(x);
+                }
+                File.WriteAllText(Path.Combine(dir, "smoke_sound_speed.csv"), speeds.ToString());
+                Debug.Log($"[Smoke] {wav} ({seconds} s)");
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                code = 1;
+            }
+            finally { EditorApplication.Exit(code); }
+        }
+
         static void Shot(string dir, string name, Vector3 from, Vector3 at)
         {
             var go = new GameObject("smoke_cam");

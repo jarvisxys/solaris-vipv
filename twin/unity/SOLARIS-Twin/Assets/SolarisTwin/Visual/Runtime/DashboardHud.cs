@@ -235,7 +235,7 @@ namespace SolarisTwin.Visual
             bl.Add(right);
             root.Add(bl);
 
-            var keys = Text("H HUD · M dots · N map · B map background · T traffic · Space pause · ←/→ 10 s · [ ] speed · Tab drive · C view",
+            var keys = Text("H HUD · M dots · N map · B map background · T traffic · V sound · Space pause · ←/→ 10 s · [ ] speed · Tab drive · C view",
                 12, new Color(1, 1, 1, 0.55f));
             keys.style.position = Position.Absolute;
             keys.style.right = 24;

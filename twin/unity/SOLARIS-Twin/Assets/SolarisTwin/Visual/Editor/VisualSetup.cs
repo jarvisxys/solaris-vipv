@@ -214,6 +214,44 @@ namespace SolarisTwin.Visual.Editor
 
         public static void InstallTrafficBatch() => Batch(InstallTraffic);
 
+        [MenuItem("SOLARIS Visual/5 Install EV sound (Playback)")]
+        public static void InstallSound()
+        {
+            OpenPlayback();
+            int visual = EnsureVisualLayer();
+            var player = Object.FindFirstObjectByType<TrajectoryPlayer>();
+            if (player == null)
+                throw new InvalidOperationException("Playback.unity has no TrajectoryPlayer");
+            // one listener, on the viewing camera
+            if (Object.FindFirstObjectByType<AudioListener>() == null)
+            {
+                var chase = Object.FindFirstObjectByType<ChaseCamera>();
+                var cam = chase != null ? chase.GetComponent<Camera>() : Camera.main;
+                if (cam == null) cam = Object.FindFirstObjectByType<Camera>();
+                if (cam == null) throw new InvalidOperationException("Playback.unity has no camera");
+                cam.gameObject.AddComponent<AudioListener>();
+            }
+            var go = GameObject.Find("Visual_Sound");
+            if (go == null) go = new GameObject("Visual_Sound");
+            var src = go.GetComponent<AudioSource>();
+            if (src == null) src = go.AddComponent<AudioSource>();
+            src.playOnAwake = true;
+            src.loop = true;
+            src.spatialBlend = 0f;
+            var snd = go.GetComponent<EvSound>();
+            if (snd == null) snd = go.AddComponent<EvSound>();
+            snd.player = player;
+            snd.volume = 1f;
+            snd.driver = Object.FindFirstObjectByType<VehicleDriver>();
+            SetLayer(go, visual);
+            var scene = player.gameObject.scene;
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log("[VisualSetup] EV sound installed in Playback.unity");
+        }
+
+        public static void InstallSoundBatch() => Batch(InstallSound);
+
         [MenuItem("SOLARIS Visual/All: re-install every visual feature (Playback)")]
         public static void InstallAll()
         {
@@ -221,6 +259,7 @@ namespace SolarisTwin.Visual.Editor
             InstallStreetBanner();
             InstallMiniMap();
             InstallTraffic();
+            InstallSound();
         }
 
         public static void InstallAllBatch() => Batch(InstallAll);
