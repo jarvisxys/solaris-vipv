@@ -3,6 +3,47 @@
 Every decision that changes a number, claim or reference in the journal paper,
 newest first, with date and reason.
 
+## 2026-10-25 · P8 / E8 Mapillary SVF, P8-visual, Figure 3
+
+Sources: `results/e8/{table_e8_svf.csv, summary_e8_svf.json, fig13b_svf.png}` (rules
+`e8_mapillary_fetch`, `e8_mapillary_svf`, frozen `configs/experiments/e8.yaml`),
+`twin/visual/`, `twin/unity/SOLARIS-Twin/Assets/SolarisTwin/Visual/`, `twin/unity/CREDITS.md`.
+
+- **Mapillary SVF run: 8 panoramas, not 30.** Only 7 on R-DENSE and 1 on R-MIXED are within
+  10 m of the route and at least 250 m apart. The limit is coverage: R-DENSE's 140 nearby
+  panoramas sit in 7 clusters, R-MIXED's 6 in one. All 8 carry Mapillary's sky segmentation
+  and were captured in January 2026. The config was not changed.
+- **Result (buildings + trees, camera 2.0 m above the DEM).**
+
+  | Set | n | MAE | RMSE | Bias (engine − image) | r |
+  |---|---|---|---|---|---|
+  | All panoramas | 8 | 0.171 | 0.360 | −0.134 | 0.29 |
+  | Without the bridge-deck panorama | 7 | **0.054** | **0.088** | −0.011 | **0.92** |
+
+  - Buildings only differs by less than 0.001; the 1.5–2.5 m height sweep by less than 0.01.
+  - **The one miss is explained, not an engine error.** At Central Avenue, lat 33.429, the
+    panorama (SVF 0.993) was taken on the deck of bridge way 37439183 (DSM 6.4 m above the
+    DEM). R-DENSE passes underneath: the frozen trace has `z_road` = DEM and `covered`
+    there. The engine, evaluated at DEM + 2 m, sees the deck (SVF 0.003), which is right
+    for the route.
+  - The largest remaining gap is 0.21 (one R-DENSE point, engine more obstructed).
+  - **Proposed:** "Against eight Mapillary street-level panoramas, the engine's sky view
+    factor has MAE 0.054 and r = 0.92 (n = 7); the eighth panorama was taken on an overpass
+    the route passes under." Small n: report it as a plausibility check, not a validation.
+  - Attribution: imagery and segmentation © Mapillary contributors, CC BY-SA 4.0.
+- **P8-visual (display only; no number changes).** The Playback scene gained a dashboard,
+  maps, SUMO background traffic and signals, sound, camera modes, a trip picker, sky with a
+  sun disc and a photo mode. Background traffic comes from a visual-only SUMO re-run that
+  reproduces every frozen R-DENSE ego row exactly. Car models: "Generic passenger car pack"
+  by comrade1280 (CC BY 4.0); signal kit built in Blender. Credits in `twin/unity/CREDITS.md`.
+  `twin/visual/verify_frozen.py` proved after every change that tests, Snakemake and the
+  TwinBatch output were unchanged.
+- **Figure 3 moment fixed.** "Unity render of R-DENSE with shadows on the skin": R-DENSE
+  forward 08:00, medium traffic, 21 December, 08:03:52 MST. Building shadow covers 42 % of
+  the roof, 69 % of the right side and 30 % of the tailgate (frozen E8 visibility); sun 5.7°
+  in the ESE. Rendered with the analysis geometry in shadows-only mode under Google tiles;
+  the caption must credit Google and Cesium (shown in the image).
+
 ## 2026-10-19 · P8 / E8 Unity twin and validation
 
 Sources: `twin/unity/SOLARIS-Twin/Assets/SolarisTwin/`, `twin/unity/README.md` (Section 6
@@ -46,7 +87,8 @@ walkthrough), `src/solaris/twin_io/`, `src/solaris/imagery/mapillary.py`,
   - The paper should report both rows and this mechanism. **Proposed:** "Unity and Python
     agree on 99.1 % of sample-seconds; trip lit fractions agree within 2.4 pp, and within
     0.65 pp outside ±1° of the horizon line."
-- **Mapillary SVF comparison: built, not yet run.** The module, rules and tests exist.
+- **Mapillary SVF comparison: built, not yet run** (run 2026-10-25, see above). The module,
+  rules and tests exist.
   - Panoramas come from Graph API v4, 15 per route on R-DENSE and R-MIXED.
   - The sky mask comes from Mapillary's own `nature--sky` segmentation (vector tiles, decoded
     in-repo).
