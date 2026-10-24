@@ -133,6 +133,56 @@ namespace SolarisTwin.Visual.Editor
             finally { EditorApplication.Exit(code); }
         }
 
+        /// Renders the scene camera in every CameraModes mode at second -k (smoke_cam_<mode>.png).
+        public static void CamerasBatch()
+        {
+            int code = 0;
+            try
+            {
+                EditorSceneManager.OpenScene(VisualSetup.PlaybackScene, OpenSceneMode.Single);
+                string dir = Arg("-shots", Path.GetTempPath());
+                var player = Object.FindFirstObjectByType<TrajectoryPlayer>();
+                var modes = Object.FindFirstObjectByType<CameraModes>();
+                player.Load();
+                player.Seek(int.Parse(Arg("-k", "941")));
+                var traffic = Object.FindFirstObjectByType<TrafficPlayer>();
+                if (traffic != null)
+                {
+                    Call(traffic, "Start");
+                    Call(traffic, "Update");
+                }
+                Call(modes, "Start");
+                var cam = modes.GetComponent<Camera>();
+                foreach (CameraModes.Mode m in Enum.GetValues(typeof(CameraModes.Mode)))
+                {
+                    if (m == CameraModes.Mode.Chase) continue; // the chase view is the existing camera
+                    typeof(CameraModes).GetMethod("Apply", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .Invoke(modes, new object[] { m, false });
+                    for (int i = 0; i < 60; i++) Call(modes, "LateUpdate"); // let the smoothing settle
+                    var rt = new RenderTexture(1600, 900, 24);
+                    cam.targetTexture = rt;
+                    cam.clearFlags = CameraClearFlags.SolidColor;
+                    cam.backgroundColor = new Color(0.55f, 0.7f, 0.85f);
+                    cam.Render();
+                    RenderTexture.active = rt;
+                    var tex = new Texture2D(rt.width, rt.height, TextureFormat.RGB24, false);
+                    tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+                    tex.Apply();
+                    RenderTexture.active = null;
+                    cam.targetTexture = null;
+                    File.WriteAllBytes(Path.Combine(dir, $"smoke_cam_{m}.png"), tex.EncodeToPNG());
+                    Object.DestroyImmediate(rt);
+                    Debug.Log($"[Smoke] camera {m} at {cam.transform.position}");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                code = 1;
+            }
+            finally { EditorApplication.Exit(code); }
+        }
+
         static void Shot(string dir, string name, Vector3 from, Vector3 at)
         {
             var go = new GameObject("smoke_cam");

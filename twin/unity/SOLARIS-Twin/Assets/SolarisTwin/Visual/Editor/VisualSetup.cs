@@ -252,6 +252,47 @@ namespace SolarisTwin.Visual.Editor
 
         public static void InstallSoundBatch() => Batch(InstallSound);
 
+        [MenuItem("SOLARIS Visual/6 Install camera modes, trip picker, key help (Playback)")]
+        public static void InstallViewTools()
+        {
+            OpenPlayback();
+            int visual = EnsureVisualLayer();
+            var player = Object.FindFirstObjectByType<TrajectoryPlayer>();
+            if (player == null)
+                throw new InvalidOperationException("Playback.unity has no TrajectoryPlayer");
+            var chase = Object.FindFirstObjectByType<ChaseCamera>();
+            if (chase == null) throw new InvalidOperationException("Playback.unity has no ChaseCamera");
+            var modes = chase.GetComponent<CameraModes>();
+            if (modes == null) modes = chase.gameObject.AddComponent<CameraModes>();
+            modes.player = player;
+
+            T Doc<T>(string name, int order) where T : MonoBehaviour
+            {
+                var go = GameObject.Find(name);
+                if (go == null) go = new GameObject(name);
+                var doc = go.GetComponent<UIDocument>();
+                if (doc == null) doc = go.AddComponent<UIDocument>();
+                doc.panelSettings = HudPanelSettings();
+                doc.sortingOrder = order;
+                var c = go.GetComponent<T>();
+                if (c == null) c = go.AddComponent<T>();
+                SetLayer(go, visual);
+                return c;
+            }
+
+            var picker = Doc<TripPicker>("Visual_TripPicker", 20);
+            picker.player = player;
+            picker.driver = Object.FindFirstObjectByType<VehicleDriver>();
+            Doc<KeyHelp>("Visual_KeyHelp", 21);
+
+            var scene = player.gameObject.scene;
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log("[VisualSetup] camera modes, trip picker and key help installed in Playback.unity");
+        }
+
+        public static void InstallViewToolsBatch() => Batch(InstallViewTools);
+
         [MenuItem("SOLARIS Visual/All: re-install every visual feature (Playback)")]
         public static void InstallAll()
         {
@@ -260,6 +301,7 @@ namespace SolarisTwin.Visual.Editor
             InstallMiniMap();
             InstallTraffic();
             InstallSound();
+            InstallViewTools();
         }
 
         public static void InstallAllBatch() => Batch(InstallAll);
