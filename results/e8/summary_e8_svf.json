@@ -1,0 +1,59 @@
+{
+  "points": 8,
+  "per_route": {
+    "R-DENSE": 7,
+    "R-MIXED": 1
+  },
+  "camera_height_m": 2.0,
+  "buildings_trees": {
+    "mae": 0.1711,
+    "rmse": 0.3596,
+    "bias_engine_minus_image": -0.1335,
+    "r2": -2.1362,
+    "pearson_r": 0.2891
+  },
+  "buildings_only": {
+    "mae": 0.1712,
+    "rmse": 0.3596,
+    "bias_engine_minus_image": -0.1327,
+    "r2": -2.1356,
+    "pearson_r": 0.29
+  },
+  "height_sweep_buildings_trees": {
+    "1.5": {
+      "mae": 0.1718,
+      "rmse": 0.3601,
+      "bias_engine_minus_image": -0.1387,
+      "r2": -2.145,
+      "pearson_r": 0.2881
+    },
+    "2.5": {
+      "mae": 0.1714,
+      "rmse": 0.3591,
+      "bias_engine_minus_image": -0.1295,
+      "r2": -2.1274,
+      "pearson_r": 0.288
+    }
+  },
+  "by_route": {
+    "R-DENSE": {
+      "mae": 0.1934,
+      "rmse": 0.3844,
+      "bias_engine_minus_image": -0.1504,
+      "r2": -2.4522,
+      "pearson_r": 0.2124
+    },
+    "R-MIXED": {
+      "mae": 0.0151,
+      "rmse": 0.0151,
+      "bias_engine_minus_image": -0.0151,
+      "r2": null,
+      "pearson_r": null
+    }
+  },
+  "captured": [
+    "2026-01-29",
+    "2026-01-31"
+  ],
+  "attribution": "Imagery and segmentation: Mapillary contributors, CC BY-SA 4.0"
+}
