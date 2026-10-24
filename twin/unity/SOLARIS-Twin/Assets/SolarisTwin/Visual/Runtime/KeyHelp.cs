@@ -37,6 +37,7 @@ namespace SolarisTwin.Visual
                 ("M", "shade dots on the panels"),
                 ("T", "background traffic and signals"),
                 ("V", "sound on / off"),
+                ("F12", "photo mode: hide panels and pause; Enter saves a PNG"),
                 ("K", "this list"),
             }),
             ("DRIVE MODE", new[]

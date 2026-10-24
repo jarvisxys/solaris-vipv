@@ -293,6 +293,82 @@ namespace SolarisTwin.Visual.Editor
 
         public static void InstallViewToolsBatch() => Batch(InstallViewTools);
 
+        const string SkyPath = "Assets/SolarisTwin/Visual/Sky/SolarisSky.mat";
+
+        [MenuItem("SOLARIS Visual/7 Install sky + sun disc, photo mode, credits, Figure 3 (Playback)")]
+        public static void InstallFinish()
+        {
+            OpenPlayback();
+            int visual = EnsureVisualLayer();
+            var player = Object.FindFirstObjectByType<TrajectoryPlayer>();
+            if (player == null)
+                throw new InvalidOperationException("Playback.unity has no TrajectoryPlayer");
+
+            GameObject Go(string name)
+            {
+                var g = GameObject.Find(name);
+                if (g == null)
+                {
+                    foreach (var t in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                        if (t.name == name && t.parent == null) g = t.gameObject;
+                }
+                if (g == null) g = new GameObject(name);
+                SetLayer(g, visual);
+                return g;
+            }
+            T Add<T>(GameObject g) where T : Component
+            {
+                var c = g.GetComponent<T>();
+                return c != null ? c : g.AddComponent<T>();
+            }
+
+            // sky: procedural skybox whose disc follows the (pvlib-driven) sun light
+            Directory.CreateDirectory("Assets/SolarisTwin/Visual/Sky");
+            var sky = AssetDatabase.LoadAssetAtPath<Material>(SkyPath);
+            if (sky == null)
+            {
+                sky = new Material(Shader.Find("Skybox/Procedural")) { name = "SolarisSky" };
+                AssetDatabase.CreateAsset(sky, SkyPath);
+            }
+            sky.SetFloat("_SunDisk", 2f);
+            sky.EnableKeyword("_SUNDISK_HIGH_QUALITY");
+            sky.SetFloat("_SunSize", 0.035f);
+            sky.SetFloat("_SunSizeConvergence", 6f);
+            sky.SetFloat("_AtmosphereThickness", 1f);
+            sky.SetColor("_SkyTint", new Color(0.5f, 0.5f, 0.5f));
+            sky.SetColor("_GroundColor", new Color(0.37f, 0.35f, 0.32f));
+            sky.SetFloat("_Exposure", 1.25f);
+            EditorUtility.SetDirty(sky);
+            RenderSettings.skybox = sky;
+            if (player.sun != null) RenderSettings.sun = player.sun;
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Skybox;
+            var skySun = Add<SkySun>(Go("Visual_Sky"));
+            skySun.player = player;
+            skySun.sky = sky;
+
+            var photo = Add<PhotoMode>(Go("Visual_PhotoMode"));
+            photo.player = player;
+
+            var credits = Go("Visual_Credits");
+            var doc = Add<UIDocument>(credits);
+            doc.panelSettings = HudPanelSettings();
+            doc.sortingOrder = 9;
+            Add<CreditStrip>(credits);
+
+            var fig = Add<Figure3Director>(Go("Visual_Figure3"));
+            fig.player = player;
+            fig.enabled = false; // SOLARIS Visual -> Figure 3: on
+
+            AssetDatabase.SaveAssets();
+            var scene = player.gameObject.scene;
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            VisualRecorder.WritePreset();
+            Debug.Log("[VisualSetup] sky + sun disc, photo mode, credit strip, Figure 3 installed in Playback.unity");
+        }
+
+        public static void InstallFinishBatch() => Batch(InstallFinish);
+
         [MenuItem("SOLARIS Visual/All: re-install every visual feature (Playback)")]
         public static void InstallAll()
         {
@@ -302,6 +378,7 @@ namespace SolarisTwin.Visual.Editor
             InstallTraffic();
             InstallSound();
             InstallViewTools();
+            InstallFinish();
         }
 
         public static void InstallAllBatch() => Batch(InstallAll);

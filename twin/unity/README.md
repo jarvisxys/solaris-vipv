@@ -282,6 +282,25 @@ Then `e8_twin_agreement` writes `results/e8/summary_e8_unity.json`, `table_e8_tr
 4. Press **Start Recording** (it enters Play mode). Stop when the trip ends.
 5. The video is display only. Its numbers (HUD) come from Python.
 
+### Figure 3 (still) with the preset
+
+Figure 3 is "Unity render of R-DENSE with shadows on the skin". The moment is R-DENSE forward
+08:00, medium traffic, 21 Dec, 08:03:52 MST (record 232): building shadow on 42 % of the roof,
+69 % of the right side and 30 % of the tailgate (frozen E8 visibility), sun 5.7° in the ESE.
+
+1. Close Play mode. **SOLARIS Visual → Figure 3: on**. It sets the analysis geometry to
+   *shadows only*, `Fixed Fps = 30`, and switches on `Visual_Figure3`, which on Play loads that
+   trip, holds the second, frames the car and enters photo mode (panels hidden; the credit
+   strip and Cesium's own credits stay).
+2. Press **Play** and wait until the Google tiles have loaded. Adjust *Camera Offset* on
+   `Visual_Figure3` in the Inspector if wanted (live).
+3. Either press **Enter** (photo mode saves a 2× PNG to `twin/renders/photos/`), or use the
+   Recorder: *Recorder Window* → top-right menu → **Load Recorder List** →
+   `Assets/SolarisTwin/Visual/Recorder/Figure3_RecorderList` → **Start Recording** for a second
+   and stop. `Figure3_still_4K` writes 3840 × 2160 PNGs to `Recordings/figure3/`; tick
+   `Figure3_chase_1080` instead for the MP4 video.
+4. **SOLARIS Visual → Figure 3: off** returns to normal playback (geometry hidden, wall clock).
+
 ## 15. Troubleshooting
 
 | Symptom | Fix |

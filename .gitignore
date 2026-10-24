@@ -67,3 +67,5 @@ desktop.ini
 
 # UMEP/SuPy writes a log into the working directory when SOLWEIG runs
 SuPy.log
+# photo-mode screenshots and renders (P8-visual)
+twin/renders/

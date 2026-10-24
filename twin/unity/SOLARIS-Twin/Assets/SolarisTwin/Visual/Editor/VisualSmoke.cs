@@ -183,6 +183,77 @@ namespace SolarisTwin.Visual.Editor
             finally { EditorApplication.Exit(code); }
         }
 
+        /// Renders the Figure 3 framing with the sky (smoke_fig3.png) and a wide sky view
+        /// (smoke_sky.png) at second -k of the Figure 3 trip. Analysis geometry casts the shadows;
+        /// Google tiles do not stream in batch mode.
+        public static void Figure3Batch()
+        {
+            int code = 0;
+            try
+            {
+                EditorSceneManager.OpenScene(VisualSetup.PlaybackScene, OpenSceneMode.Single);
+                string dir = Arg("-shots", Path.GetTempPath());
+                var player = Object.FindFirstObjectByType<TrajectoryPlayer>();
+                var fig = Object.FindFirstObjectByType<Figure3Director>(FindObjectsInactive.Include);
+                player.trajectoryPath = $"../../exchange/trajectories/trajectory_{fig.trip}.csv";
+                player.Load();
+                player.Seek(int.Parse(Arg("-k", fig.second.ToString())));
+                if (Arg("-geom", "shadows") == "visible") SolarisTwin.Editor.TwinSetup.GeometryVisible();
+                else SolarisTwin.Editor.TwinSetup.GeometryShadowsOnly(); // in memory only; the scene is not saved
+                // batch mode cannot compile the tiles' glTFast shader (error shader, no shadow pass):
+                // give them a plain URP material for this test render only
+                var lit = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                lit.SetColor("_BaseColor", new Color(0.62f, 0.6f, 0.56f));
+                var geo = GameObject.Find("AnalysisGeometry");
+                if (geo != null)
+                    foreach (var r in geo.GetComponentsInChildren<MeshRenderer>(true))
+                    {
+                        var m = new Material[r.sharedMaterials.Length];
+                        for (int i = 0; i < m.Length; i++) m[i] = lit;
+                        r.sharedMaterials = m;
+                    }
+                var sky = Object.FindFirstObjectByType<SkySun>();
+                Call(sky, "Start");
+                Call(sky, "Update");
+                var cam = Object.FindFirstObjectByType<ChaseCamera>().GetComponent<Camera>();
+                cam.clearFlags = CameraClearFlags.Skybox;
+                cam.fieldOfView = fig.fieldOfView;
+                var car = player.car;
+                void Render(string name)
+                {
+                    var rt = new RenderTexture(1920, 1080, 24);
+                    cam.targetTexture = rt;
+                    cam.Render();
+                    RenderTexture.active = rt;
+                    var tex = new Texture2D(rt.width, rt.height, TextureFormat.RGB24, false);
+                    tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+                    tex.Apply();
+                    RenderTexture.active = null;
+                    cam.targetTexture = null;
+                    File.WriteAllBytes(Path.Combine(dir, $"smoke_{name}.png"), tex.EncodeToPNG());
+                    Object.DestroyImmediate(rt);
+                }
+                cam.transform.position = car.TransformPoint(fig.cameraOffset);
+                cam.transform.LookAt(car.TransformPoint(fig.lookAtOffset));
+                Render("fig3");
+                cam.transform.position = car.position + Vector3.up * 60f - car.forward * 40f;
+                cam.transform.LookAt(car.position);
+                Render("fig3_wide");
+                // looking toward the sun from behind the car: the disc must sit where the light comes from
+                cam.fieldOfView = 70f;
+                cam.transform.position = car.position + Vector3.up * 2f - player.SunDirection * 6f;
+                cam.transform.rotation = Quaternion.LookRotation(player.SunDirection);
+                Render("sky");
+                Debug.Log($"[Smoke] figure 3 at {player.Current.tUtc}, sun el {player.SunElevation:0.0}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                code = 1;
+            }
+            finally { EditorApplication.Exit(code); }
+        }
+
         static void Shot(string dir, string name, Vector3 from, Vector3 at)
         {
             var go = new GameObject("smoke_cam");

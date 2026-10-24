@@ -239,7 +239,7 @@ namespace SolarisTwin.Visual
                 12, new Color(1, 1, 1, 0.55f));
             keys.style.position = Position.Absolute;
             keys.style.right = 24;
-            keys.style.bottom = 16;
+            keys.style.bottom = 30; // above the credit strip
             root.Add(keys);
         }
 
