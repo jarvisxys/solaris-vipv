@@ -1,0 +1,238 @@
+{
+  "baseline": "conference toolkit v1.1.0 (SOLARIS__Final), satellite hourly TMY",
+  "inputs": {
+    "tmy_phoenix": {
+      "path": "data/323705_33.45_-112.06_tmy-2023.csv",
+      "sha256": "a7e851c33c58b88cd18459321a4630bfc4486297e518e18fbeccd21d6a3e687a"
+    },
+    "tmy_phoenix_2023": {
+      "path": "data/conference/phoenix/nsrdb_tmy/323705_33.45_-112.06_tmy-2023.csv",
+      "sha256": "3da4773a4f2384fa9943457e6480d92509433e854febef0e5c60f1b75c171655"
+    },
+    "tmy_phoenix_2022": {
+      "path": "data/conference/phoenix/nsrdb_tmy/323705_33.45_-112.06_tmy-2022.csv",
+      "sha256": "d36147f979dc57d14907ba5e665377c8ea9863812cbe525cc5eee803cf20031d"
+    },
+    "tmy_phoenix_2024": {
+      "path": "data/conference/phoenix/nsrdb_tmy/323705_33.45_-112.06_tmy-2024.csv",
+      "sha256": "2858d34e8b5c03870e80a5038d855394b1583219574c03685234cadfe03c2034"
+    },
+    "tmy_phoenix_2025": {
+      "path": "data/conference/phoenix/nsrdb_tmy/323705_33.45_-112.06_tmy-2025.csv",
+      "sha256": "2c60c1d6043a094b276c45e64c066f9e0f2db9de94135356d29bbc06c40fb16d"
+    },
+    "tmy_lucknow": {
+      "path": "data/conference/lucknow/nsrdb_tmy/46088_26.85_80.95_tmy.csv",
+      "sha256": "b3780c35a095fdb51d13380b8e3d2220a2f8469106aca5f669ca3639987e5cd7"
+    },
+    "tmy_london": {
+      "path": "data/conference/london/pvgis_tmy/tmy_51.526_-0.129_2005_2023.csv",
+      "sha256": "4570905efc4603bbdd83d84df487d570f9a26d36e38bbeeb8ae898ad2dc41970"
+    }
+  },
+  "climate": {
+    "Phoenix": {
+      "ghi_kWh_m2": 2110.0,
+      "psh": 5.781,
+      "T_mean_C": 23.23,
+      "ghi_vs_gsa_pct": -0.44
+    },
+    "Lucknow": {
+      "ghi_kWh_m2": 1843.6,
+      "psh": 5.051,
+      "T_mean_C": 26.76,
+      "ghi_vs_gsa_pct": 6.84
+    },
+    "London": {
+      "ghi_kWh_m2": 1050.7,
+      "psh": 2.879,
+      "T_mean_C": 11.12,
+      "ghi_vs_gsa_pct": 1.74
+    }
+  },
+  "gap_decomposition_II": {
+    "Phoenix": {
+      "f_syn": 0.9378,
+      "f_mag": 0.8793,
+      "f_t2": 0.832,
+      "magnitude": 0.0584,
+      "distribution": 0.0473,
+      "total": 0.1058
+    },
+    "Lucknow": {
+      "f_syn": 0.771,
+      "f_mag": 0.7407,
+      "f_t2": 0.7134,
+      "magnitude": 0.0303,
+      "distribution": 0.0273,
+      "total": 0.0576
+    },
+    "London": {
+      "f_syn": 0.5088,
+      "f_mag": 0.539,
+      "f_t2": 0.5173,
+      "magnitude": -0.0302,
+      "distribution": 0.0217,
+      "total": -0.0085
+    }
+  },
+  "tmy_releases_phoenix": [
+    {
+      "release": 2022,
+      "scenario": "II 50km",
+      "psh": 5.815,
+      "fss": 0.836,
+      "charges": 5,
+      "grid": 881
+    },
+    {
+      "release": 2022,
+      "scenario": "I 100km",
+      "psh": 5.815,
+      "fss": 0.421,
+      "charges": 31,
+      "grid": 5585
+    },
+    {
+      "release": 2023,
+      "scenario": "II 50km",
+      "psh": 5.781,
+      "fss": 0.832,
+      "charges": 5,
+      "grid": 885
+    },
+    {
+      "release": 2023,
+      "scenario": "I 100km",
+      "psh": 5.781,
+      "fss": 0.419,
+      "charges": 31,
+      "grid": 5541
+    },
+    {
+      "release": 2024,
+      "scenario": "II 50km",
+      "psh": 5.828,
+      "fss": 0.834,
+      "charges": 5,
+      "grid": 883
+    },
+    {
+      "release": 2024,
+      "scenario": "I 100km",
+      "psh": 5.828,
+      "fss": 0.42,
+      "charges": 31,
+      "grid": 5581
+    },
+    {
+      "release": 2025,
+      "scenario": "II 50km",
+      "psh": 5.827,
+      "fss": 0.84,
+      "charges": 4,
+      "grid": 707
+    },
+    {
+      "release": 2025,
+      "scenario": "I 100km",
+      "psh": 5.827,
+      "fss": 0.422,
+      "charges": 31,
+      "grid": 5566
+    }
+  ],
+  "design_levers_phoenix_II": {
+    "kappa_060_070_080": {
+      "Phoenix": [
+        0.6312,
+        0.7316,
+        0.832
+      ],
+      "Lucknow": [
+        0.5421,
+        0.6277,
+        0.7134
+      ],
+      "London": [
+        0.3959,
+        0.4566,
+        0.5173
+      ]
+    },
+    "kappa_for_quasi": 0.868,
+    "eta_regen_072": {
+      "city_whkm": [
+        210.06,
+        194.64
+      ],
+      "fss": [
+        0.832,
+        0.883
+      ]
+    },
+    "suspension_W_fss": {
+      "50": 0.8116,
+      "100": 0.8184,
+      "150": 0.8252,
+      "200": 0.832
+    },
+    "area_for_fss1_m2": 14.057,
+    "pack": [
+      {
+        "A": 11.6,
+        "cap": 150.0,
+        "mass": 2281.6,
+        "fss": 0.878,
+        "relief": 0.8614,
+        "grid": 640.3092,
+        "charges": 6
+      },
+      {
+        "A": 11.6,
+        "cap": 200.0,
+        "mass": 2381.6,
+        "fss": 0.8544,
+        "relief": 0.8512,
+        "grid": 706.1569,
+        "charges": 5
+      },
+      {
+        "A": 11.6,
+        "cap": 250.0,
+        "mass": 2481.6,
+        "fss": 0.8321,
+        "relief": 0.8205,
+        "grid": 884.4628,
+        "charges": 5
+      },
+      {
+        "A": 15.0,
+        "cap": 150.0,
+        "mass": 2293.5,
+        "fss": 1.1227,
+        "relief": 0.9536,
+        "grid": 214.9666,
+        "charges": 2
+      },
+      {
+        "A": 15.0,
+        "cap": 200.0,
+        "mass": 2393.5,
+        "fss": 1.0927,
+        "relief": 0.9705,
+        "grid": 140.4835,
+        "charges": 1
+      },
+      {
+        "A": 15.0,
+        "cap": 250.0,
+        "mass": 2493.5,
+        "fss": 1.0643,
+        "relief": 0.9637,
+        "grid": 177.6594,
+        "charges": 1
+      }
+    ]
+  }
+}

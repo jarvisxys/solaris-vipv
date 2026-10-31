@@ -63,6 +63,8 @@ class Params:
     sites: MappingProxyType
     gsa: MappingProxyType
     tmy_files: MappingProxyType
+    utc_offset: MappingProxyType
+    tmy_releases: MappingProxyType
     # auxiliary load and schedule
     park_setpt: float
     park_UA: float
@@ -75,10 +77,10 @@ class Params:
     floor: float
     recharge_to: float
     soc_initial_frac: float
+    warmup: bool
     # economics and Pareto sweep
     price: MappingProxyType
     cost_items: MappingProxyType
-    pareto_pv_cost: float
     pareto_pack_cost: float
     pareto_areas: tuple
     pareto_caps: tuple
@@ -120,6 +122,8 @@ class Params:
             ),
             gsa=ro({c: tuple(v.values()) for c, v in y["global_solar_atlas"].items()}),
             tmy_files=ro(dict(y["tmy_files"])),
+            utc_offset=ro(dict(y["utc_offset_h"])),
+            tmy_releases=ro(dict(y["tmy_releases"])),
             park_setpt=y["park_load"]["setpt"],
             park_UA=y["park_load"]["UA"],
             park_COP=y["park_load"]["COP"],
@@ -130,14 +134,24 @@ class Params:
             floor=y["simulate"]["floor"],
             recharge_to=y["simulate"]["recharge_to"],
             soc_initial_frac=y["simulate"]["soc_initial_frac"],
-            price=ro(dict(y["economics"]["price_usd_per_kWh"])),
+            warmup=y["simulate"]["warmup"],
+            price=ro(prices_usd(y["economics"])),
             cost_items=ro(dict(y["economics"]["cost_items_usd"])),
-            pareto_pv_cost=y["pareto"]["pv_cost_usd_per_m2"],
             pareto_pack_cost=y["pareto"]["pack_cost_usd_per_kWh"],
             pareto_areas=tuple(y["pareto"]["areas_m2"]),
             pareto_caps=tuple(y["pareto"]["capacities_kWh"]),
             pareto_seeds=tuple(y["pareto"]["seeds"]),
         )
+
+
+def prices_usd(ec) -> dict:
+    """Tariffs in USD/kWh, converted as the conference code does (same operations)."""
+    t = ec["tariff"]
+    return {
+        "Phoenix": t["Phoenix"],
+        "Lucknow": t["Lucknow"] / ec["fx_inr_per_usd"],
+        "London": t["London"] * ec["fx_usd_per_gbp"],
+    }
 
 
 BASE = Params.from_yaml()

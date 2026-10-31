@@ -1,4 +1,4 @@
-"""Hourly climate inputs: the conference synthetic generator and measured TMY loaders."""
+"""Hourly climate inputs: the conference synthetic generator and satellite TMY loaders."""
 
 import csv
 from pathlib import Path
@@ -40,12 +40,12 @@ def site_climate(site: Site, seed=0):
 
 
 def gsa_psh(city: str, p: Params = BASE) -> float:
-    """Measured annual GHI from Global Solar Atlas as peak-sun-hours per day (3 d.p.)."""
+    """Global Solar Atlas annual GHI as peak-sun-hours per day (3 d.p.)."""
     return round(p.gsa[city][2] / 365.0, 3)
 
 
 def gsa_site(city: str, p: Params = BASE) -> Site:
-    """Synthetic site rescaled to the measured Global Solar Atlas GHI and temperature (Tier 1)."""
+    """Synthetic site rescaled to the Global Solar Atlas GHI and temperature (Tier 1)."""
     s = p.sites[city]
     return Site(s.lat, gsa_psh(city, p), p.gsa[city][5], s.T_amp)
 
@@ -54,12 +54,13 @@ def tmy_path(city: str, p: Params = BASE) -> Path:
     return REPO_ROOT / p.tmy_files[city]
 
 
-def load_tmy(path):
-    """Measured 8760-h series -> (GHI W/m2, T_amb C). Auto-detects NSRDB and PVGIS CSVs.
+def load_tmy(path, utc_offset=None):
+    """Satellite-derived 8760-h series -> (GHI W/m2, T_amb C) in local standard time.
 
-    NSRDB files must carry local-standard-time stamps: a file whose ``Time Zone`` differs
-    from its ``Local Time Zone`` (a UTC download) is rejected, because the SoC loop indexes
-    hours of the local day.
+    Auto-detects NSRDB and PVGIS CSVs. NSRDB: the shift is ``Local Time Zone - Time Zone``
+    from the header (0 for a local-time download), or ``utc_offset - Time Zone`` if given.
+    PVGIS stamps are UTC: the shift is ``utc_offset`` (default 0). The series is rolled
+    cyclically by the shift rounded half up (Lucknow +5.5 h -> +6 h), as in v1.1.0.
     """
     raw = Path(path).read_text(encoding="utf-8-sig").splitlines()
     if any(line.startswith("time(UTC)") for line in raw):  # PVGIS
@@ -71,15 +72,13 @@ def load_tmy(path):
                 break
             T.append(float(parts[1]))
             ghi.append(float(parts[3]))
+        shift = 0.0 if utc_offset is None else float(utc_offset)
     else:  # NSRDB
         rows = list(csv.reader(raw))
         meta = dict(zip(rows[0], rows[1], strict=False))
-        tz, local_tz = meta.get("Time Zone"), meta.get("Local Time Zone")
-        if tz is not None and local_tz is not None and float(tz) != float(local_tz):
-            raise ValueError(
-                f"{path}: NSRDB timestamps are UTC{float(tz):+g}, not local time "
-                f"(UTC{float(local_tz):+g}); download with local time (utc=false)"
-            )
+        stored = float(meta.get("Time Zone", 0))
+        local = float(meta.get("Local Time Zone", 0))
+        shift = (local - stored) if utc_offset is None else float(utc_offset) - stored
         hdr = rows[2]
         gi, ti = hdr.index("GHI"), hdr.index("Temperature")
         ghi = [float(r[gi]) for r in rows[3:] if len(r) > gi]
@@ -89,7 +88,21 @@ def load_tmy(path):
     if len(ghi) != 8760:
         idx = np.linspace(0, len(ghi) - 1, 8760).astype(int)
         ghi, T = ghi[idx], T[idx]
+    k = int(np.floor(shift + 0.5))
+    if k:
+        ghi, T = np.roll(ghi, k), np.roll(T, k)
     return ghi, T
+
+
+def load_city_tmy(city: str, p: Params = BASE):
+    """Satellite-derived hourly TMY of a study city in local standard time (None if absent)."""
+    if city not in p.tmy_files or not tmy_path(city, p).exists():
+        return None
+    return load_tmy(tmy_path(city, p), utc_offset=p.utc_offset.get(city))
+
+
+def release_path(year: int, p: Params = BASE) -> Path:
+    return REPO_ROOT / p.tmy_releases[year]
 
 
 def monthly_psh(ghi):
@@ -99,12 +112,12 @@ def monthly_psh(ghi):
 
 
 def climate_error(loc, p: Params = BASE):
-    """Annual and monthly error of the synthetic series vs the measured TMY (None if absent)."""
-    if loc not in p.tmy_files or not tmy_path(loc, p).exists():
+    """Annual and monthly error of the synthetic series vs the satellite TMY (None if absent)."""
+    tmy = load_city_tmy(loc, p)
+    if tmy is None:
         return None
-    meas_ghi, _ = load_tmy(tmy_path(loc, p))
     syn_ghi, _ = site_climate(p.sites[loc])
-    meas, syn = monthly_psh(meas_ghi), monthly_psh(syn_ghi)
+    meas, syn = monthly_psh(tmy[0]), monthly_psh(syn_ghi)
     return dict(
         ann_err=100 * (syn.mean() - meas.mean()) / meas.mean(),
         monthly_mape=float(np.mean(np.abs(syn - meas) / meas) * 100),

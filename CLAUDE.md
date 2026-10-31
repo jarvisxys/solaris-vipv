@@ -15,16 +15,20 @@
   Snakemake rules use `run:` (load experiments with `experiment("<name>")` from the
   Snakefile), never `script:` or `shell:` — Snakemake launches them through cmd without
   quoting, which breaks on the space in the user-profile path. Build paths with pathlib.
-- Conference numbers: printed values live in configs/experiments/e0.yaml; the measured
-  baseline is results/e0/table_b0.csv. Compare new results against B0, never the paper.
-- `solaris.core` is bit-identical to legacy; extend it with new keyword arguments only and
-  keep tests/test_core_equivalence.py green.
+- Conference numbers: printed values of the final paper (docs/SOLARIS__Final.pdf, toolkit
+  v1.1.0) live in configs/experiments/e0.yaml; the baseline is results/e0/table_b0.csv
+  (satellite hourly TMY, Phoenix/Lucknow/London). Compare new results against B0, never the paper.
+- `solaris.core` reproduces legacy v1.1.0 within 1e-9; extend it with new keyword arguments
+  only and keep tests/test_core_equivalence.py green. Load legacy with
+  `solaris.core.conference.legacy_module()` (points its data/ tree at data/conference/).
 - One phase (P0-P9) per session; start in plan mode; write tests before implementation.
 - Commit after every passing task with the phase and experiment ID in the subject,
   e.g. `P1/E0: regression tests for Tables II-IV`. Remote: github.com/jarvisxys/solaris-vipv.
 - Gates: no E2 work until Table B0 is frozen; no annual runs until E1 passes;
   no results writing until E8 is done.
 - Legacy integrity: `python src/solaris/integrity.py` (also a Snakemake rule and a pre-commit hook).
-  Conference solaris.py SHA-256: 7b30b213d8d89addfe7edcc6a1621caf94505f28ecbdd4eb26badc39152a96d5.
-- Every baseline number comes from the measured NSRDB TMY run; synthetic-climate values
-  appear only as a labelled historical row.
+  Conference solaris.py v1.1.0 (src/solaris/legacy/solaris_v110.py) SHA-256:
+  2603b4b6a2786fbab62f2431873f0498f0ce907c44f55a3aa640510b61807142
+  (v1.0, 7b30b213...96d5, is at tag v1.0.0-conference).
+- Every baseline number comes from the satellite-derived hourly TMY run; idealized
+  synthetic-climate values appear only as a labelled historical row.

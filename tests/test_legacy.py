@@ -9,15 +9,17 @@ import yaml
 from solaris import integrity
 
 ROOT = Path(__file__).resolve().parents[1]
-# SHA-256 of the conference solaris.py, recorded 2026-10-15 (PAPER_CHANGELOG.md).
-CONFERENCE_SHA256 = "7b30b213d8d89addfe7edcc6a1621caf94505f28ecbdd4eb26badc39152a96d5"
+# SHA-256 of the conference solaris.py v1.1.0 (git blob, LF), recorded 2026-10-29
+# (PAPER_CHANGELOG.md). v1.0 (7b30b213...96d5) is at tag v1.0.0-conference.
+CONFERENCE_SHA256 = "2603b4b6a2786fbab62f2431873f0498f0ce907c44f55a3aa640510b61807142"
+LEGACY_FILE = "solaris_v110.py"
 
 
 @pytest.fixture(scope="module")
 def v1():
-    from solaris.legacy import solaris_v1
+    from solaris.core.conference import legacy_module
 
-    return solaris_v1
+    return legacy_module()
 
 
 @pytest.fixture(scope="module")
@@ -34,7 +36,7 @@ def defaults(func):
 
 
 def test_recorded_hash_is_conference_hash():
-    assert integrity.recorded_hashes() == {"solaris_v1.py": CONFERENCE_SHA256}
+    assert integrity.recorded_hashes() == {LEGACY_FILE: CONFERENCE_SHA256}
 
 
 def test_legacy_is_byte_identical():
@@ -42,16 +44,16 @@ def test_legacy_is_byte_identical():
 
 
 def test_guard_detects_a_one_byte_change(tmp_path, monkeypatch):
-    raw = (integrity.LEGACY_DIR / "solaris_v1.py").read_bytes()
-    (tmp_path / "solaris_v1.py").write_bytes(raw + b"\n")
-    (tmp_path / "SHA256SUMS").write_text(f"{CONFERENCE_SHA256}  solaris_v1.py\n")
+    raw = (integrity.LEGACY_DIR / LEGACY_FILE).read_bytes()
+    (tmp_path / LEGACY_FILE).write_bytes(raw + b"\n")
+    (tmp_path / "SHA256SUMS").write_text(f"{CONFERENCE_SHA256}  {LEGACY_FILE}\n")
     monkeypatch.setattr(integrity, "LEGACY_DIR", tmp_path)
     monkeypatch.setattr(integrity, "SUMS_FILE", tmp_path / "SHA256SUMS")
     assert len(integrity.verify_legacy()) == 1
 
 
 def test_legacy_has_no_crlf():
-    raw = (integrity.LEGACY_DIR / "solaris_v1.py").read_bytes()
+    raw = (integrity.LEGACY_DIR / LEGACY_FILE).read_bytes()
     assert b"\r" not in raw
 
 
@@ -65,6 +67,10 @@ def test_legacy_public_api_imports(v1):
         "pareto",
         "tmy_validation",
         "real_data_validation",
+        "load_city_tmy",
+        "tmy_robustness",
+        "gap_decomposition",
+        "design_levers_tmy",
     ):
         assert callable(getattr(v1, name)), name
 
@@ -111,20 +117,29 @@ def test_base_climate_sites(v1, base):
         }
     for city, row in v1.GSA.items():
         assert tuple(base["global_solar_atlas"][city].values()) == row
-    assert base["tmy_files"] == v1.TMY_FILES
+    # legacy_module() points v1.1.0's data/ tree at data/conference/
+    assert {c: str(ROOT / f) for c, f in base["tmy_files"].items()} == v1.TMY_FILES
+    assert {y: str(ROOT / f) for y, f in base["tmy_releases"].items()} == v1.TMY_RELEASES
+    assert base["utc_offset_h"] == v1.UTC_OFFSET
 
 
 def test_base_park_load_and_simulate(v1, base):
     pl = {k: v for k, v in base["park_load"].items() if k != "P_min_W"}
     assert pl == defaults(v1.park_load)
     d = defaults(v1.simulate)
-    for key in ("variant", "floor", "recharge_to", "seed", "pv_scale"):
+    for key in ("variant", "floor", "recharge_to", "seed", "pv_scale", "warmup"):
         assert base["simulate"][key] == d[key], key
     assert d["kappa"] == base["pv"]["kappa_pv_base"]
     assert d["eta_regen"] == base["physics"]["eta_regen_base"]
 
 
 def test_base_economics(v1, base):
+    from solaris.core.params import prices_usd
+
     ec = base["economics"]
-    assert ec["price_usd_per_kWh"] == v1.PRICE
+    assert (ec["fx_inr_per_usd"], ec["fx_usd_per_gbp"]) == (v1.FX_INR_PER_USD, v1.FX_USD_PER_GBP)
+    assert prices_usd(ec) == v1.PRICE
     assert list(ec["cost_items_usd"].items()) == list(v1.COST_ITEMS.items())
+    pa = defaults(v1.pareto)
+    assert tuple(base["pareto"]["areas_m2"]) == pa["areas"]
+    assert tuple(base["pareto"]["capacities_kWh"]) == pa["caps"]

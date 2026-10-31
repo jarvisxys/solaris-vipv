@@ -1,11 +1,11 @@
-"""Design inversion for self-sufficiency, Eq. (2) of the conference paper.
+"""Design inversion for self-sufficiency, Eqs. (3)-(4) of the conference paper (v1.1.0).
 
-    A_req = (D c / eta_dt + E_aux) / (eta_pv PSH kappa_pv f_T)
-    D_max = eta_dt (A_skin eta_pv PSH kappa_pv f_T - E_aux) / c
+    A_req = (D c + E_aux) / (eta_pv PSH kappa_pv f_T)
+    D_max = (A eta_pv PSH kappa_pv f_T - E_aux) / c
 
-f_T and E_aux are annual means from the same hourly engine. With ``climate=None`` the
-conference synthetic climate (and its nominal PSH) is used, as in the paper; pass a
-measured (GHI, T) series to invert on measured data.
+c is the battery-side consumption (eta_dt is already inside it). PSH, f_T and E_aux are
+annual means of one hourly climate: the idealized synthetic climate with ``climate=None``,
+or a satellite (GHI, T) series, e.g. ``load_city_tmy(loc)``.
 """
 
 import numpy as np
@@ -20,12 +20,6 @@ D_MAX_AUX_KM = 50  # conference convention: D_max uses the 50 km/day auxiliary s
 
 def _climate(loc, climate, p: Params):
     return site_climate(p.sites[loc]) if climate is None else climate
-
-
-def _psh(loc, climate, p: Params) -> float:
-    if climate is None:
-        return p.sites[loc].psh
-    return climate[0].sum() / 1000.0 / 365.0
 
 
 def fT_from_series(ghi, Tamb, p: Params = BASE) -> float:
@@ -46,17 +40,22 @@ def engine_Eaux(loc, city, daily_km, climate=None, p: Params = BASE) -> float:
 
 
 def required_pv_area(daily_km, city, loc, climate=None, p: Params = BASE) -> float:
-    """Minimum PV skin area (m2) for f_ss = 1."""
+    """Minimum PV skin area (m2) for f_ss = 1 (TEG and suspension neglected)."""
+    ghi, T = _climate(loc, climate, p)
+    psh = ghi.sum() / 1000.0 / 365.0
     c = whkm("P0", city=city, p=p) / 1000.0
-    fT = engine_fT(loc, climate, p)
-    E_aux = engine_Eaux(loc, city, daily_km, climate, p)
-    return (daily_km * c / p.eta_dt + E_aux) / (p.eta_pv * _psh(loc, climate, p) * p.kappa_pv * fT)
+    fT = engine_fT(loc, (ghi, T), p)
+    E_aux = engine_Eaux(loc, city, daily_km, (ghi, T), p)
+    return float((daily_km * c + E_aux) / (p.eta_pv * psh * p.kappa_pv * fT))
 
 
-def max_selfsuff_km(loc, city=True, climate=None, p: Params = BASE) -> float:
-    """Maximum self-sufficient daily distance (km/day) with the as-built skin."""
+def max_selfsuff_km(loc, city=True, climate=None, A=None, p: Params = BASE) -> float:
+    """Maximum self-sufficient daily distance (km/day) with PV area A (default: 11.6 m2)."""
+    A = p.A_skin if A is None else A
+    ghi, T = _climate(loc, climate, p)
+    psh = ghi.sum() / 1000.0 / 365.0
     c = whkm("P0", city=city, p=p) / 1000.0
-    fT = engine_fT(loc, climate, p)
-    E_aux = engine_Eaux(loc, city, D_MAX_AUX_KM, climate, p)
-    E_pv = p.A_skin * p.eta_pv * _psh(loc, climate, p) * p.kappa_pv * fT
-    return p.eta_dt * (E_pv - E_aux) / c
+    fT = engine_fT(loc, (ghi, T), p)
+    E_aux = engine_Eaux(loc, city, D_MAX_AUX_KM, (ghi, T), p)
+    E_pv = A * p.eta_pv * psh * p.kappa_pv * fT
+    return float((E_pv - E_aux) / c)

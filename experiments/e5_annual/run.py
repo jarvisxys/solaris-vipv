@@ -220,8 +220,7 @@ def metrics(r):
         "fss": r["fss"],
         "grid_kWh": r["grid_kwh"],
         "charges_per_yr": r["charges"],
-        "relief_conference_pct": 100 * (r["ann_dem"] - r["grid_kwh"]) / r["ann_dem"],
-        "relief_balanced_pct": 100 * r["harvest_used_kwh"] / r["ann_dem"],
+        "relief_pct": 100 * r["relief"],  # (harvest - curtailed) / demand, periodic year
         "demand_kWh": r["ann_dem"],
         "curtailed_kWh": r["curtailed_kwh"],
     }
@@ -332,7 +331,7 @@ def fig_waterfall(table, steps, stem):
         ax.set_title(f"{a} {name}", loc="left", fontsize=8.5)
     np.atleast_1d(axes)[0].set_ylabel("Solar self-sufficiency f_ss")
     fig.suptitle(
-        "Loss waterfall from Table B0 to each archetype (Phoenix, measured TMY)",
+        "Loss waterfall from Table B0 to each archetype (Phoenix, satellite TMY)",
         x=0.01,
         ha="left",
         fontsize=10,

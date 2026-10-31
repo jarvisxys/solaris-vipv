@@ -58,11 +58,12 @@ def test_e5_closes_and_starts_at_b0():
     assert s["energy_balance"]["pass"] and s["energy_balance"]["max_rel"] <= 1e-3
     t = pd.read_csv(RESULTS / "e5" / "table_e5.csv")
     t = t[t.weather == "tmy"]
-    b0 = pd.read_csv(RESULTS / "e0" / "table_b0.csv").set_index(["scenario", "metric"])
+    b0 = pd.read_csv(RESULTS / "e0" / "table_b0.csv")
+    b0 = b0[b0.city == "Phoenix"].set_index(["scenario", "metric"])
     sched = {"A1": "II", "A2": "II", "A3": "II", "A4": "I"}
     for arch, sc in sched.items():
         row = t[(t.archetype == arch) & (t.step == "B0")].iloc[0]
-        ref = b0.loc[sc, "measured_b0"]
+        ref = b0.loc[sc, "tmy"]
         assert row.fss == pytest.approx(float(ref["fss"]), rel=1e-5)
         assert row.grid_kWh == pytest.approx(float(ref["grid_kWh"]), rel=1e-5)
     assert (t["energy_closure_rel"] <= 1e-3).all() and (t["pack_balance_rel"] <= 1e-3).all()

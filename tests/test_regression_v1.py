@@ -1,4 +1,5 @@
-"""P1/E0: every number printed in the conference paper, from the legacy module and the core.
+"""P1/E0: every number printed in the final conference paper (toolkit v1.1.0), from the
+legacy module and the core.
 
 The printed values, their tolerances and climate basis live in configs/experiments/e0.yaml.
 """
@@ -25,9 +26,12 @@ def tolerance(entry):
 
 
 def skip_if_missing(entry):
-    key = entry.get("requires")
-    if key and not input_path(key).exists():
-        pytest.skip(f"input '{key}' not supplied ({E0['inputs'][key]['path']})")
+    """``requires: tmy`` needs every e0.yaml input; any other value names one input."""
+    req = entry.get("requires")
+    keys = [] if not req else list(E0["inputs"]) if req == "tmy" else [req]
+    for key in keys:
+        if not input_path(key).exists():
+            pytest.skip(f"input '{key}' not supplied ({E0['inputs'][key]['path']})")
 
 
 def test_expected_ids_are_unique():

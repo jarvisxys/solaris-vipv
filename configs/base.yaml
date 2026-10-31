@@ -1,8 +1,9 @@
 # Conference baseline parameters -- FROZEN (see CLAUDE.md).
-# Transcribed from src/solaris/legacy/solaris_v1.py (SHA-256 7b30b213...96d5).
+# Transcribed from src/solaris/legacy/solaris_v110.py (SOLARIS v1.1.0, SHA-256 2603b4b6...7142).
 # tests/test_legacy.py asserts every introspectable value equals the legacy module;
 # values marked "literal" sit inside function bodies and are checked by the E0
-# refactor regression (P1) instead. Never edit; new parameters go in other configs.
+# regression (tests/test_core_equivalence.py) instead. Never edit; new parameters go in
+# other configs. v1.0 values (before the 2026-10-29 rework) are in PAPER_CHANGELOG.md.
 
 physics:
   g: 9.81                    # m/s2
@@ -10,7 +11,7 @@ physics:
   Cd: 0.28
   Af: 2.9                    # m2, frontal area
   Cr: 0.010                  # rolling resistance
-  eta_dt: 0.92               # drivetrain efficiency
+  eta_dt: 0.92               # drivetrain efficiency (inside the battery-side Wh/km only)
   eta_regen_base: 0.60       # 0.72 optimistic sensitivity
   P_susp_W: 200.0            # regenerative suspension, during motion
 
@@ -55,12 +56,12 @@ teg:                         # defaults of teg_daily_kwh()
 wltc:                        # official WLTC Class 3b phase statistics
   Low:       {distance_km: 3.095, duration_s: 589, vmax_kmh: 56.5,  n_microtrips: 8}
   Medium:    {distance_km: 4.756, duration_s: 433, vmax_kmh: 76.6,  n_microtrips: 5}
-  High:      {distance_km: 7.158, duration_s: 455, vmax_kmh: 97.4,  n_microtrips: 4}
+  High:      {distance_km: 7.162, duration_s: 455, vmax_kmh: 97.4,  n_microtrips: 4}
   ExtraHigh: {distance_km: 8.254, duration_s: 323, vmax_kmh: 131.3, n_microtrips: 2}
   build_phase: {a_acc: 1.0, a_dec: 1.2}
-  official_total_km: 23.263  # literal in wltp_recon_error()
+  official_total_km: 23.266  # literal in wltp_recon_error()
 
-synthetic_climate:           # LOCS: synthetic-climate design assumptions (not measured)
+synthetic_climate:           # LOCS: idealized synthetic climate (assumed PSH, not data)
   Phoenix: {lat: 33.4, psh: 6.3, T_mean: 24, T_amp: 12}
   Lucknow: {lat: 26.8, psh: 5.2, T_mean: 26, T_amp: 10}
   London:  {lat: 51.5, psh: 2.7, T_mean: 11, T_amp: 7}
@@ -70,9 +71,18 @@ global_solar_atlas:          # GSA, reports generated 18 Jul 2026
   Lucknow: {lat: 26.857530, lon: 80.912659,   GHI: 1725.6, DNI: 1145.5, GTI_opta: 1851.5, T: 24.9, elev_m: 127}
   London:  {lat: 51.501993, lon: -0.119476,   GHI: 1032.7, DNI: 883.8,  GTI_opta: 1209.5, T: 10.9, elev_m: 9}
 
+# Satellite-derived hourly TMYs, UTC-stamped as shipped with v1.1.0 (its data/<city>/ tree,
+# here under data/conference/; SHA-256 pinned in configs/experiments/e0.yaml).
 tmy_files:
-  Phoenix: data/323705_33.45_-112.06_tmy-2023.csv   # NSRDB PSM v4.0.1
-  London: data/tmy_51_526_-0_129_2005_2023.csv       # PVGIS 5.2
+  Phoenix: data/conference/phoenix/nsrdb_tmy/323705_33.45_-112.06_tmy-2023.csv  # NSRDB PSM v4.0.1
+  Lucknow: data/conference/lucknow/nsrdb_tmy/46088_26.85_80.95_tmy.csv          # NSRDB SUNY intl
+  London: data/conference/london/pvgis_tmy/tmy_51.526_-0.129_2005_2023.csv      # PVGIS 5.3 SARAH-3
+utc_offset_h: {Phoenix: -7.0, Lucknow: 5.5, London: 0.0}
+tmy_releases:                # Phoenix NSRDB TMY releases (inter-release robustness)
+  2022: data/conference/phoenix/nsrdb_tmy/323705_33.45_-112.06_tmy-2022.csv
+  2023: data/conference/phoenix/nsrdb_tmy/323705_33.45_-112.06_tmy-2023.csv
+  2024: data/conference/phoenix/nsrdb_tmy/323705_33.45_-112.06_tmy-2024.csv
+  2025: data/conference/phoenix/nsrdb_tmy/323705_33.45_-112.06_tmy-2025.csv
 
 park_load:                   # defaults of park_load()
   setpt: 30.0
@@ -91,10 +101,14 @@ simulate:                    # defaults of simulate()
   recharge_to: 0.80
   seed: 0
   pv_scale: 1.0
+  warmup: true               # periodic year: report the second pass
   soc_initial_frac: 0.9      # literal
 
 economics:
-  price_usd_per_kWh: {Phoenix: 0.16, Lucknow: 0.09, London: 0.34}
+  # residential tariffs in local currency, converted at fixed exchange rates
+  tariff: {Phoenix: 0.1576, Lucknow: 6.50, London: 0.2632}   # USD, INR, GBP per kWh
+  fx_inr_per_usd: 94.5975    # RBI reference rate, 30 Jun 2026
+  fx_usd_per_gbp: 1.3373     # GBP/USD close, 21 Oct 2026
   cost_items_usd:
     "PV skin (2.55 kWp @ ~$1.2/Wp incl. integration)": 3060
     "Multi-input MPPT / power electronics": 800
@@ -102,12 +116,11 @@ economics:
     "Regenerative suspension (4 EM dampers)": 2000
     "HV wiring / structure / coatings": 1200
 
-pareto:                      # literals inside pareto()
-  pv_cost_usd_per_m2: 400.0
-  pack_cost_usd_per_kWh: 90.0
+pareto:                      # pareto(); PV is priced as PV skin cost / A_skin (~264 USD/m2)
+  pack_cost_usd_per_kWh: 90.0   # literal
   areas_m2: [8, 11.6, 15, 20]
-  capacities_kWh: [150, 200, 250]
-  seeds: [0, 1, 2, 3]
+  capacities_kWh: [150, 200, 250, 300]
+  seeds: [0, 1, 2, 3]        # literal: synthetic climate only
 
 scenarios:
   II: {daily_km: 50, city: true}     # light urban

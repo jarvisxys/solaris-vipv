@@ -75,8 +75,7 @@ def metrics(r, pv_kwh_yr):
         "fss": r["fss"],
         "grid_kWh": r["grid_kwh"],
         "charges_per_yr": r["charges"],
-        "relief_balanced_pct": 100 * r["harvest_used_kwh"] / r["ann_dem"],
-        "relief_conference_pct": 100 * (r["ann_dem"] - r["grid_kwh"]) / r["ann_dem"],
+        "relief_pct": 100 * r["relief"],  # (harvest - curtailed) / demand, periodic year
     }
 
 

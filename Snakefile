@@ -11,7 +11,7 @@ import yaml
 
 sys.path.insert(0, str(Path(workflow.basedir) / "src"))
 
-LEGACY = "src/solaris/legacy/solaris_v1.py"
+LEGACY = "src/solaris/legacy/solaris_v110.py"
 LEGACY_SUMS = "src/solaris/legacy/SHA256SUMS"
 CORE_SRC = sorted(str(f) for f in Path("src/solaris/core").glob("*.py"))
 E0_CFG = "configs/experiments/e0.yaml"
@@ -56,6 +56,7 @@ rule all:
         "results/p0/legacy_sha256.ok",
         E0["b0"]["out_table"],
         E0["b0"]["out_pareto"],
+        E0["b0"]["out_summary"],
         "results/p2/summary_weather.json",
         "results/p3/summary_geometry.json",
         "results/e1/table_e1.csv",
@@ -90,10 +91,11 @@ rule legacy_sha256:
 
 # ---------------------------------------------------------------- P1 / E0
 rule e0_measured:
-    """Table B0: conference metrics on the measured NSRDB TMY (Phoenix), next to the
-    reproduced synthetic values and the numbers printed in the conference paper."""
+    """Table B0: conference metrics (toolkit v1.1.0) on the satellite hourly TMY for Phoenix,
+    Lucknow and London, next to the idealized synthetic values and the numbers printed in
+    the final conference paper; Phoenix Pareto sweep; gap split and TMY-release spread."""
     input:
-        tmy=E0["inputs"]["tmy_phoenix"]["path"],
+        tmy=[spec["path"] for spec in E0["inputs"].values()],
         base="configs/base.yaml",
         e0=E0_CFG,
         legacy_ok="results/p0/legacy_sha256.ok",
@@ -101,8 +103,9 @@ rule e0_measured:
     output:
         table=E0["b0"]["out_table"],
         pareto=E0["b0"]["out_pareto"],
+        summary=E0["b0"]["out_summary"],
     run:
-        experiment("e0_reproduce").main(input.tmy, output.table, output.pareto)
+        experiment("e0_reproduce").main(output.table, output.pareto, output.summary)
 
 
 # ---------------------------------------------------------------- P2 weather

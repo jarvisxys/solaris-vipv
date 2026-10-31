@@ -1,157 +1,237 @@
 # E0 -- reproduce and reconcile the conference baseline (workflow guide, Sec. 5).
 #
-# `expected` lists every number printed in the conference paper that solaris.py
-# emits. Each value is checked against the legacy module AND the refactored core
-# by tests/test_regression_v1.py; the ids are computed by
-# solaris.core.conference.conference_values().
+# Baseline: the final ITEC-AP 2026 paper (docs/SOLARIS__Final.pdf) and its toolkit v1.1.0
+# (src/solaris/legacy/solaris_v110.py; github.com/Anandsagar18/Solaris @ 8201cee).
+# `expected` lists every number printed in that paper that the toolkit emits. Each value is
+# checked against the legacy module AND the refactored core by tests/test_regression_v1.py;
+# the ids are computed by solaris.core.conference.conference_values().
 #
 #   printed  value as printed in the paper
 #   tol      |computed - printed| <= tol; default = half a unit of the last printed digit
-#   op       "eq" (default, uses tol) or "lt" (computed < printed, for "< x" claims)
-#   basis    climate behind the number: synthetic | gsa_annual | tmy_hourly | none
-#   requires input file needed (test skips with a reason when absent)
+#   op       "eq" (default, uses tol) or "lt" (computed < printed, for "under x" claims)
+#   basis    climate behind the number: synthetic | gsa_annual | tmy | none
+#   requires "tmy": needs every input below (test skips with a reason when one is absent)
 #
-# Guide rule: every journal baseline comes from the measured TMY run (Table B0,
-# rule e0_measured). Synthetic values stay only as a labelled historical row.
+# Guide rule: every journal baseline comes from the satellite TMY run (Table B0, rule
+# e0_measured). Synthetic (idealized-climate) values stay only as labelled historical rows.
 
 inputs:
+  # E0/P2/E2/E5 anchor: the same NSRDB TMY-2023 downloaded in local time. It loads to the
+  # identical (GHI, T) series as tmy_phoenix_2023 after its UTC -> local roll (asserted).
   tmy_phoenix:
     path: data/323705_33.45_-112.06_tmy-2023.csv
     sha256: a7e851c33c58b88cd18459321a4630bfc4486297e518e18fbeccd21d6a3e687a
     source: NREL NSRDB GOES TMY v4, PSM v4.0.1, location 323705 (33.45, -112.06), tmy-2023, local time (UTC-7)
+  # Weather files shipped with v1.1.0 (git blob bytes, UTC timestamps), under data/conference/.
+  tmy_phoenix_2023:
+    path: data/conference/phoenix/nsrdb_tmy/323705_33.45_-112.06_tmy-2023.csv
+    sha256: 3da4773a4f2384fa9943457e6480d92509433e854febef0e5c60f1b75c171655
+    source: NREL NSRDB PSM v4.0.1, location 323705, TMY-2023, UTC
+  tmy_phoenix_2022:
+    path: data/conference/phoenix/nsrdb_tmy/323705_33.45_-112.06_tmy-2022.csv
+    sha256: d36147f979dc57d14907ba5e665377c8ea9863812cbe525cc5eee803cf20031d
+    source: NREL NSRDB PSM v4.0.1, location 323705, TMY-2022, UTC
+  tmy_phoenix_2024:
+    path: data/conference/phoenix/nsrdb_tmy/323705_33.45_-112.06_tmy-2024.csv
+    sha256: 2858d34e8b5c03870e80a5038d855394b1583219574c03685234cadfe03c2034
+    source: NREL NSRDB PSM v4.0.1, location 323705, TMY-2024, UTC
+  tmy_phoenix_2025:
+    path: data/conference/phoenix/nsrdb_tmy/323705_33.45_-112.06_tmy-2025.csv
+    sha256: 2c60c1d6043a094b276c45e64c066f9e0f2db9de94135356d29bbc06c40fb16d
+    source: NREL NSRDB PSM v4.0.1, location 323705, TMY-2025, UTC
+  tmy_lucknow:
+    path: data/conference/lucknow/nsrdb_tmy/46088_26.85_80.95_tmy.csv
+    sha256: b3780c35a095fdb51d13380b8e3d2220a2f8469106aca5f669ca3639987e5cd7
+    source: NREL NSRDB SUNY International (10 km, 2000-2014), TMY, location 46088 (26.85, 80.95), UTC
   tmy_london:
-    path: data/tmy_51_526_-0_129_2005_2023.csv
-    sha256: null        # not yet supplied: PVGIS 5.2 TMY, 51.526 / -0.129, 2005-2023
-    source: JRC PVGIS 5.2 TMY
+    path: data/conference/london/pvgis_tmy/tmy_51.526_-0.129_2005_2023.csv
+    sha256: 4570905efc4603bbdd83d84df487d570f9a26d36e38bbeeb8ae898ad2dc41970
+    source: EC-JRC PVGIS 5.3 TMY (PVGIS-SARAH3, 2005-2023), 51.526 / -0.129, UTC
 
 b0:
-  site: Phoenix
+  sites: [Phoenix, Lucknow, London]
   scenarios: [II, I]
-  kappa_sensitivity: [0.60, 0.70]
+  pareto_site: Phoenix
   out_table: results/e0/table_b0.csv
   out_pareto: results/e0/table_b0_pareto.csv
+  out_summary: results/e0/summary_b0.json
 
 expected:
-  # ---------------------------------------------------------------- Sec. V / Table I
-  - {id: mass.harvest_subtotal_kg, where: Table I, printed: 182, tol: 0, basis: none}
-  - {id: mass.P0_kg, where: Table I, printed: 2482, tol: 0, basis: none}
-  - {id: mass.PA_kg, where: Table I, printed: 2696, tol: 0, basis: none}
+  # ---------------------------------------------------------------- Sec. III-A, Table II
+  - {id: mass.harvest_subtotal_kg, where: Table II, printed: 182, tol: 0, basis: none}
+  - {id: mass.P0_kg, where: Table II / Sec. III-A, printed: 2482, tol: 0, basis: none}
+  - {id: mass.PA_kg, where: Sec. III-A, printed: 2696, tol: 0, basis: none}
+  - {id: mass.table2_other_kg, where: Table II "Thermal mgmt., HV wiring, coolant, structure, coatings", printed: 62, tol: 0, basis: none}
 
-  # ---------------------------------------------------------------- Sec. VI-B TEG
-  - {id: teg.dT_leg_K, where: Sec. VI-B, printed: 3.8, basis: none}
-  - {id: teg.q_through_Wm2, where: Sec. VI-B, printed: 565, basis: none}
-  - {id: teg.P_matched_W, where: Sec. VI-B, printed: 3.8, basis: none}
-  - {id: teg.E_kWh_day, where: Sec. VI-B, printed: 0.019, basis: none}
-  - {id: teg.P_opt_W, where: Sec. VI-B "caps near 11 W", printed: 11, basis: none}
-  - {id: teg.tradeoff_kWh, where: Sec. V, printed: 17.5, basis: none}
-  - {id: teg.tradeoff_days, where: Sec. V "~920 days", printed: 920, tol: 5, basis: none}
-  - {id: teg.tradeoff_years, where: Sec. V, printed: 2.5, basis: none}
+  # ---------------------------------------------------------------- Sec. III-B drive cycle
+  - {id: wltp.total_km, where: Sec. III-B "23.29 vs. 23.266 km", printed: 23.29, basis: none}
+  - {id: wltp.total_err_pct, where: Sec. III-B "within 0.11%", printed: 0.11, basis: none}
+  - {id: wltp.vmax_low_pct, where: Sec. III-B "top speed is 5% low", printed: 5, basis: none}
+  - {id: wltp.P0_combined_whkm, where: Sec. III-B, printed: 237, basis: none}
+  - {id: wltp.P0_city_whkm, where: Sec. III-B, printed: 210, basis: none}
 
-  # ---------------------------------------------------------------- Sec. VI-C WLTP
-  - {id: wltp.total_km, where: Sec. VI-C, printed: 23.29, basis: none}
-  - {id: wltp.total_err_pct, where: Sec. VI-C, printed: 0.12, basis: none}
-  - {id: wltp.low_err_pct, where: Sec. VI-C, printed: -0.71, basis: none}
-  - {id: wltp.medium_err_pct, where: Sec. VI-C, printed: 0.55, basis: none}
-  - {id: wltp.vmax_kmh, where: Sec. VI-C, printed: 124.7, basis: none}
-  - {id: wltp.P0_combined_whkm, where: Sec. VI-C, printed: 237, basis: none}
-  - {id: wltp.P0_city_whkm, where: Sec. VI-C, printed: 210, basis: none}
-  - {id: wltp.P0_combined_whkm_regen072, where: Sec. XIII, printed: 226, basis: none}
+  # ---------------------------------------------------------------- Sec. III-C energy harvested
+  - {id: teg.q_through_Wm2, where: Sec. III-C, printed: 565, basis: none}
+  - {id: teg.k_stack_Wm2K, where: Sec. III-C "~130 W/(m2 K) incl. contact resistance", printed: 130, basis: none}
+  - {id: teg.dT_leg_K, where: Sec. III-C, printed: 3.8, basis: none}
+  - {id: teg.P_matched_W, where: Sec. III-C, printed: 3.8, basis: none}
+  - {id: teg.E_kWh_day, where: Sec. III-C, printed: 0.019, basis: none}
+  - {id: teg.P_opt_W, where: Sec. III-C "stays near 11 W", printed: 11, basis: none}
+  - {id: teg.tradeoff_kWh, where: Sec. III-C, printed: 17.5, basis: none}
+  - {id: teg.tradeoff_years, where: Sec. III-C "~2.5 yr", printed: 2.5, basis: none}
+  - {id: sec3c.suspension_50_200.fss_shift, where: Sec. III-C "moves f_ss by only 0.02", printed: 0.02, basis: tmy, requires: tmy}
 
-  # ---------------------------------------------------------------- Table II
-  - {id: table2.Lightyear0.whkm, where: Table II, printed: 132, basis: none}
-  - {id: table2.Aptera.whkm, where: Table II, printed: 84, basis: none}
+  # ---------------------------------------------------------------- Sec. IV, Table III
+  - {id: table3.Lightyear0.whkm, where: Table III, printed: 132, basis: none}
+  - {id: table3.Aptera.whkm, where: Table III, printed: 84, basis: none}
+  - {id: table3.Lightyear0.ratio, where: Table III / Sec. IV "38% higher", printed: 1.38, basis: none}
+  - {id: table3.Aptera.ratio, where: Table III / Sec. IV "29% higher", printed: 1.29, basis: none}
 
-  # ---------------------------------------------------------------- Table III (synthetic)
-  - {id: table3.II.Phoenix.fss, where: Table III, printed: 0.88, basis: synthetic}
-  - {id: table3.II.Lucknow.fss, where: Table III, printed: 0.72, basis: synthetic}
-  - {id: table3.II.London.fss, where: Table III, printed: 0.47, basis: synthetic}
-  - {id: table3.II.Phoenix.charges, where: Table III, printed: 6, tol: 0, basis: synthetic}
-  - {id: table3.II.Lucknow.charges, where: Table III, printed: 8, tol: 0, basis: synthetic}
-  - {id: table3.II.London.charges, where: Table III, printed: 13, tol: 0, basis: synthetic}
-  - {id: table3.II.Phoenix.charges_nosolar, where: Table III, printed: 28, tol: 0, basis: synthetic}
-  - {id: table3.II.Lucknow.charges_nosolar, where: Table III, printed: 29, tol: 0, basis: synthetic}
-  - {id: table3.II.London.charges_nosolar, where: Table III, printed: 25, tol: 0, basis: synthetic}
-  - {id: table3.I.Phoenix.fss, where: Table III, printed: 0.44, basis: synthetic}
-  - {id: table3.I.Lucknow.fss, where: Table III, printed: 0.36, basis: synthetic}
-  - {id: table3.I.London.fss, where: Table III, printed: 0.23, basis: synthetic}
-  - {id: table3.I.Phoenix.charges, where: Table III, printed: 32, tol: 0, basis: synthetic}
-  - {id: table3.I.Lucknow.charges, where: Table III, printed: 37, tol: 0, basis: synthetic}
-  - {id: table3.I.London.charges, where: Table III, printed: 43, tol: 0, basis: synthetic}
-  - {id: table3.I.Phoenix.charges_nosolar, where: Table III, printed: 57, tol: 0, basis: synthetic}
-  - {id: table3.I.Lucknow.charges_nosolar, where: Table III, printed: 57, tol: 0, basis: synthetic}
-  - {id: table3.I.London.charges_nosolar, where: Table III, printed: 56, tol: 0, basis: synthetic}
+  # ---------------------------------------------------------------- Table IV, Sec. V-A (idealized synthetic)
+  - {id: table4.II.Phoenix.fss_syn, where: Table IV Synth. / Sec. V-A, printed: 0.94, basis: synthetic}
+  - {id: table4.II.Lucknow.fss_syn, where: Table IV Synth., printed: 0.77, basis: synthetic}
+  - {id: table4.II.London.fss_syn, where: Table IV Synth., printed: 0.51, basis: synthetic}
+  - {id: table4.I.Phoenix.fss_syn, where: Table IV Synth., printed: 0.47, basis: synthetic}
+  - {id: table4.I.Lucknow.fss_syn, where: Table IV Synth., printed: 0.39, basis: synthetic}
+  - {id: table4.I.London.fss_syn, where: Table IV Synth., printed: 0.24, basis: synthetic}
+  - {id: table4.II.Phoenix.charges_syn, where: Fig. 2 "0.94 (6/yr)", printed: 6, tol: 0, basis: synthetic}
+  - {id: table4.II.Lucknow.charges_syn, where: Fig. 2 "0.77 (7/yr)", printed: 7, tol: 0, basis: synthetic}
+  - {id: table4.II.London.charges_syn, where: Fig. 2 "0.51 (12/yr)", printed: 12, tol: 0, basis: synthetic}
 
-  # ---------------------------------------------------------------- Table IV and Sec. IX-A
-  - {id: table4.II.Phoenix.fss_t1, where: Table IV, printed: 0.83, basis: gsa_annual}
-  - {id: table4.II.Lucknow.fss_t1, where: Table IV, printed: 0.68, basis: gsa_annual}
-  - {id: table4.II.London.fss_t1, where: Table IV, printed: 0.49, basis: gsa_annual}
-  - {id: table4.I.Phoenix.fss_t1, where: Table IV, printed: 0.41, basis: gsa_annual}
-  - {id: table4.I.Lucknow.fss_t1, where: Table IV, printed: 0.34, basis: gsa_annual}
-  - {id: table4.I.London.fss_t1, where: Table IV, printed: 0.24, basis: gsa_annual}
-  - {id: table4.II.Phoenix.fss_t2, where: Table IV, printed: 0.78, basis: tmy_hourly, requires: tmy_phoenix}
-  - {id: table4.I.Phoenix.fss_t2, where: Table IV, printed: 0.39, basis: tmy_hourly, requires: tmy_phoenix}
-  - {id: table4.II.London.fss_t2, where: Table IV, printed: 0.48, basis: tmy_hourly, requires: tmy_london}
-  - {id: table4.I.London.fss_t2, where: Table IV, printed: 0.23, basis: tmy_hourly, requires: tmy_london}
-  - {id: sec9a.gsa_psh.Phoenix, where: Sec. IX-A, printed: 5.81, basis: gsa_annual}
-  - {id: sec9a.gsa_psh.Lucknow, where: Sec. IX-A, printed: 4.73, basis: gsa_annual}
-  - {id: sec9a.gsa_psh.London, where: Sec. IX-A, printed: 2.83, basis: gsa_annual}
-  - {id: sec9a.Phoenix.tmy_ghi_kWh_m2, where: Sec. IX-A, printed: 2110, basis: tmy_hourly, requires: tmy_phoenix}
-  - {id: sec9a.Phoenix.tmy_psh, where: Sec. IX-A "measured 5.78", printed: 5.78, basis: tmy_hourly, requires: tmy_phoenix}
-  - {id: sec9a.Phoenix.synthetic_annual_err_pct, where: Sec. IX, printed: 9.0, basis: tmy_hourly, requires: tmy_phoenix}
-  - {id: sec9a.Phoenix.synthetic_monthly_mape_pct, where: Sec. IX, printed: 11.3, basis: tmy_hourly, requires: tmy_phoenix}
-  - {id: sec9a.London.tmy_ghi_kWh_m2, where: Sec. IX-A, printed: 1050.7, basis: tmy_hourly, requires: tmy_london}
-  - {id: sec9a.London.synthetic_annual_err_pct, where: Sec. IX, printed: -6.2, basis: tmy_hourly, requires: tmy_london}
-  - {id: sec9a.London.synthetic_monthly_mape_pct, where: Sec. IX, printed: 12.1, basis: tmy_hourly, requires: tmy_london}
-  - {id: sec9a.Phoenix.gap_total, where: Sec. IX-A "0.10 gap", printed: 0.10, tol: 0.005, basis: tmy_hourly, requires: tmy_phoenix}
-  # Not emitted by any legacy function. Reproduced when the magnitude step rescales the
-  # synthetic climate to the TMY's own annual PSH and mean temperature (5.781, 23.2 C);
-  # with the Global Solar Atlas values (5.807, 23.1 C) the split is 0.050 / 0.049.
-  - {id: sec9a.Phoenix.gap_magnitude, where: Sec. IX-A, printed: 0.055, basis: tmy_hourly, requires: tmy_phoenix}
-  - {id: sec9a.Phoenix.gap_distribution, where: Sec. IX-A, printed: 0.045, basis: tmy_hourly, requires: tmy_phoenix}
+  # ---------------------------------------------------------------- Table IV T1, Sec. V-B (Global Solar Atlas)
+  - {id: table4.II.Phoenix.fss_t1, where: Table IV T1, printed: 0.88, basis: gsa_annual}
+  - {id: table4.II.Lucknow.fss_t1, where: Table IV T1, printed: 0.72, basis: gsa_annual}
+  - {id: table4.II.London.fss_t1, where: Table IV T1, printed: 0.53, basis: gsa_annual}
+  - {id: table4.I.Phoenix.fss_t1, where: Table IV T1, printed: 0.44, basis: gsa_annual}
+  - {id: table4.I.Lucknow.fss_t1, where: Table IV T1, printed: 0.36, basis: gsa_annual}
+  - {id: table4.I.London.fss_t1, where: Table IV T1, printed: 0.25, basis: gsa_annual}
+  - {id: sec5b.gsa_psh.Phoenix, where: Sec. V-B, printed: 5.81, basis: gsa_annual}
+  - {id: sec5b.gsa_psh.Lucknow, where: Sec. V-B, printed: 4.73, basis: gsa_annual}
+  - {id: sec5b.gsa_psh.London, where: Sec. V-B, printed: 2.83, basis: gsa_annual}
+  - {id: sec5b.gti_above_ghi_min_pct, where: Sec. V-B "7-17% above GHI", printed: 7, basis: gsa_annual}
+  - {id: sec5b.gti_above_ghi_max_pct, where: Sec. V-B "7-17% above GHI", printed: 17, basis: gsa_annual}
 
-  # ---------------------------------------------------------------- Sec. X design inversion (synthetic PSH)
-  - {id: inversion.II.Phoenix.A_req, where: Sec. X, printed: 13.6, basis: synthetic}
-  - {id: inversion.II.Lucknow.A_req, where: Sec. X, printed: 16.7, basis: synthetic}
-  - {id: inversion.II.London.A_req, where: Sec. X, printed: 26.2, basis: synthetic}
-  - {id: inversion.I.Phoenix.A_req, where: Sec. X "27.3 to 55.2", printed: 27.3, basis: synthetic}
-  - {id: inversion.I.London.A_req, where: Sec. X "27.3 to 55.2", printed: 55.2, basis: synthetic}
-  - {id: inversion.II.Phoenix.D_max, where: Sec. X, printed: 40.6, basis: synthetic}
-  - {id: inversion.II.Lucknow.D_max, where: Sec. X, printed: 30.6, basis: synthetic}
-  - {id: inversion.II.London.D_max, where: Sec. X, printed: 18.4, basis: synthetic}
+  # ---------------------------------------------------------------- Table IV T2, Sec. V-B (satellite hourly TMY)
+  - {id: table4.II.Phoenix.fss_t2, where: Table IV T2 / abstract, printed: 0.83, basis: tmy, requires: tmy}
+  - {id: table4.II.Lucknow.fss_t2, where: Table IV T2 / abstract, printed: 0.71, basis: tmy, requires: tmy}
+  - {id: table4.II.London.fss_t2, where: Table IV T2 / abstract, printed: 0.52, basis: tmy, requires: tmy}
+  - {id: table4.I.Phoenix.fss_t2, where: Table IV T2, printed: 0.42, basis: tmy, requires: tmy}
+  - {id: table4.I.Lucknow.fss_t2, where: Table IV T2, printed: 0.36, basis: tmy, requires: tmy}
+  - {id: table4.I.London.fss_t2, where: Table IV T2, printed: 0.25, basis: tmy, requires: tmy}
+  - {id: table4.II.Phoenix.charges_t2, where: Table IV / Fig. 2, printed: 5, tol: 0, basis: tmy, requires: tmy}
+  - {id: table4.II.Lucknow.charges_t2, where: Table IV / Fig. 2, printed: 8, tol: 0, basis: tmy, requires: tmy}
+  - {id: table4.II.London.charges_t2, where: Table IV / Fig. 2, printed: 12, tol: 0, basis: tmy, requires: tmy}
+  - {id: table4.I.Phoenix.charges_t2, where: Table IV, printed: 31, tol: 0, basis: tmy, requires: tmy}
+  - {id: table4.I.Lucknow.charges_t2, where: Table IV, printed: 35, tol: 0, basis: tmy, requires: tmy}
+  - {id: table4.I.London.charges_t2, where: Table IV, printed: 39, tol: 0, basis: tmy, requires: tmy}
+  - {id: table4.II.Phoenix.charges_nosolar_t2, where: Table IV, printed: 27, tol: 0, basis: tmy, requires: tmy}
+  - {id: table4.II.Lucknow.charges_nosolar_t2, where: Table IV, printed: 27, tol: 0, basis: tmy, requires: tmy}
+  - {id: table4.II.London.charges_nosolar_t2, where: Table IV, printed: 24, tol: 0, basis: tmy, requires: tmy}
+  - {id: table4.I.Phoenix.charges_nosolar_t2, where: Table IV, printed: 54, tol: 0, basis: tmy, requires: tmy}
+  - {id: table4.I.Lucknow.charges_nosolar_t2, where: Table IV, printed: 53, tol: 0, basis: tmy, requires: tmy}
+  - {id: table4.I.London.charges_nosolar_t2, where: Table IV, printed: 50, tol: 0, basis: tmy, requires: tmy}
+  - {id: table4.II.Phoenix.relief_t2_pct, where: Table IV / abstract "up to 82 percent", printed: 82, tol: 0, basis: tmy, requires: tmy}
+  - {id: table4.II.Lucknow.relief_t2_pct, where: Table IV, printed: 71, tol: 0, basis: tmy, requires: tmy}
+  - {id: table4.II.London.relief_t2_pct, where: Table IV, printed: 52, tol: 0, basis: tmy, requires: tmy}
+  - {id: table4.I.Phoenix.relief_t2_pct, where: Table IV, printed: 42, tol: 0, basis: tmy, requires: tmy}
+  - {id: table4.I.Lucknow.relief_t2_pct, where: Table IV, printed: 36, tol: 0, basis: tmy, requires: tmy}
+  - {id: table4.I.London.relief_t2_pct, where: Table IV, printed: 25, tol: 0, basis: tmy, requires: tmy}
+  - {id: sec5b.Phoenix.tmy_ghi_kWh_m2, where: Sec. V-B, printed: 2110.0, basis: tmy, requires: tmy}
+  - {id: sec5b.Lucknow.tmy_ghi_kWh_m2, where: Sec. V-B, printed: 1843.6, basis: tmy, requires: tmy}
+  - {id: sec5b.London.tmy_ghi_kWh_m2, where: Sec. V-B, printed: 1050.7, basis: tmy, requires: tmy}
+  - {id: sec5b.Phoenix.tmy_vs_gsa_pct, where: Sec. V-B, printed: -0.4, basis: tmy, requires: tmy}
+  - {id: sec5b.Lucknow.tmy_vs_gsa_pct, where: Sec. V-B / Sec. VII "up to 6.8%", printed: 6.8, basis: tmy, requires: tmy}
+  - {id: sec5b.London.tmy_vs_gsa_pct, where: Sec. V-B, printed: 1.7, basis: tmy, requires: tmy}
+  - {id: sec5b.Lucknow.tmy_mean_T_C, where: Sec. V-B "26.8 vs. 24.9 C", printed: 26.8, basis: tmy, requires: tmy}
+  - {id: sec5b.Lucknow.tmy_minus_gsa_T_K, where: Sec. V-B "1.9 K warmer", printed: 1.9, basis: tmy, requires: tmy}
+  # gap split: magnitude = synthetic rescaled to the TMY's own annual GHI and mean T
+  - {id: sec5b.Phoenix.gap_total, where: Sec. V-B / abstract "lower the Phoenix score by 0.11", printed: 0.11, basis: tmy, requires: tmy}
+  - {id: sec5b.Phoenix.gap_magnitude, where: Sec. V-B "That step removes 0.058", printed: 0.058, basis: tmy, requires: tmy}
+  - {id: sec5b.Phoenix.gap_distribution, where: Sec. V-B "remaining 0.047", printed: 0.047, basis: tmy, requires: tmy}
+  - {id: sec5b.Lucknow.gap_magnitude, where: Sec. V-B, printed: 0.030, basis: tmy, requires: tmy}
+  - {id: sec5b.Lucknow.gap_distribution, where: Sec. V-B, printed: 0.027, basis: tmy, requires: tmy}
+  # London: printed as a gain "(+0.030)" from sunshine and a timing loss "(0.022)"
+  - {id: sec5b.London.gap_magnitude, where: Sec. V-B "+0.030" (gain), printed: -0.030, basis: tmy, requires: tmy}
+  - {id: sec5b.London.gap_distribution, where: Sec. V-B "timing loss (0.022)", printed: 0.022, basis: tmy, requires: tmy}
+  - {id: sec5b.Phoenix.monthly_mape_pct, where: Sec. V-B, printed: 11.3, basis: tmy, requires: tmy}
+  - {id: sec5b.Lucknow.monthly_mape_pct, where: Sec. V-B, printed: 12.9, basis: tmy, requires: tmy}
+  - {id: sec5b.London.monthly_mape_pct, where: Sec. V-B, printed: 12.1, basis: tmy, requires: tmy}
+  - {id: sec5b.releases.II.fss_min, where: Sec. V-B "0.832-0.840", printed: 0.832, basis: tmy, requires: tmy}
+  - {id: sec5b.releases.II.fss_max, where: Sec. V-B "0.832-0.840", printed: 0.840, basis: tmy, requires: tmy}
+  - {id: sec5b.releases.II.charges_min, where: Sec. V-B "4 or 5 plug-ins", printed: 4, tol: 0, basis: tmy, requires: tmy}
+  - {id: sec5b.releases.II.charges_max, where: Sec. V-B "4 or 5 plug-ins", printed: 5, tol: 0, basis: tmy, requires: tmy}
+  - {id: sec5b.releases.I.fss_min, where: Sec. V-B "0.419-0.422", printed: 0.419, basis: tmy, requires: tmy}
+  - {id: sec5b.releases.I.fss_max, where: Sec. V-B "0.419-0.422", printed: 0.422, basis: tmy, requires: tmy}
+  - {id: sec5b.Phoenix.plugin_reduction_pct, where: Sec. V-B / abstract "by up to 81 percent", printed: 81, basis: tmy, requires: tmy}
+  - {id: sec5b.Phoenix.weeks_between_plugins_nosolar, where: Sec. V-B "roughly every two weeks", printed: 2, basis: tmy, requires: tmy}
+  - {id: sec5b.Phoenix.weeks_between_plugins_solar, where: Sec. V-B "roughly every ten weeks", printed: 10, basis: tmy, requires: tmy}
 
-  # ---------------------------------------------------------------- Sec. XI, Tables V-VI (synthetic)
-  - {id: table5.total_usd, where: Table V, printed: 9560, tol: 0, basis: none}
-  - {id: table5.pv_only_usd, where: Table V, printed: 4460, tol: 0, basis: none}
-  - {id: table6.Phoenix.relief_pct, where: Table VI, printed: 80, basis: synthetic}
-  - {id: table6.Lucknow.relief_pct, where: Table VI, printed: 73, basis: synthetic}
-  - {id: table6.London.relief_pct, where: Table VI, printed: 51, basis: synthetic}
-  - {id: table6.Phoenix.saved_kWh, where: Table VI, printed: 4198, basis: synthetic}
-  - {id: table6.Lucknow.saved_kWh, where: Table VI, printed: 3908, basis: synthetic}
-  - {id: table6.London.saved_kWh, where: Table VI, printed: 2438, basis: synthetic}
-  - {id: table6.Phoenix.payback_full_yr, where: Table VI, printed: 14.2, basis: synthetic}
-  - {id: table6.Lucknow.payback_full_yr, where: Table VI, printed: 27.2, basis: synthetic}
-  - {id: table6.London.payback_full_yr, where: Table VI, printed: 11.5, basis: synthetic}
-  - {id: table6.Phoenix.payback_pvonly_yr, where: Table VI, printed: 6.6, basis: synthetic}
-  - {id: table6.Lucknow.payback_pvonly_yr, where: Table VI, printed: 12.7, basis: synthetic}
-  - {id: table6.London.payback_pvonly_yr, where: Table VI, printed: 5.4, basis: synthetic}
-  - {id: sec11.Phoenix.charge_reduction_pct, where: Sec. XI / abstract "79%", printed: 79, basis: synthetic}
+  # ---------------------------------------------------------------- Sec. V-C reverse design, Fig. 3
+  - {id: inversion.II.Phoenix.A_req_tmy, where: Sec. V-C / abstract / Fig. 4, printed: 14.4, basis: tmy, requires: tmy}
+  - {id: inversion.II.Lucknow.A_req_tmy, where: Sec. V-C, printed: 16.9, basis: tmy, requires: tmy}
+  - {id: inversion.II.London.A_req_tmy, where: Sec. V-C / abstract, printed: 23.9, basis: tmy, requires: tmy}
+  - {id: inversion.II.Phoenix.A_req_syn, where: Sec. V-C "(12.8, 15.6 and 24.3 m2 with the idealized climate)", printed: 12.8, basis: synthetic}
+  - {id: inversion.II.Lucknow.A_req_syn, where: Sec. V-C, printed: 15.6, basis: synthetic}
+  - {id: inversion.II.London.A_req_syn, where: Sec. V-C, printed: 24.3, basis: synthetic}
+  - {id: inversion.I.Phoenix.A_req_tmy, where: Sec. V-C "28.8 m2 to 50.2 m2", printed: 28.8, basis: tmy, requires: tmy}
+  - {id: inversion.I.London.A_req_tmy, where: Sec. V-C "28.8 m2 to 50.2 m2", printed: 50.2, basis: tmy, requires: tmy}
+  - {id: inversion.II.Phoenix.D_max_tmy, where: Sec. V-C / Fig. 3 / Fig. 4, printed: 37.5, basis: tmy, requires: tmy}
+  - {id: inversion.II.Lucknow.D_max_tmy, where: Sec. V-C / Fig. 3, printed: 29.6, basis: tmy, requires: tmy}
+  - {id: inversion.II.London.D_max_tmy, where: Sec. V-C / Fig. 3, printed: 20.5, basis: tmy, requires: tmy}
+  - {id: sec5c.Phoenix.E_aux_kWh_day, where: Sec. V-C "2.9 and 3.1 kWh/day ... against 1.6", printed: 2.9, basis: tmy, requires: tmy}
+  - {id: sec5c.Lucknow.E_aux_kWh_day, where: Sec. V-C, printed: 3.1, basis: tmy, requires: tmy}
+  - {id: sec5c.London.E_aux_kWh_day, where: Sec. V-C, printed: 1.6, basis: tmy, requires: tmy}
+  - {id: sec5c.Phoenix.fT_loss_pct, where: Sec. V-C "hot cells lose about 9%", printed: 9, basis: tmy, requires: tmy}
+  - {id: sec5c.Lucknow.fT_loss_pct, where: Sec. V-C "hot cells lose about 9%", printed: 9, basis: tmy, requires: tmy}
+  - {id: sec5c.London.fT_loss_pct, where: Sec. V-C "under 1%", printed: 1, op: lt, basis: tmy, requires: tmy}
 
-  # ---------------------------------------------------------------- Sec. XII Pareto (synthetic, 4 seeds)
-  - {id: pareto.A15.fss, where: Sec. XII, printed: 1.13, basis: synthetic}
-  - {id: pareto.A15.cap150.grid_kWh, where: Sec. XII "853", printed: 853, basis: synthetic}
-  - {id: pareto.A15.cap250.grid_kWh, where: Sec. XII "705", printed: 705, basis: synthetic}
-  - {id: pareto.A15.cap_grid_reduction_pct, where: Sec. XII "~17%", printed: 17, basis: synthetic}
+  # ---------------------------------------------------------------- Sec. V-D design choices (Phoenix II, TMY, mass fed back)
+  - {id: sec5d.area_for_fss1_m2, where: Sec. V-D "f_ss = 1 at about 14.1 m2", printed: 14.1, basis: tmy, requires: tmy}
+  - {id: sec5d.A11.6.cap150_to_250.mass_kg, where: Sec. V-D "adds 200 kg", printed: 200, tol: 0, basis: none, requires: tmy}
+  - {id: sec5d.A11.6.cap150.fss, where: Sec. V-D "lowers f_ss from 0.88 to 0.83", printed: 0.88, basis: tmy, requires: tmy}
+  - {id: sec5d.A11.6.cap250.fss, where: Sec. V-D, printed: 0.83, basis: tmy, requires: tmy}
+  - {id: sec5d.A11.6.cap150.relief_pct, where: Sec. V-D "grid relief from 86% to 82%", printed: 86, basis: tmy, requires: tmy}
+  - {id: sec5d.A11.6.cap250.relief_pct, where: Sec. V-D, printed: 82, basis: tmy, requires: tmy}
+  - {id: sec5d.A11.6.cap150_to_250.cost_usd, where: Sec. V-D "about 9000 $ more", printed: 9000, tol: 0, basis: none, requires: tmy}
+  - {id: sec5d.A15.fss_min, where: Sec. V-D "f_ss = 1.06-1.12", printed: 1.06, basis: tmy, requires: tmy}
+  - {id: sec5d.A15.fss_max, where: Sec. V-D, printed: 1.12, basis: tmy, requires: tmy}
+  - {id: sec5d.A15.relief_min_pct, where: Sec. V-D "relief stays at 95-97%", printed: 95, basis: tmy, requires: tmy}
+  - {id: sec5d.A15.relief_max_pct, where: Sec. V-D, printed: 97, basis: tmy, requires: tmy}
+  - {id: sec5d.A15.charges_min, where: Sec. V-D "one or two winter plug-ins", printed: 1, tol: 0, basis: tmy, requires: tmy}
+  - {id: sec5d.A15.charges_max, where: Sec. V-D, printed: 2, tol: 0, basis: tmy, requires: tmy}
+  - {id: sec5d.kappa060.Phoenix.fss, where: Sec. V-D "0.63-0.83 in Phoenix", printed: 0.63, basis: tmy, requires: tmy}
+  - {id: sec5d.kappa080.Phoenix.fss, where: Sec. V-D, printed: 0.83, basis: tmy, requires: tmy}
+  - {id: sec5d.kappa060.Lucknow.fss, where: Sec. V-D "0.54-0.71 in Lucknow", printed: 0.54, basis: tmy, requires: tmy}
+  - {id: sec5d.kappa080.Lucknow.fss, where: Sec. V-D, printed: 0.71, basis: tmy, requires: tmy}
+  - {id: sec5d.kappa060.London.fss, where: Sec. V-D "0.40-0.52 in London", printed: 0.40, basis: tmy, requires: tmy}
+  - {id: sec5d.kappa080.London.fss, where: Sec. V-D, printed: 0.52, basis: tmy, requires: tmy}
+  - {id: sec5d.kappa_for_quasi, where: Sec. V-D "kappa_pv ~ 0.87", printed: 0.87, basis: tmy, requires: tmy}
+  - {id: sec5d.regen072.city_whkm_base, where: Sec. V-D "from 210 to 195 Wh/km", printed: 210, basis: none, requires: tmy}
+  - {id: sec5d.regen072.city_whkm, where: Sec. V-D, printed: 195, basis: none, requires: tmy}
+  - {id: sec5d.regen072.fss_base, where: Sec. V-D "f_ss from 0.83 to 0.88", printed: 0.83, basis: tmy, requires: tmy}
+  - {id: sec5d.regen072.fss, where: Sec. V-D, printed: 0.88, basis: tmy, requires: tmy}
 
-  # ---------------------------------------------------------------- Sec. VI-D, XIII sensitivities (synthetic)
-  - {id: sens.kappa060.II.Phoenix.fss, where: Sec. XIII, printed: 0.67, basis: synthetic}
-  - {id: sens.kappa060.II.Lucknow.fss, where: Sec. XIII, printed: 0.55, basis: synthetic}
-  - {id: sens.kappa060.II.London.fss, where: Sec. XIII, printed: 0.36, basis: synthetic}
-  - {id: sens.suspension_50_200.fss_shift, where: Sec. VI-D / XIII "~0.019", printed: 0.019, basis: synthetic}
-  # Holds for Scenario I (combined cycle, 237 -> 226 Wh/km); Scenario II shifts 0.033-0.054.
-  - {id: sens.eta_regen072.I.max_fss_shift, where: Sec. XIII "< 0.03", printed: 0.03, op: lt, basis: synthetic}
+  # ---------------------------------------------------------------- Sec. V-E, Table V (Scenario II, TMY)
+  - {id: table5.total_usd, where: Sec. V-E / Table V, printed: 9560, tol: 0, basis: none, requires: tmy}
+  - {id: table5.pv_only_usd, where: Sec. V-E, printed: 4460, tol: 0, basis: none, requires: tmy}
+  - {id: table5.teg_and_suspension_usd, where: Sec. V-E "cost 4500 $", printed: 4500, tol: 0, basis: none, requires: tmy}
+  - {id: table5.wiring_dropped_usd, where: Sec. V-E / Table V "drops 600 of wiring", printed: 600, tol: 0, basis: none, requires: tmy}
+  - {id: table5.Phoenix.relief_pct, where: Table V, printed: 82, basis: tmy, requires: tmy}
+  - {id: table5.Lucknow.relief_pct, where: Table V, printed: 71, basis: tmy, requires: tmy}
+  - {id: table5.London.relief_pct, where: Table V, printed: 52, basis: tmy, requires: tmy}
+  - {id: table5.Phoenix.saved_kWh, where: Table V, printed: 3999, basis: tmy, requires: tmy}
+  - {id: table5.Lucknow.saved_kWh, where: Table V, printed: 3550, basis: tmy, requires: tmy}
+  - {id: table5.London.saved_kWh, where: Table V, printed: 2278, basis: tmy, requires: tmy}
+  - {id: table5.Phoenix.tariff_usd_kWh, where: Table V, printed: 0.158, basis: none, requires: tmy}
+  - {id: table5.Lucknow.tariff_usd_kWh, where: Table V, printed: 0.069, basis: none, requires: tmy}
+  - {id: table5.London.tariff_usd_kWh, where: Table V, printed: 0.352, basis: none, requires: tmy}
+  - {id: table5.Phoenix.payback_full_yr, where: Table V, printed: 15.2, basis: tmy, requires: tmy}
+  - {id: table5.Lucknow.payback_full_yr, where: Table V / Sec. V-E, printed: 39.2, basis: tmy, requires: tmy}
+  - {id: table5.London.payback_full_yr, where: Table V / Sec. V-E, printed: 11.9, basis: tmy, requires: tmy}
+  - {id: table5.Phoenix.payback_pvonly_yr, where: Table V, printed: 7.1, basis: tmy, requires: tmy}
+  - {id: table5.Lucknow.payback_pvonly_yr, where: Table V, printed: 18.3, basis: tmy, requires: tmy}
+  - {id: table5.London.payback_pvonly_yr, where: Table V, printed: 5.6, basis: tmy, requires: tmy}
 
-  # ---------------------------------------------------------------- Sec. XVIII usage example
-  - {id: sec18.simulate.fss, where: Sec. XVIII, printed: 0.88, basis: synthetic}
-  - {id: sec18.simulate.charges, where: Sec. XVIII, printed: 6, tol: 0, basis: synthetic}
-  - {id: sec18.required_pv_area.London, where: Sec. XVIII, printed: 26.2, basis: synthetic}
-  - {id: sec18.max_selfsuff_km.Phoenix, where: Sec. XVIII "41 km/day", printed: 41, basis: synthetic}
+  # ---------------------------------------------------------------- Sec. VI, Fig. 4 listing
+  - {id: fig4.listing.fss, where: Fig. 4 "(0.83, 5)", printed: 0.83, tol: 0, basis: tmy, requires: tmy}
+  - {id: fig4.listing.charges, where: Fig. 4 "(0.83, 5)", printed: 5, tol: 0, basis: tmy, requires: tmy}
