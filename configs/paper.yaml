@@ -1,0 +1,18 @@
+# P9 journal paper: reporting choices that are not experiment settings (src/solaris/paper.py).
+# Every number in paper/ comes from results/ through paper/generated/macros.tex.
+e8_svf:
+  # Mapillary panorama taken on the deck of bridge way 37439183; R-DENSE passes underneath
+  # (frozen trace: z_road = DEM, covered). Reported with and without it (changelog 2026-10-25).
+  exclude_id: "1752691012354126"
+  exclude_reason: overpass deck above the route
+fig_aoi:
+  decimate: 20            # DSM pixels per map pixel (0.5 m -> 10 m)
+  margin_km: 0.8          # map extent: routes and sites plus this margin
+  label_offsets:          # points; negative x puts the label left of the marker
+    P2: [-4, -7]
+    P4: [3, 3]
+archetype_short:          # labels in figures and tables
+  A1: commuter
+  A2: downtown street
+  A3: downtown shaded
+  A4: fleet 100 km/day

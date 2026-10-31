@@ -69,3 +69,12 @@ desktop.ini
 SuPy.log
 # photo-mode screenshots and renders (P8-visual)
 twin/renders/
+
+# Paper build by-products (paper/main.pdf, macros and figures are committed)
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.toc
+paper/*.blg
+paper/*.bbl
+paper/*.synctex.gz

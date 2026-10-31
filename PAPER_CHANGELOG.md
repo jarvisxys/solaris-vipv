@@ -3,6 +3,50 @@
 Every decision that changes a number, claim or reference in the journal paper,
 newest first, with date and reason.
 
+## 2026-10-31 · P9 / E7 design inversion and the journal manuscript
+
+Sources: `configs/experiments/e7.yaml`, `src/solaris/design.py`,
+`experiments/e7_inversion/run.py`, `results/e7/` (rules `e7_facets`, `e7_inversion`),
+`configs/paper.yaml`, `src/solaris/paper.py`, `paper/main.tex` (rules `paper_macros`,
+`paper_figures`, `paper`).
+
+- **E7 per-facet harvest reuses E5 unchanged.** `e7_facets` reruns the E5 driving, parking
+  and archetype code once per facet (a one-facet vehicle config) and keeps the chain,
+  facets, trees and mismatch steps per facet and hour. Facet sums reproduce
+  `table_e5.csv` to 3.6e-6 (annual, tolerance 1e-5) and the E5 hourly series to 5.0e-5
+  (tolerance 1e-4). PV energy is linear in area and κ_pv, mismatch included, so other
+  areas and allocations are the per-facet series scaled by A/A0 over the allocated
+  facets (area spread in proportion to the assumed layout).
+- **Extended Eq. (2).** A_req = (D c + E_aux)/(η PSH κ f_T F_geo F_sh F_mm) with
+  F_geo = E_facets/E_chain, F_sh = E_trees/E_facets, F_mm = E_mismatch/E_trees from each
+  archetype's annual harvest. Checked against the hour-by-hour SoC loop solved for
+  f_ss = 1 (brentq) with vehicle mass fed back at 3.5 kg/m² around the 11.6 m² design
+  mass. Grid: 4 archetypes × roof / roof+hood / full skin × κ_pv 0.60–0.80 (60 cases).
+  Largest error 2.65 % (gate 3 %), 3.26 % with the mass held fixed. Full skin at κ 0.80:
+  A1 24.1 m² (sim. 23.6), A2 51.3 (51.5), A3 38.0 (37.7), A4 48.8 (48.9) against the
+  conference 14.4 m²; D_max on 11.6 m² is 17.8, 1.9, 6.8 and 15.5 km/day against 37.5.
+  The area sweep 8/11.6/15/20 m² is in `table_e7_sweep.csv`.
+- **Layout wording.** `configs/vehicle/solaris_p0.yaml` status `placeholder` →
+  `assumed_design_layout`, header comment reworded; geometry untouched (author decision,
+  P9 brief). E2 was rerun: `table_e2.csv` and `table_e2_facets.csv` byte-identical, only
+  `summary_e2.json` "layout" changed. `twin/exchange/facet_samples.csv` regenerated to
+  scratch and byte-identical; E3–E8 outputs touched, not rerun.
+- **Every number in `paper/` is a macro.** `paper_macros` writes
+  `paper/generated/macros.tex` from `results/` (and the conference Wh/km from
+  `solaris.core`); `tests/test_paper.py` fails if `main.tex` uses an undefined result
+  macro. Hand-typed counts were replaced (Mapillary points, survey marks); the render
+  placeholder no longer quotes shadow fractions. Remaining literals are model inputs,
+  method settings and cited literature values.
+- **Mapillary exclusion.** Panorama 1752691012354126 (taken on the overpass deck the route
+  passes beneath) is excluded from the kept SVF metrics in `configs/paper.yaml`; the paper
+  reports both the kept and all-point MAE.
+- **Build.** `snakemake -c1 paper` runs pdflatex three times (no latexmk/Perl on this
+  machine); MiKTeX needs `initexmf --set-config-value=[MPM]AutoInstall=1` or the first
+  run hangs on a hidden package dialog. Figures are re-plotted at IEEE column widths.
+- **Placeholders left for the authors.** Corresponding author's postal address and phone,
+  and the Unity render (Fig. 9). ORCIDs are entered in ScholarOne at submission, not in
+  the manuscript; Arjun Deo's is still missing.
+
 ## 2026-10-31 · P1–P7 / E0, E2, E5, E6 rework to conference v1.1.0
 
 Sources: `src/solaris/legacy/solaris_v110.py` (github.com/Anandsagar18/Solaris @ 8201cee,

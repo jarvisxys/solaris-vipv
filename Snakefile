@@ -68,6 +68,8 @@ rule all:
         "results/e5/summary_e5.json",
         "results/e8/summary_e8_unity.json",
         "results/e8/summary_e8_svf.json",
+        "results/e7/summary_e7.json",
+        "paper/main.pdf",
 
 
 # ---------------------------------------------------------------- P0 bootstrap
@@ -668,5 +670,154 @@ rule e8_mapillary_svf:
         )
 
 
-# ---------------------------------------------------------------- planned rules
-# P9  E7   e7_inversion, figures, paper
+# ---------------------------------------------------------------- P9 / E7
+E7_CFG = "configs/experiments/e7.yaml"
+
+
+rule e7_facets:
+    """E7 stage 1: the E5 waterfall per facet on the TMY (facet sums must reproduce E5).
+    Long run (~E5): launch detached."""
+    input:
+        RASTERS,
+        e5_table="results/e5/table_e5.csv",
+        e5_hourly="results/e5/table_e5_hourly.csv.gz",
+        fit="results/e6/fit_fmm.json",
+        tmy=nsrdb_raw("tmy"),
+        cfg=E7_CFG,
+        e5="configs/experiments/e5.yaml",
+        sched=SCHED_CFG,
+        vehicle=VEHICLE_CFG,
+    output:
+        hourly="results/e7/table_e7_facet_hourly.csv.gz",
+        facets="results/e7/table_e7_facets.csv",
+        check="results/e7/check_e7_facets.json",
+    run:
+        experiment("e7_inversion").facet_series(output.hourly, output.facets, output.check)
+
+
+rule e7_inversion:
+    """E7 stage 2: area x allocation x kappa x archetype sweep, extended Eq. (2) vs full
+    simulation (3 % gate), Fig. 12 nomograph."""
+    input:
+        hourly="results/e7/table_e7_facet_hourly.csv.gz",
+        check="results/e7/check_e7_facets.json",
+        tmy=nsrdb_raw("tmy"),
+        cfg=E7_CFG,
+        sched=SCHED_CFG,
+        vehicle=VEHICLE_CFG,
+        code=["src/solaris/design.py"],
+    output:
+        sweep="results/e7/table_e7_sweep.csv",
+        inversion="results/e7/table_e7_inversion.csv",
+        nomograph="results/e7/table_e7_nomograph.csv",
+        fss_area="results/e7/table_e7_fss_area.csv",
+        summary="results/e7/summary_e7.json",
+        fig="results/e7/fig12_nomograph.png",
+    run:
+        experiment("e7_inversion").inversion(
+            input.hourly,
+            output.sweep,
+            output.inversion,
+            output.nomograph,
+            output.summary,
+            output.fig,
+            input.check,
+            output.fss_area,
+        )
+
+
+# ---------------------------------------------------------------- P9 paper
+# snakemake -c1 paper: macros and figures from results/, then pdflatex (three passes).
+PAPER_RESULTS = [
+    E0["b0"]["out_table"],
+    E0["b0"]["out_summary"],
+    "results/p2/summary_weather.json",
+    "results/p3/summary_geometry.json",
+    "results/e1/summary_e1.json",
+    "results/e2/summary_e2.json",
+    "results/e2/table_e2_facets.csv",
+    "results/e3/table_e3_summary.csv",
+    "results/e3/summary_e3.json",
+    "results/e3/table_e3_tod.csv",
+    "results/p6/table_traces.csv",
+    "results/e4/summary_e4.json",
+    "results/e5/table_e5.csv",
+    "results/e5/summary_e5.json",
+    "results/e6/summary_e6.json",
+    "results/e6/table_e6.csv",
+    "results/e7/summary_e7.json",
+    "results/e7/table_e7_sweep.csv",
+    "results/e7/table_e7_inversion.csv",
+    "results/e7/table_e7_nomograph.csv",
+    "results/e7/table_e7_fss_area.csv",
+    "results/e8/summary_e8_unity.json",
+    "results/e8/table_e8_trips.csv",
+    "results/e8/table_e8_svf.csv",
+]
+PAPER_FIGS = [
+    "fig_aoi.pdf",
+    "fig_facets.pdf",
+    "fig_tod.pdf",
+    "fig_waterfall.pdf",
+    "fig_fmm.pdf",
+    "fig_nomograph.pdf",
+    "fig_validation.pdf",
+]
+
+
+rule paper_macros:
+    """paper/generated/macros.tex: one LaTeX command per reported number."""
+    input:
+        PAPER_RESULTS,
+        f"{ROUTES}/MANIFEST.json",
+        cfg="configs/paper.yaml",
+        code=["src/solaris/paper.py"] + CORE_SRC,
+    output:
+        "paper/generated/macros.tex",
+    run:
+        from solaris import paper
+
+        paper.macros(output[0])
+
+
+rule paper_figures:
+    """Journal figures re-plotted from results/ (IEEE widths, no titles)."""
+    input:
+        PAPER_RESULTS,
+        f"{DD}/dsm.tif",
+        f"{ROUTES}/MANIFEST.json",
+        vehicle=VEHICLE_CFG,
+        sched=SCHED_CFG,
+        cfg="configs/paper.yaml",
+        code="src/solaris/paper.py",
+    output:
+        [f"paper/figures/{f}" for f in PAPER_FIGS],
+    run:
+        from solaris import paper
+
+        paper.figures("paper/figures")
+
+
+rule paper:
+    """paper/main.pdf with pdflatex (MiKTeX or TeX Live on PATH)."""
+    input:
+        "paper/generated/macros.tex",
+        [f"paper/figures/{f}" for f in PAPER_FIGS],
+        tex="paper/main.tex",
+        cls="paper/IEEEtran.cls",
+    output:
+        "paper/main.pdf",
+    run:
+        import shutil
+        import subprocess
+
+        exe = shutil.which("pdflatex")
+        if exe is None:
+            raise RuntimeError("pdflatex not found on PATH")
+        for _ in range(3):
+            subprocess.run(
+                [exe, "-interaction=nonstopmode", "-halt-on-error", "main.tex"],
+                cwd="paper",
+                check=True,
+                stdout=subprocess.DEVNULL,
+            )
