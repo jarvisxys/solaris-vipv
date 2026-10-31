@@ -1,0 +1,24 @@
+# E7 -- design sensitivity and shading-aware inversion (workflow guide Sec. 5).
+# experiments/e7_inversion/run.py; extended Eq. (2) in src/solaris/design.py.
+# Grid approved by the author 2026-10-29: area x allocation x kappa_pv x archetype, area
+# scaled proportionally over the allocated facets of configs/vehicle/solaris_p0.yaml.
+archetypes: [A1, A2, A3, A4]
+weather: tmy                          # as E5 base
+areas_m2: [8, 11.6, 15, 20]
+allocations:
+  roof: [roof]
+  roof_hood: [roof, hood]
+  full_skin: [roof, hood, tailgate, side_left, side_right]
+kappa: [0.60, 0.65, 0.70, 0.75, 0.80]
+mass_feedback: true                   # P0 mass + 3.5 kg/m2 x (A - 11.6); pack fixed (P0)
+loss_steps:                           # E5 waterfall steps behind F_geo, F_sh, F_mm
+  chain: chain
+  facets: facets
+  trees: trees
+  mismatch: mismatch
+gate_rel: 0.03                        # closed form within 3 % of full simulation
+nomograph:
+  allocation: full_skin
+  kappa: 0.80
+  km: [0, 120, 2]                     # start, stop, step (km/day)
+  area_m2: [4, 40, 1]                 # f_ss vs area panel

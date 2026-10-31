@@ -1,5 +1,5 @@
 {
-  "layout": "placeholder",
+  "layout": "assumed_design_layout",
   "area_m2": 11.6,
   "ghi_kWh_m2_yr": 2110.0,
   "scenario_II": {

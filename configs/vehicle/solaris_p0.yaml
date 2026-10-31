@@ -1,5 +1,5 @@
-# SOLARIS P0 PV skin (P5 / E2). PLACEHOLDER LAYOUT: the intended panel layout is unconfirmed,
-# so this is the workflow guide's placeholder (Sec. 5, E2), totalling the conference 11.6 m2.
+# SOLARIS P0 PV skin (P5 / E2). ASSUMED DESIGN LAYOUT of this study: the workflow guide's
+# five-facet skin (Sec. 5, E2), totalling the conference 11.6 m2. Author decision 2026-10-31.
 # Case 2d (roof only, 4.4 m2) is the bound reported with it. Author decision 2026-10-18.
 #
 # Body frame: x forward, y left, z up (m), origin on the ground under the body centre.
@@ -8,7 +8,7 @@
 # Each facet is a rectangle: `across_m` along its horizontal edge, `slope_m` up its slope.
 
 name: SOLARIS P0, seven-seat SUV (conference variant P0)
-status: placeholder
+status: assumed_design_layout
 body: {length_m: 5.0, width_m: 2.0, height_m: 1.85}
 sample_spacing_m: 0.25            # facet sampling grid
 
