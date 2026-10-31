@@ -3,6 +3,97 @@
 Every decision that changes a number, claim or reference in the journal paper,
 newest first, with date and reason.
 
+## 2026-10-31 · P1–P7 / E0, E2, E5, E6 rework to conference v1.1.0
+
+Sources: `src/solaris/legacy/solaris_v110.py` (github.com/Anandsagar18/Solaris @ 8201cee,
+SHA-256 `2603b4b6a2786fbab62f2431873f0498f0ce907c44f55a3aa640510b61807142`),
+`data/conference/` (weather files, exact upstream bytes), `configs/base.yaml`,
+`configs/experiments/e0.yaml`, `src/solaris/core/`, `results/e0/`, `results/e2/`,
+`results/e5/`, `results/e6/` (rules `legacy_sha256`, `e0_measured`, `e2_facets`,
+`e6_mismatch`, `e5_annual`).
+
+- **Baseline is now the final conference paper (SOLARIS__Final) and toolkit v1.1.0.**
+  The freeze was lifted for E0/E2/E5/E6 only (author decision, 2026-10-29). v1.0 stays at
+  tag `v1.0.0-conference`. `solaris.core` reproduces all 160 values v1.1.0 emits within
+  1e-9, and all 155 numbers printed in the final paper pass for both engines.
+- **What v1.1.0 changes in the model.**
+  - Demand uses the battery-side Wh/km once; v1.0 divided it by η_dt a second time.
+  - Periodic year: the SoC loop runs one warm-up year and reports the second, so the pack
+    no longer runs a year-end deficit.
+  - Grid relief = (harvest − curtailed)/demand. The balanced definition adopted on
+    2026-10-16 is now the conference definition; the separate "balanced" columns are gone.
+  - TMY loader rolls UTC-stamped files to local time (Local Time Zone − Time Zone, or the
+    configured UTC offset) instead of rejecting them.
+  - WLTC High phase 7.162 km (official total 23.266 km); the reconstructed trace is
+    unchanged. Aptera reference 65 Wh/km.
+  - Tariffs in local currency with FX: Phoenix 0.1576 USD, Lucknow 6.50 INR (94.5975
+    INR/USD), London 0.2632 GBP (1.3373 USD/GBP).
+  - Pareto: PV priced at 3060/11.6 USD/m², packs 150–300 kWh, vehicle mass fed back into
+    consumption, one TMY year without seed averaging, relief column added.
+  - New analyses: TMY release robustness (2022–2025), gap decomposition, design levers on
+    the TMY.
+- **Weather files (`data/conference/`, gitignored, SHA-256 in `configs/experiments/e0.yaml`).**
+  NSRDB TMY Phoenix 2022/2023/2024/2025 (UTC), NSRDB international TMY Lucknow, PVGIS
+  TMY London 2005–2023. Phoenix E0 keeps the local-time file `a7e851c3…`, so P2's weather
+  check is not restaled; a test proves it equals the conference TMY-2023 after the roll.
+- **Table B0 now covers all three cities (satellite TMY).** London is no longer skipped;
+  the 2026-10-16 decision to drop its measured-hourly values is superseded.
+
+  | | Phoenix II | Phoenix I | Lucknow II | Lucknow I | London II | London I |
+  |---|---|---|---|---|---|---|
+  | f_ss, old | 0.779 | 0.389 | — | — | — | — |
+  | f_ss, new | **0.832** | **0.419** | **0.713** | **0.363** | **0.517** | **0.248** |
+  | Charges/yr (no solar), new | 5 (27) | 31 (54) | 8 (27) | 35 (53) | 12 (24) | 39 (50) |
+  | Grid relief, new | 82.0 % | 41.9 % | 71.3 % | 36.3 % | 51.7 % | 24.8 % |
+  | A_req (m²), new | 14.44 | 28.78 | 16.93 | 33.39 | 23.89 | 50.17 |
+  | D_max (km/day), new | 37.50 | 33.60 | 29.58 | 26.58 | 20.45 | 18.72 |
+  | Payback full / PV-only (yr) | 15.2 / 7.1 | 14.9 / 7.0 | 39.2 / 18.3 | 39.0 / 18.2 | 11.9 / 5.6 | 11.9 / 5.5 |
+
+  - Phoenix old (v1.0): II 6 charges, A_req 15.43 m², D_max 34.5 km/day, balanced relief
+    77.9 %, payback 14.7 / 6.9 yr; I 35 charges, A_req 31.01 m².
+  - Payback rises in Phoenix despite the higher f_ss because the tariff is now 0.1576 USD/kWh.
+  - TMY releases 2022–2025 (Phoenix): f_ss 0.832–0.840 (II), 0.419–0.422 (I).
+  - Area for f_ss = 1 in Phoenix II: 14.06 m².
+- **Sec. IX-A decomposition resolved.** v1.1.0 defines the magnitude step as the synthetic
+  climate rescaled to the TMY's own GHI and mean T, the definition this changelog
+  reconstructed on 2026-10-16. Scenario II split (magnitude + distribution = total):
+  Phoenix 0.058 + 0.047 = 0.106, Lucknow 0.030 + 0.027 = 0.058, London −0.030 + 0.022 =
+  −0.009. The open "state which definition" item is closed.
+- **E2 (Phoenix, satellite TMY).** Facet geometry is unchanged (F_geo 2c 0.805, 2d 0.380);
+  the gate 2b vs 2a passes (−0.03 %).
+
+  | Case | II old | II new | I old | I new |
+  |---|---|---|---|---|
+  | 2a conference flat | 0.779 | **0.832** | 0.389 | **0.419** |
+  | 2c facet skin | 0.635 | **0.678** | 0.317 | **0.342** |
+  | 2d roof only | 0.314 | **0.335** | 0.157 | **0.170** |
+
+  Charges/yr (II): 2a 5, 2c 9, 2d 18 (old 6, 10, 20).
+- **E5 waterfall.** Every step moves up with B0; the losses per step are unchanged in kind
+  (facets −0.16, A4 −0.08; parking −0.07 to −0.37; driving shade 0.01–0.02; trees < 0.002).
+
+  | Step | A1 | A2 | A3 | A4 |
+  |---|---|---|---|---|
+  | Table B0 | 0.832 | 0.832 | 0.832 | 0.419 |
+  | + facets | 0.677 | 0.678 | 0.676 | 0.345 |
+  | + parking shade | 0.552 | 0.308 | 0.420 | 0.271 |
+  | + electrical mismatch, final (old) | **0.512** (0.479) | **0.256** (0.239) | **0.335** (0.313) | **0.257** (0.239) |
+  | Charges/yr, B0 → final (old) | 5 → 13 (6 → 15) | 5 → 20 (6 → 22) | 5 → 18 (6 → 20) | 31 → 41 (35 → 44) |
+  | Relief, final | 51.2 % | 25.6 % | 33.5 % | 25.7 % |
+  | Grid energy, final kWh/yr (old) | 2300 (2666) | 3540 (3908) | 3172 (3540) | 7251 (7779) |
+
+  Energy balance closes to 1.1e-14. The F_mm fit uses only E6 and is unchanged.
+- **E6 unchanged.** Rerun with `--forcerun`; every output, figures included, is
+  byte-identical (E6 imports no model parameter that v1.1.0 changed).
+- **E1, E3, E4, E8 proven unchanged.** All 368 files under `results/`, `routes/` and
+  `twin/exchange/` were hashed before the rework. Afterwards only the E0, E2 and E5 outputs
+  and `results/p0/legacy_sha256.ok` differ. E3 and E4 were rerun into a scratch directory
+  with the new parameters and are byte-identical to the frozen results; `snakemake -n`
+  schedules nothing. Their PV path reads only η_pv, κ, β and the cell-temperature rise,
+  which v1.1.0 does not change.
+- **Proposed** for the journal: quote the v1.1.0 numbers above throughout; describe B0 as
+  "satellite-derived hourly TMY" for all three cities.
+
 ## 2026-10-25 · P8 / E8 Mapillary SVF, P8-visual, Figure 3
 
 Sources: `results/e8/{table_e8_svf.csv, summary_e8_svf.json, fig13b_svf.png}` (rules
