@@ -24,8 +24,8 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 import rasterio  # noqa: E402
+import rasterio.features  # noqa: E402
 import rasterio.windows  # noqa: E402
-import yaml  # noqa: E402
 from PIL import Image, ImageDraw, ImageFont  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -73,13 +73,26 @@ def routes_geojson():
                         "type": f["geometry"]["type"],
                         "coordinates": np.round(coords, 5).tolist(),
                     },
-                    "properties": {**props, "stroke": ROUTE_COL[rid], "stroke-width": 4},
+                    "properties": {**props, "stroke": ROUTE_COL[rid], "stroke-width": 6},
+                }
+            )
+            # GitHub's map opens a popup only for markers, so each route also gets one
+            mid = coords[len(coords) // 2]
+            feats.append(
+                {
+                    "type": "Feature",
+                    "geometry": {"type": "Point", "coordinates": np.round(mid, 5).tolist()},
+                    "properties": {
+                        **props,
+                        "marker-color": ROUTE_COL[rid],
+                        "marker-symbol": "road",
+                    },
                 }
             )
     names = {
         "P1": "open lot",
         "P2": "street-canyon curb",
-        "P3": "home driveway",
+        "P3": "residential driveway beside a tree",
         "P4": "garage top deck",
         "P5": "P1 under a shade roof",
     }
@@ -101,7 +114,7 @@ def routes_geojson():
                     + (" (P5: same stall under a shade roof)" if p["id"] == "P1" else ""),
                     "sky_view_factor": round(p["svf"], 2),
                     "marker-color": "#264653",
-                    "marker-symbol": "car",
+                    "marker-symbol": "parking",
                 },
             }
         )
@@ -111,59 +124,98 @@ def routes_geojson():
     )
 
 
-def _ascii_stl(name, tris):
+def _compact_stl(name, tris, nd=1):
+    """ASCII STL with short numbers, small enough to inline in the README."""
+
+    def g(x):
+        s = f"{x:.{nd}f}".rstrip("0").rstrip(".")
+        return "0" if s in ("", "-0") else s
+
     lines = [f"solid {name}"]
     for a, b, c in tris:
         n = np.cross(b - a, c - a)
         n = n / (np.linalg.norm(n) or 1)
-        lines += [
-            f"facet normal {n[0]:.3f} {n[1]:.3f} {n[2]:.3f}",
-            "outer loop",
-            *[f"vertex {v[0]:.3f} {v[1]:.3f} {v[2]:.3f}" for v in (a, b, c)],
-            "endloop",
-            "endfacet",
-        ]
+        lines += ["facet normal " + " ".join(f"{q:.2f}".rstrip("0").rstrip(".") or "0" for q in n)]
+        lines += ["outer loop", *("vertex " + " ".join(g(q) for q in p) for p in (a, b, c))]
+        lines += ["endloop", "endfacet"]
     return "\n".join(lines + [f"endsolid {name}"]) + "\n"
 
 
-def vehicle_stl():
-    """Body box plus the five PV facets of configs/vehicle/solaris_p0.yaml (body frame, m)."""
-    cfg = yaml.safe_load((ROOT / "configs/vehicle/solaris_p0.yaml").read_text())
-    L, W, H = cfg["body"]["length_m"], cfg["body"]["width_m"], cfg["body"]["height_m"]
+def canyon_blocks_stl(half=110.0):
+    """Block model of the P2 canyon: Overture footprints extruded to lidar roof height."""
+    import shapely
+    from shapely.geometry import box
+
+    m = json.loads((ROOT / "routes/v2/MANIFEST.json").read_text())["parking"]["P2"]
+    x0, y0 = m["x"], m["y"]
+    bb = box(x0 - half, y0 - half, x0 + half, y0 + half)
+    fp = gpd.read_file(ROOT / "data/raw/overture/buildings.gpkg", mask=bb).to_crs(26912)
+    fp = fp.explode(index_parts=False)
+    fp = fp[
+        (fp.geometry.area > 20) & fp.geometry.centroid.within(bb)
+    ]  # whole buildings, no cut walls
+    ext = box(*fp.total_bounds).union(bb).bounds
+
+    def window(p):
+        s = rasterio.open(p)
+        w = rasterio.windows.from_bounds(*ext, s.transform).round_offsets().round_lengths()
+        return s.read(1, window=w), s.window_transform(w)
+
+    dsm, tr = window(ROOT / "data/derived/dsm.tif")
+    dem, _ = window(ROOT / "data/derived/dem.tif")
+    ground = float(np.median(dem[dem > -1000]))
     tris = []
 
-    def quad(p, u, v):  # rectangle centred on p, half-edges u and v
-        c = [p - u - v, p + u - v, p + u + v, p - u + v]
-        tris.extend([(c[0], c[1], c[2]), (c[0], c[2], c[3])])
+    def quad(a, b, c, d):
+        tris.extend([(a, b, c), (a, c, d)])
 
-    hood = next(f for f in cfg["facets"] if f["id"] == "hood")
-    x_cab = hood["centre_m"][0] - hood["slope_m"] / 2  # cabin ends where the hood starts
-    boxes = [
-        ([-L / 2, -W / 2 + 0.06, 0.35], [x_cab, W / 2 - 0.06, H - 0.04]),  # cabin
-        ([x_cab, -W / 2 + 0.06, 0.35], [L / 2, W / 2 - 0.06, hood["centre_m"][2] - 0.04]),
-    ]  # front
-    for lo, hi in boxes:
-        lo, hi = np.array(lo), np.array(hi)
-        ctr, half = (lo + hi) / 2, (hi - lo) / 2
-        for ax in range(3):
-            for s in (-1, 1):
-                n = np.eye(3)[ax] * s
-                u, v = (
-                    np.eye(3)[(ax + 1) % 3] * half[(ax + 1) % 3],
-                    np.eye(3)[(ax + 2) % 3] * half[(ax + 2) % 3],
-                )
-                quad(ctr + n * half[ax], u if s > 0 else -u, v)
-    for f in cfg["facets"]:
-        t, a = np.radians(f["tilt_deg"]), np.radians(f["azimuth_body_deg"])
-        nrm = np.array(
-            [np.cos(a) * np.sin(t), -np.sin(a) * np.sin(t), np.cos(t)]
-        )  # azimuth clockwise from x
-        across = np.array([-np.sin(a), -np.cos(a), 0.0])
-        up = np.cross(nrm, across)
-        quad(
-            np.array(f["centre_m"]) + 0.03 * nrm, across * f["across_m"] / 2, up * f["slope_m"] / 2
+    for poly in fp.geometry.simplify(0.7):
+        if poly.is_empty or poly.geom_type != "Polygon":
+            continue
+        mask = rasterio.features.geometry_mask([poly], dsm.shape, tr, invert=True)
+        if mask.sum() < 4:
+            continue
+        top = float(np.percentile(dsm[mask], 90)) - ground  # roof height above the street
+        if top < 2.5:
+            continue
+        ring = np.array(poly.exterior.coords)[:-1] - [x0, y0]
+        if shapely.Polygon(ring).exterior.is_ccw is False:
+            ring = ring[::-1]
+        for (xa, ya), (xb, yb) in zip(ring, np.roll(ring, -1, axis=0), strict=True):
+            quad(
+                np.array([xa, ya, 0]),
+                np.array([xb, yb, 0]),
+                np.array([xb, yb, top]),
+                np.array([xa, ya, top]),
+            )
+        roof = shapely.constrained_delaunay_triangles(shapely.Polygon(ring))
+        for t in roof.geoms:
+            c = np.array(t.exterior.coords)[:3]
+            tri = [np.array([x, y, top]) for x, y in c]
+            if np.cross(tri[1] - tri[0], tri[2] - tri[0])[2] < 0:
+                tri = tri[::-1]
+            tris.append(tuple(tri))
+    gx0, gy0, gx1, gy1 = ext[0] - x0 - 5, ext[1] - y0 - 5, ext[2] - x0 + 5, ext[3] - y0 + 5
+    quad(
+        *(
+            np.array(p)
+            for p in ([gx0, gy0, -0.05], [gx1, gy0, -0.05], [gx1, gy1, -0.05], [gx0, gy1, -0.05])
         )
-    (OUT / "solaris_facets.stl").write_text(_ascii_stl("solaris_p0_facets", tris), newline="\n")
+    )
+    # the parked SOLARIS at the curb (5 x 2 x 1.85 m, heading along the avenue) for scale
+    lo, hi = np.array([-1.0, -2.5, 0.0]), np.array([1.0, 2.5, 1.85])
+    for ax in range(3):
+        for s in (lo, hi):
+            u, v = [i for i in range(3) if i != ax]
+            pts = []
+            for du, dv in ((0, 0), (1, 0), (1, 1), (0, 1)):
+                p = s.copy()
+                p[u] = (lo, hi)[du][u]
+                p[v] = (lo, hi)[dv][v]
+                pts.append(p)
+            quad(*pts)
+    (OUT / "canyon_p2_blocks.stl").write_text(_compact_stl("p2_canyon", tris), newline="\n")
+    print(f"  canyon blocks: {len(fp)} footprints, {len(tris)} triangles")
 
 
 def canyon_stl(half=150.0, step=2.0):
@@ -497,10 +549,14 @@ def social_preview():
 
 
 def readme():
-    """README.md from README.template.md with the GeoJSON map and the facet STL inlined."""
+    """README.md from README.template.md with the GeoJSON map and two STL models inlined."""
     t = (OUT / "README.template.md").read_text(encoding="utf-8")
     t = t.replace("{{GEOJSON}}", (OUT / "routes.geojson").read_text(encoding="utf-8").strip())
-    t = t.replace("{{STL}}", (OUT / "solaris_facets.stl").read_text(encoding="utf-8").strip())
+    for key, name in (
+        ("CANYON", "canyon_p2_blocks.stl"),
+        ("VEHICLE", "solaris_p0_vehicle_lowpoly.stl"),
+    ):
+        t = t.replace("{{" + key + "}}", (OUT / name).read_text(encoding="utf-8").strip())
     (ROOT / "README.md").write_bytes(t.encode("utf-8"))
 
 
@@ -513,8 +569,8 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     steps = {
         "routes": routes_geojson,
-        "vehicle": vehicle_stl,
         "canyon": canyon_stl,
+        "blocks": canyon_blocks_stl,
         "weather": weather,
         "network": network_map,
         "traffic": traffic,

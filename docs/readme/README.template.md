@@ -85,7 +85,7 @@ Weather is the NSRDB typical meteorological year for the cell over downtown Phoe
 
 ## Routes, traffic and parking
 
-Click the routes and sites for their properties. GitHub renders this map from the GeoJSON below.
+Pan and zoom the map; click a coloured route marker or a parking pin for its details.
 
 ```geojson
 {{GEOJSON}}
@@ -101,6 +101,18 @@ Click the routes and sites for their properties. GitHub renders this map from th
 <img src="docs/readme/network_routes.png" width="49%" alt="Map of the OSM arterial network of central Phoenix with the four routes and the parking sites"> <img src="docs/readme/traffic_trips.png" width="49%" alt="Distance against time for one R-DENSE trip at three traffic levels, and the durations of all 120 simulated trips">
 
 Traffic comes from SUMO on the OSM network: background demand at three levels, five departure times (08:00 to 16:00) and both directions, giving 120 frozen trips with a position and speed every second. The vehicle parks at five sites: an open lot (P1), the darkest curb on Central Avenue (P2, sky view factor 0.34), a residential driveway beside a tree (P3), a garage top deck (P4) and the P1 stall under a shade roof (P5).
+
+### The street canyon at the P2 curb, in 3D
+
+Drag to rotate, scroll to zoom. This is the block around the darkest curb on Central Avenue, where the downtown archetype parks all day: Overture building footprints raised to their lidar roof height (trees left out), with the curb at the centre. The tallest tower is 114 m; the canyon floor keeps a sky view factor of 0.34.
+
+```stl
+{{CANYON}}
+```
+
+[![Open the full lidar canyon in GitHub's 3D viewer](https://img.shields.io/badge/3D%20viewer-full%20lidar%20canyon%20with%20trees%2C%20300%20m-d1495b?style=for-the-badge&logo=threedotjs&logoColor=white)](docs/readme/canyon_p2.stl)
+
+<sub>The button opens the lidar surface itself (buildings and tree canopy on a 2 m grid, 300 m × 300 m) in GitHub's 3D viewer.</sub>
 
 ### A day in the life of each archetype
 
@@ -159,18 +171,17 @@ gantt
 | Right side | red | 2.5 | 85° | right |
 | **Total** | | **11.6** | | |
 
-The layout is the study's assumed design ([`configs/vehicle/solaris_p0.yaml`](configs/vehicle/solaris_p0.yaml)); roof only (4.4 m²) is reported as the lower bound. Each facet is sampled every 0.25 m, and the samples' shading feeds an electrical mismatch model with bypass diodes. Drag to rotate the facet model the engine uses (grey body, facets offset 3 cm):
+The layout is the study's assumed design ([`configs/vehicle/solaris_p0.yaml`](configs/vehicle/solaris_p0.yaml)); roof only (4.4 m²) is reported as the lower bound. Each facet is sampled every 0.25 m, and the samples' shading feeds an electrical mismatch model with bypass diodes.
+
+The SOLARIS vehicle from Blender, in 3D. Drag to rotate, scroll to zoom (a simplified copy of the model the Unity twin drives, 1,318 triangles):
 
 ```stl
-{{STL}}
+{{VEHICLE}}
 ```
 
-<details>
-<summary>A 300 m street canyon around the P2 curb as a 3D model</summary>
+[![Open the full Blender model in GitHub's 3D viewer](https://img.shields.io/badge/3D%20viewer-full%20Blender%20model%2C%2033%2C900%20triangles-2a9d8f?style=for-the-badge&logo=blender&logoColor=white)](docs/readme/solaris_p0_vehicle.stl)
 
-[`docs/readme/canyon_p2.stl`](docs/readme/canyon_p2.stl) is the lidar surface (buildings plus tree canopy, 2 m cells) for 150 m around the curb on Central Avenue where the downtown archetype parks. Open it on GitHub to rotate and zoom it.
-
-</details>
+<sub>Built by <a href="twin/blender/build_solaris_p0.py">twin/blender/build_solaris_p0.py</a> around the exact facets of the configuration; the shading engine itself uses the facets, not this mesh.</sub>
 
 ## Architecture
 

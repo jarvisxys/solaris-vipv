@@ -392,6 +392,97 @@ def city(out, sun_frames=True):
             o.hide_render = False
 
 
+def vehicle_stl(readme_dir):
+    """SOLARIS_SUV as STL: full binary model, and a 1.3k-triangle ASCII copy for the README."""
+    import struct
+
+    import bmesh
+    import bpy
+    from mathutils import Matrix, Vector
+
+    if "SOLARIS_SUV" not in bpy.data.collections:
+        exec(
+            compile(
+                (REPO / "twin/blender/build_solaris_p0.py").read_text(),
+                "build_solaris_p0.py",
+                "exec",
+            ),
+            {},
+        )
+    small = ("Spoke", "Caliper", "Disc", "Handle", "Badge", "Belt", "HubCap", "Mirror_Arm", "LED",
+             "Headlamp", "RimLip", "RimBarrel", "ArchLiner", "ArchCut", "Tail_Corner", "Front_Skid",
+             "Rear_Diffuser")  # fmt: skip
+    root = bpy.data.objects["SOLARIS_SUV"]
+    dg = bpy.context.evaluated_depsgraph_get()
+    rot = Matrix.Rotation(math.radians(90), 4, "Z")  # root forward -Y -> body frame x forward
+
+    def parts(o):
+        for c in o.children:
+            if c.type == "MESH":
+                yield c
+            yield from parts(c)
+
+    def combined(skip_small):
+        bm = bmesh.new()
+        for o in parts(root):
+            if skip_small and o.name.startswith(small):
+                continue
+            me = bpy.data.meshes.new_from_object(o.evaluated_get(dg), depsgraph=dg)
+            me.transform(rot @ o.matrix_world)
+            bm.from_mesh(me)
+            bpy.data.meshes.remove(me)
+        bmesh.ops.triangulate(bm, faces=bm.faces[:])
+        return bm
+
+    bm = combined(False)
+    with open(readme_dir / "solaris_p0_vehicle.stl", "wb") as fh:
+        fh.write(
+            b"SOLARIS P0 (twin/blender/build_solaris_p0.py), metres, x forward, z up".ljust(80)
+        )
+        fh.write(struct.pack("<I", len(bm.faces)))
+        for f in bm.faces:
+            a, b, c = (Vector(lp.vert.co) for lp in f.loops)
+            n = (b - a).cross(c - a)
+            fh.write(struct.pack("<12fH", *(n.normalized() if n.length else n), *a, *b, *c, 0))
+    bm.free()
+    bm = combined(True)
+    me = bpy.data.meshes.new("RD_tmp_vehicle")
+    bm.to_mesh(me)
+    bm.free()
+    ob = bpy.data.objects.new("RD_tmp_vehicle", me)
+    bpy.context.scene.collection.objects.link(ob)
+    try:
+        d = ob.modifiers.new("planar", "DECIMATE")
+        d.decimate_type, d.angle_limit = "DISSOLVE", math.radians(5)
+        ob.modifiers.new("tri", "TRIANGULATE")
+        d = ob.modifiers.new("collapse", "DECIMATE")
+        d.decimate_type, d.ratio = "COLLAPSE", 0.2
+        ev = ob.evaluated_get(bpy.context.evaluated_depsgraph_get())
+        m = ev.to_mesh()
+        z0 = min(v.co.z for v in m.vertices)
+
+        def g(x):
+            s = f"{x:.2f}".rstrip("0").rstrip(".")
+            return "0" if s in ("-0", "") else s
+
+        lines = ["solid solaris_p0"]
+        for p in m.polygons:
+            vs = [m.vertices[i].co - Vector((0, 0, z0)) for i in p.vertices]
+            n = (vs[1] - vs[0]).cross(vs[2] - vs[0])
+            lines += [
+                "facet normal " + " ".join(g(q) for q in (n.normalized() if n.length else n)),
+                "outer loop",
+            ]
+            lines += ["vertex " + " ".join(g(q) for q in v) for v in vs] + ["endloop", "endfacet"]
+        ev.to_mesh_clear()
+        (readme_dir / "solaris_p0_vehicle_lowpoly.stl").write_text(
+            "\n".join([*lines, "endsolid solaris_p0"]) + "\n", newline="\n"
+        )
+    finally:
+        bpy.data.objects.remove(ob)
+        bpy.data.meshes.remove(me)
+
+
 if __name__ == "__main__":
     if (
         len(sys.argv) > 1 and sys.argv[1] == "points"
@@ -404,4 +495,5 @@ if __name__ == "__main__":
         t0 = time.time()
         studio(OUT)
         city(OUT)
+        vehicle_stl(REPO / "docs" / "readme")
         print(f"README renders in {OUT} ({time.time() - t0:.0f} s)")
