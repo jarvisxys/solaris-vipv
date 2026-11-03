@@ -7,10 +7,20 @@ e8_svf:
   exclude_reason: overpass deck above the route
 fig_aoi:
   decimate: 20            # DSM pixels per map pixel (0.5 m -> 10 m)
-  margin_km: 0.8          # map extent: routes and sites plus this margin
-  label_offsets:          # points; negative x puts the label left of the marker
-    P2: [-4, -7]
-    P4: [3, 3]
+  margin_km: 0.6          # map extent: routes and sites plus this margin
+  height_max_m: 40        # grey scale of building and tree height above ground
+  scale_km: 2
+  route_labels:           # [fraction along the route from its southern/western end, dx, dy] pt
+    R-OPEN: [0.3, 0, 6]
+    R-MIXED: [0.22, 5, 0]
+    R-DENSE: [0.85, 5, 0]
+  label_offsets:          # leader-line label position, points from the marker
+    P1/P5: [16, -12]
+    P2: [-20, -9]
+    P4: [14, 9]
+    P3: [-16, 9]
+fig_render:
+  file: fig_render.png    # Unity twin, R-DENSE fwd 08:00, 2023-12-21 15:03:52 UTC (E8 render)
 archetype_short:          # labels in figures and tables
   A1: commuter
   A2: downtown street

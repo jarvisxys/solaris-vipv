@@ -1,53 +1,707 @@
+<div align="center">
+
 # SOLARIS-Twin
 
-Trajectory- and parking-resolved assessment of a solar-assisted heavy EV in a
-lidar-built 3D Phoenix. This is the journal extension of the SOLARIS conference
-paper (*SOLARIS: A First-Principles, Drive-Cycle- and Climate-Resolved Methodology
-and Open Toolkit for Assessing Solar-Assisted Heavy Electric Vehicles*). The
-conference code is kept byte-identical in `src/solaris/legacy/solaris_v1.py`.
+**A digital twin for shading-aware assessment of vehicle-integrated photovoltaics on a heavy electric vehicle**
 
-Python produces every reported number. The Unity + Cesium twin and SOLWEIG are
-independent cross-checks only.
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.23896001-1682D4)](https://doi.org/10.5281/zenodo.23896001)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2a9d8f)](LICENSE)
+![Python 3.11](https://img.shields.io/badge/python-3.11-3776AB)
+![Snakemake](https://img.shields.io/badge/pipeline-Snakemake-039475)
+![Tests](https://img.shields.io/badge/tests-568%20passed-2a9d8f)
+![Unity 6](https://img.shields.io/badge/twin-Unity%206%20%2B%20Cesium-222222)
+[![Paper](https://img.shields.io/badge/paper-PDF-d1495b)](paper/main.pdf)
 
-## Setup
+<img src="docs/readme/twin_drive.webp" width="100%" alt="The SOLARIS vehicle driving north on 1st Avenue in the Unity twin of downtown Phoenix at noon on 21 June, with live readouts of speed, PV power per facet and trip energy; mid-clip it passes under a bridge and the PV power drops to 0 W">
 
-Everything runs natively on Windows 11. Install
-[Miniforge](https://conda-forge.org/download/), then from a Miniforge Prompt in the repo:
+<sub>The Unity twin replaying a simulated trip through downtown Phoenix, 21 June, 12:05 MST. The panel on the right shows which facets are in direct sun; under the bridge every facet goes dark. Full clip: <a href="docs/readme/twin_drive.mp4">twin_drive.mp4</a>.</sub>
 
-```bat
-conda env create -f environment.yml
-conda activate solaris
-pre-commit install
+</div>
+
+Solar panels on a car are usually judged as if the whole skin were a flat roof under an open sky. In a real city the panels face different directions, buildings and trees shade them, and the car spends most of the day parked wherever its owner leaves it. SOLARIS-Twin measures how much of the solar energy survives all of that.
+
+It extends the SOLARIS conference toolkit (an hour-by-hour energy model of a 2.5 t, seven-seat electric vehicle) with a lidar-built 3D model of central Phoenix, Arizona. The vehicle drives traffic-simulated trips on real arterials, parks at five sites, and the shadow on each of its five PV facets is computed every second while driving and every five minutes while parked, for a whole typical year.
+
+> [!NOTE]
+> This repository is the code and data pipeline behind the journal manuscript *"A Digital Twin for Shading-Aware Assessment of Vehicle-Integrated Photovoltaics on a Heavy Electric Vehicle"* (A. Kumar, A. Gaikwad, A. Deo), submitted to the IEEE Transactions on Transportation Electrification. It extends our ITEC-AP 2026 conference paper. Every number in [`paper/main.pdf`](paper/main.pdf) is written by a Snakemake rule from the files in [`results/`](results/).
+
+## Results at a glance
+
+| | Phoenix, 50 km/day |
+|---|---|
+| Solar self-sufficiency of the conference model (whole skin flat, never shaded) | **0.832** |
+| ... with the five facets facing where they really face | **0.677** |
+| ... for a suburban commuter after parking shade, driving shade and electrical mismatch | **0.512** |
+| ... for a car parked at a downtown street-canyon curb | **0.256** |
+| Share of the shading loss that happens while parked (commuter / downtown) | **92 % / 95 %** |
+| Shading-aware design equation vs. the full simulation | **within 2.6 %** |
+| Unity ray-casting twin vs. the Python shading engine | **99.1 % agreement over 15.5 million sample-seconds** |
+
+*Self-sufficiency* is the share of the vehicle's yearly energy demand that it covers on board (PV plus small thermoelectric and suspension-recovery terms). Parking, not driving, decides most of the outcome: the street canyon costs at most 0.017 while driving.
+
+## How the twin is built
+
+The same 1 km block of downtown Phoenix at each stage of the pipeline (Blender renders of the pipeline's own files; the sun is placed for 21 December, 15:00 MST).
+
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/L1_points_height.webp" alt="USGS lidar point cloud of downtown Phoenix coloured by height above ground"></td>
+<td width="50%"><img src="docs/readme/L2_points_class.webp" alt="The same points coloured by the pipeline's classes: ground grey, buildings orange, trees green"></td>
+</tr>
+<tr>
+<td><b>1. Lidar.</b> USGS 3DEP airborne lidar, 5.28 billion points over 952 tiles of 500 m (14 × 17 km), cleaned and reprojected with PDAL. Colour: height above ground.</td>
+<td><b>2. Classification.</b> Each 0.5 m cell becomes ground, building or tree from the lidar height and NAIP near-infrared imagery (NDVI). Downtown has few trees: about 1 % of this block.</td>
+</tr>
+<tr>
+<td><img src="docs/readme/L3_mesh_buildings.webp" alt="Clay render of the building and ground mesh built from the 0.5 m surface model"></td>
+<td><img src="docs/readme/L4_mesh_trees.webp" alt="The same mesh with the separate tree canopy mesh in green"></td>
+</tr>
+<tr>
+<td><b>3. Surface mesh.</b> A 0.5 m surface model checked against 87 NGS survey marks (median absolute deviation 0.14 m), with building changes since the lidar epoch reviewed against Overture footprints, then meshed per tile.</td>
+<td><b>4. Trees kept separate.</b> Canopy is a second mesh because leaves let some light through (transmittance τ), while buildings block it completely.</td>
+</tr>
+<tr>
+<td><img src="docs/readme/unity_google_tiles.jpg" alt="Unity twin view along Central Avenue with Google Photorealistic 3D Tiles, the SOLARIS vehicle and live PV readouts"></td>
+<td><img src="docs/readme/unity_topdown.jpg" alt="Top-down Unity view of downtown Phoenix at noon with the vehicle's facet panel"></td>
+</tr>
+<tr>
+<td><b>5. Visual twin.</b> Unity 6 with Cesium streams Google Photorealistic 3D Tiles over the same coordinates (ENU origin 33.4484° N, 112.0740° W), so the scene looks like the city while the shading still comes from the lidar mesh.</td>
+<td><b>6. Replay.</b> The twin replays the exact trips and sun positions of the simulation. Its own ray casts are an independent check of the Python engine (E8).</td>
+</tr>
+</table>
+
+### Sun and shade over a day
+
+<table>
+<tr>
+<td width="62%"><img src="docs/readme/sun_day.webp" alt="Animated clay render of downtown Phoenix from 05:45 to 19:15 on 21 June with the sun at its computed position; building shadows sweep across the streets"></td>
+<td>The sun position for every second of the year comes from the NREL solar position algorithm (pvlib). Each facet sample gets a horizon mask from the surface model; the beam is blocked when the sun is behind it, and diffuse light is scaled by the sky view factor. On 21 June the sun stands 79° high at noon, so even narrow canyons get light at midday; morning and evening are where buildings take it away.</td>
+</tr>
+</table>
+
+<img src="docs/readme/weather_tmy.png" width="100%" alt="Heat maps of hourly global horizontal irradiance and air temperature for the Phoenix typical meteorological year">
+
+Weather is the NSRDB typical meteorological year for the cell over downtown Phoenix (TMY-2023, hourly). Temperature matters as well as sunlight: cell temperature follows the Faiman model with the vehicle's speed added to the wind.
+
+## Routes, traffic and parking
+
+Click the routes and sites for their properties. GitHub renders this map from the GeoJSON below.
+
+```geojson
+{"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"LineString","coordinates":[[-112.06469,33.39224],[-112.06354,33.39224],[-112.0622,33.39224],[-112.05928,33.39226],[-112.05774,33.39226],[-112.05514,33.39226],[-112.0541,33.39234],[-112.05249,33.39253],[-112.0511,33.39263],[-112.04951,33.39268],[-112.04787,33.39273],[-112.04695,33.39275],[-112.04565,33.39278],[-112.04339,33.39284],[-112.04235,33.39286],[-112.04126,33.39284],[-112.04013,33.39282],[-112.03916,33.39287],[-112.03817,33.39291],[-112.03552,33.39301],[-112.03381,33.39307],[-112.03089,33.39318],[-112.03008,33.3932],[-112.0293,33.39322],[-112.02718,33.3933],[-112.02578,33.39335],[-112.02437,33.3934],[-112.02255,33.39346],[-112.02111,33.39352],[-112.02023,33.39358],[-112.01919,33.39367],[-112.01841,33.39374],[-112.01743,33.39382],[-112.01684,33.39384],[-112.01636,33.39378],[-112.01576,33.39361],[-112.01515,33.39336],[-112.01417,33.39296],[-112.01327,33.39264],[-112.01254,33.39254],[-112.01155,33.39254],[-112.00997,33.39255],[-112.00867,33.39256],[-112.00597,33.39258],[-112.00493,33.39259],[-112.00323,33.39259],[-112.00107,33.39261],[-111.99989,33.39262],[-111.99672,33.39263],[-111.99624,33.39263],[-111.99539,33.39264],[-111.99416,33.39264],[-111.99118,33.39267],[-111.98923,33.39268],[-111.98692,33.3927],[-111.98536,33.39271],[-111.98184,33.39274],[-111.97907,33.39276],[-111.97836,33.39276],[-111.97739,33.39276],[-111.97601,33.39276]]},"properties":{"route":"R-OPEN","street":"Southern Avenue","length_km":8.28,"mean_sky_view_factor":0.96,"stroke":"#2a9d8f","stroke-width":4}},{"type":"Feature","geometry":{"type":"LineString","coordinates":[[-112.09915,33.39227],[-112.09916,33.39311],[-112.09921,33.39545],[-112.09922,33.39593],[-112.09925,33.39777],[-112.09927,33.39893],[-112.09929,33.39966],[-112.09932,33.40133],[-112.09934,33.40244],[-112.09936,33.4039],[-112.0994,33.40529],[-112.09941,33.40611],[-112.09944,33.40668],[-112.09945,33.40735],[-112.09947,33.40849],[-112.09956,33.41222],[-112.0996,33.41416],[-112.09968,33.41835],[-112.09974,33.42095],[-112.09976,33.42224],[-112.09977,33.42284],[-112.0998,33.42382],[-112.09983,33.42503],[-112.09986,33.42653],[-112.09988,33.42783],[-112.09996,33.42847],[-112.09997,33.42935],[-112.0999,33.4303],[-112.09991,33.43102],[-112.09993,33.43178],[-112.09994,33.43294],[-112.1,33.4353],[-112.10001,33.43589],[-112.10001,33.43654],[-112.10002,33.43724],[-112.10003,33.43787],[-112.10003,33.43856],[-112.10004,33.43948],[-112.10004,33.44024],[-112.10004,33.44052],[-112.10004,33.44123],[-112.10005,33.44182],[-112.10007,33.44304],[-112.10008,33.44391],[-112.1001,33.44553],[-112.10011,33.44667],[-112.10011,33.44724],[-112.10013,33.4481],[-112.10012,33.44912],[-112.10011,33.44965],[-112.10011,33.45019],[-112.1001,33.45069],[-112.10009,33.45114],[-112.1001,33.45183],[-112.10006,33.45341],[-112.10009,33.45451],[-112.10011,33.45555],[-112.10009,33.45727],[-112.10008,33.45858],[-112.10007,33.45947],[-112.10003,33.46039],[-112.10009,33.46204],[-112.10002,33.46214]]},"properties":{"route":"R-MIXED","street":"19th Avenue","length_km":7.75,"mean_sky_view_factor":0.9,"stroke":"#e9a23b","stroke-width":4}},{"type":"Feature","geometry":{"type":"LineString","coordinates":[[-112.07331,33.41937],[-112.07322,33.4196],[-112.07327,33.42334],[-112.07331,33.42474],[-112.07351,33.42576],[-112.07364,33.42652],[-112.07366,33.42763],[-112.07367,33.42834],[-112.07365,33.42925],[-112.07368,33.43126],[-112.07369,33.43253],[-112.07371,33.43455],[-112.07372,33.43671],[-112.07373,33.43752],[-112.07373,33.43928],[-112.07372,33.44016],[-112.07372,33.44106],[-112.07372,33.44205],[-112.07374,33.44279],[-112.07378,33.445],[-112.07375,33.44608],[-112.07376,33.44684],[-112.0738,33.44716],[-112.07458,33.44716],[-112.07511,33.44727],[-112.0751,33.4478],[-112.0751,33.44823],[-112.0751,33.44923],[-112.07512,33.44975],[-112.07519,33.45037],[-112.07519,33.45128],[-112.07465,33.4514],[-112.07399,33.45139],[-112.07383,33.45213],[-112.0738,33.45343],[-112.07379,33.45453],[-112.07379,33.45543],[-112.07379,33.45665],[-112.07379,33.45785],[-112.0738,33.45879],[-112.07377,33.45978],[-112.07374,33.46094],[-112.0737,33.46174],[-112.07373,33.46319],[-112.0737,33.46451],[-112.07369,33.46516],[-112.07383,33.46572],[-112.07396,33.46666],[-112.07393,33.46737],[-112.07393,33.46868],[-112.07393,33.46956],[-112.0739,33.4711],[-112.07391,33.47255],[-112.07394,33.4738],[-112.07391,33.47487],[-112.07392,33.47616],[-112.07394,33.47673],[-112.0739,33.47881],[-112.0739,33.48003],[-112.07391,33.48094],[-112.07391,33.48185],[-112.07391,33.48237],[-112.07393,33.48338],[-112.07393,33.48471],[-112.07392,33.48635],[-112.07393,33.48754],[-112.07393,33.48754]]},"properties":{"route":"R-DENSE","street":"Central Avenue","length_km":7.84,"mean_sky_view_factor":0.74,"stroke":"#d1495b","stroke-width":4}},{"type":"Feature","geometry":{"type":"LineString","coordinates":[[-112.10002,33.46214],[-112.10009,33.46204],[-112.10009,33.46123],[-112.10002,33.46111],[-112.09999,33.46108],[-112.09995,33.46105],[-112.09984,33.46105],[-112.09979,33.46105],[-112.09964,33.46106],[-112.0981,33.46122],[-112.09733,33.46131],[-112.09657,33.46138],[-112.09646,33.46139],[-112.09632,33.4614],[-112.09522,33.46145],[-112.09418,33.46156],[-112.09336,33.46157],[-112.09293,33.46157],[-112.09247,33.46157],[-112.09204,33.46156],[-112.09165,33.46154],[-112.09132,33.46152],[-112.09095,33.46149],[-112.09061,33.46146],[-112.09024,33.46143],[-112.0897,33.46136],[-112.08852,33.46124],[-112.08699,33.46107],[-112.08553,33.46092],[-112.08511,33.46087],[-112.0847,33.46083],[-112.08435,33.46081],[-112.08397,33.46079],[-112.08356,33.46078],[-112.08316,33.46078],[-112.08264,33.4608],[-112.0821,33.46084],[-112.0811,33.46097],[-112.07928,33.46132],[-112.07871,33.4614],[-112.07798,33.46146],[-112.07709,33.46145],[-112.07382,33.46145],[-112.07265,33.46155],[-112.07136,33.46178],[-112.06998,33.46207],[-112.06923,33.46219],[-112.0688,33.46222],[-112.06842,33.46223],[-112.06792,33.46222],[-112.06768,33.46222],[-112.06699,33.46217],[-112.06655,33.46213],[-112.06625,33.46211],[-112.06487,33.462],[-112.06404,33.46193],[-112.06321,33.46187],[-112.06237,33.46181],[-112.06178,33.46177],[-112.06096,33.46174],[-112.0609,33.46174],[-112.06008,33.4617],[-112.05926,33.46171],[-112.05852,33.4617],[-112.05588,33.4617],[-112.05512,33.46171],[-112.0544,33.46173],[-112.05293,33.46184],[-112.05226,33.46176],[-112.05192,33.46175],[-112.0516,33.46174],[-112.05116,33.46172],[-112.05065,33.46168],[-112.05054,33.46167],[-112.04981,33.46161],[-112.0496,33.46159],[-112.0494,33.46158],[-112.04919,33.46158],[-112.0483,33.46158],[-112.04789,33.46158],[-112.04777,33.46157],[-112.04777,33.46149],[-112.04777,33.46138],[-112.04776,33.46115],[-112.04775,33.46086],[-112.04775,33.46077],[-112.04774,33.46067],[-112.04769,33.46057],[-112.04766,33.46052],[-112.0475,33.46052],[-112.04747,33.46052],[-112.04704,33.46052],[-112.04644,33.46051],[-112.04614,33.46051],[-112.04547,33.46051],[-112.04541,33.46051],[-112.04454,33.4605],[-112.04439,33.4605],[-112.04433,33.4605],[-112.04387,33.4605],[-112.04341,33.46049],[-112.04334,33.46049],[-112.04334,33.46044],[-112.04333,33.45959],[-112.04333,33.45959]]},"properties":{"route":"R-TUNNEL","street":"I-10 Deck Park Tunnel (seed)","length_km":5.62,"covered_m":822.0,"stroke":"#6a4c93","stroke-width":4}},{"type":"Feature","geometry":{"type":"Point","coordinates":[-112.06589,33.44369]},"properties":{"site":"P1","kind":"open lot (P5: same stall under a shade roof)","sky_view_factor":0.95,"marker-color":"#264653","marker-symbol":"car"}},{"type":"Feature","geometry":{"type":"Point","coordinates":[-112.07388,33.44853]},"properties":{"site":"P2","kind":"street-canyon curb","sky_view_factor":0.34,"marker-color":"#264653","marker-symbol":"car"}},{"type":"Feature","geometry":{"type":"Point","coordinates":[-112.09002,33.46898]},"properties":{"site":"P3","kind":"home driveway","sky_view_factor":0.48,"marker-color":"#264653","marker-symbol":"car"}},{"type":"Feature","geometry":{"type":"Point","coordinates":[-112.07146,33.44897]},"properties":{"site":"P4","kind":"garage top deck","sky_view_factor":0.91,"marker-color":"#264653","marker-symbol":"car"}}]}
 ```
 
-PDAL and GDAL come from conda-forge; `snakemake` and `embreex` have no win-64
-conda builds and are installed by pip inside the same environment.
+| Route | Street | Length | Why it was picked |
+|---|---|---|---|
+| R-OPEN | Southern Avenue, E-W | 8.3 km | highest mean sky view factor (0.96) of 128 candidate arterial windows |
+| R-MIXED | 19th Avenue, N-S | 7.8 km | most variable sky view in the middle band |
+| R-DENSE | Central Avenue, N-S | 7.8 km | lowest mean sky view factor (0.74), through the high-rise core |
+| R-TUNNEL | I-10 Deck Park Tunnel, E-W | 5.6 km | covered-road check (822 m under deck) |
+
+<img src="docs/readme/network_routes.png" width="49%" alt="Map of the OSM arterial network of central Phoenix with the four routes and the parking sites"> <img src="docs/readme/traffic_trips.png" width="49%" alt="Distance against time for one R-DENSE trip at three traffic levels, and the durations of all 120 simulated trips">
+
+Traffic comes from SUMO on the OSM network: background demand at three levels, five departure times (08:00 to 16:00) and both directions, giving 120 frozen trips with a position and speed every second. The vehicle parks at five sites: an open lot (P1), the darkest curb on Central Avenue (P2, sky view factor 0.34), a residential driveway beside a tree (P3), a garage top deck (P4) and the P1 stall under a shade roof (P5).
+
+### A day in the life of each archetype
+
+```mermaid
+gantt
+    title Where the four archetypes are on a weekday (weekends: at P3, or at P1 for A4)
+    dateFormat HH:mm
+    axisFormat %H:%M
+    todayMarker off
+    section A1 commuter
+    driveway P3   :00:00, 08:00
+    drive              :milestone, 08:00, 0d
+    open lot P1        :08:00, 17:00
+    drive              :milestone, 17:00, 0d
+    driveway P3   :17:00, 23:59
+    section A2 downtown street
+    driveway P3   :00:00, 08:00
+    drive              :milestone, 08:00, 0d
+    canyon curb P2     :crit, 08:00, 17:00
+    drive              :milestone, 17:00, 0d
+    driveway P3   :17:00, 23:59
+    section A3 downtown shaded
+    driveway P3   :00:00, 08:00
+    drive              :milestone, 08:00, 0d
+    shade roof P5      :active, 08:00, 17:00
+    drive              :milestone, 17:00, 0d
+    driveway P3   :17:00, 23:59
+    section A4 fleet, 100 km/day
+    open lot P1        :00:00, 08:00
+    curb P2            :crit, 08:00, 10:00
+    open lot P1        :10:00, 12:00
+    curb P2            :crit, 12:00, 14:00
+    open lot P1        :14:00, 16:00
+    curb P2            :crit, 16:00, 17:00
+    open lot P1        :17:00, 23:59
+```
+
+<sub>Diamonds are trips (A4 also drives at 08, 10, 12, 14 and 16 h). A trip hour drives the first part of the hour and parks for the rest. Source: <a href="configs/schedules/archetypes.yaml">configs/schedules/archetypes.yaml</a>.</sub>
+
+## The vehicle and its five PV facets
+
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/suv_beauty.webp" alt="Blender render of the SOLARIS P0 seven-seat electric SUV with PV on roof, hood and sides"></td>
+<td width="25%"><img src="docs/readme/suv_facets_front.webp" alt="Front three-quarter view with each PV facet in its own colour"></td>
+<td width="25%"><img src="docs/readme/suv_facets_rear.webp" alt="Rear three-quarter view with the tailgate and left side facets coloured"></td>
+</tr>
+</table>
+
+| Facet | Colour above | Area (m²) | Tilt | Faces |
+|---|---|---|---|---|
+| Roof | amber | 4.4 | 2° | up |
+| Hood | blue | 1.6 | 10° | forward |
+| Tailgate | purple | 0.6 | 60° | rear |
+| Left side | green | 2.5 | 85° | left |
+| Right side | red | 2.5 | 85° | right |
+| **Total** | | **11.6** | | |
+
+The layout is the study's assumed design ([`configs/vehicle/solaris_p0.yaml`](configs/vehicle/solaris_p0.yaml)); roof only (4.4 m²) is reported as the lower bound. Each facet is sampled every 0.25 m, and the samples' shading feeds an electrical mismatch model with bypass diodes. Drag to rotate the facet model the engine uses (grey body, facets offset 3 cm):
+
+```stl
+solid solaris_p0_facets
+facet normal -1.000 0.000 0.000
+outer loop
+vertex -2.500 0.940 0.350
+vertex -2.500 -0.940 0.350
+vertex -2.500 -0.940 1.810
+endloop
+endfacet
+facet normal -1.000 0.000 0.000
+outer loop
+vertex -2.500 0.940 0.350
+vertex -2.500 -0.940 1.810
+vertex -2.500 0.940 1.810
+endloop
+endfacet
+facet normal 1.000 0.000 0.000
+outer loop
+vertex 1.250 -0.940 0.350
+vertex 1.250 0.940 0.350
+vertex 1.250 0.940 1.810
+endloop
+endfacet
+facet normal 1.000 0.000 0.000
+outer loop
+vertex 1.250 -0.940 0.350
+vertex 1.250 0.940 1.810
+vertex 1.250 -0.940 1.810
+endloop
+endfacet
+facet normal 0.000 -1.000 0.000
+outer loop
+vertex -2.500 -0.940 1.810
+vertex -2.500 -0.940 0.350
+vertex 1.250 -0.940 0.350
+endloop
+endfacet
+facet normal 0.000 -1.000 0.000
+outer loop
+vertex -2.500 -0.940 1.810
+vertex 1.250 -0.940 0.350
+vertex 1.250 -0.940 1.810
+endloop
+endfacet
+facet normal 0.000 1.000 0.000
+outer loop
+vertex -2.500 0.940 0.350
+vertex -2.500 0.940 1.810
+vertex 1.250 0.940 1.810
+endloop
+endfacet
+facet normal 0.000 1.000 0.000
+outer loop
+vertex -2.500 0.940 0.350
+vertex 1.250 0.940 1.810
+vertex 1.250 0.940 0.350
+endloop
+endfacet
+facet normal 0.000 0.000 -1.000
+outer loop
+vertex 1.250 -0.940 0.350
+vertex -2.500 -0.940 0.350
+vertex -2.500 0.940 0.350
+endloop
+endfacet
+facet normal 0.000 0.000 -1.000
+outer loop
+vertex 1.250 -0.940 0.350
+vertex -2.500 0.940 0.350
+vertex 1.250 0.940 0.350
+endloop
+endfacet
+facet normal 0.000 0.000 1.000
+outer loop
+vertex -2.500 -0.940 1.810
+vertex 1.250 -0.940 1.810
+vertex 1.250 0.940 1.810
+endloop
+endfacet
+facet normal 0.000 0.000 1.000
+outer loop
+vertex -2.500 -0.940 1.810
+vertex 1.250 0.940 1.810
+vertex -2.500 0.940 1.810
+endloop
+endfacet
+facet normal -1.000 0.000 0.000
+outer loop
+vertex 1.250 0.940 0.350
+vertex 1.250 -0.940 0.350
+vertex 1.250 -0.940 1.010
+endloop
+endfacet
+facet normal -1.000 0.000 0.000
+outer loop
+vertex 1.250 0.940 0.350
+vertex 1.250 -0.940 1.010
+vertex 1.250 0.940 1.010
+endloop
+endfacet
+facet normal 1.000 0.000 0.000
+outer loop
+vertex 2.500 -0.940 0.350
+vertex 2.500 0.940 0.350
+vertex 2.500 0.940 1.010
+endloop
+endfacet
+facet normal 1.000 0.000 0.000
+outer loop
+vertex 2.500 -0.940 0.350
+vertex 2.500 0.940 1.010
+vertex 2.500 -0.940 1.010
+endloop
+endfacet
+facet normal 0.000 -1.000 0.000
+outer loop
+vertex 1.250 -0.940 1.010
+vertex 1.250 -0.940 0.350
+vertex 2.500 -0.940 0.350
+endloop
+endfacet
+facet normal 0.000 -1.000 0.000
+outer loop
+vertex 1.250 -0.940 1.010
+vertex 2.500 -0.940 0.350
+vertex 2.500 -0.940 1.010
+endloop
+endfacet
+facet normal 0.000 1.000 0.000
+outer loop
+vertex 1.250 0.940 0.350
+vertex 1.250 0.940 1.010
+vertex 2.500 0.940 1.010
+endloop
+endfacet
+facet normal 0.000 1.000 0.000
+outer loop
+vertex 1.250 0.940 0.350
+vertex 2.500 0.940 1.010
+vertex 2.500 0.940 0.350
+endloop
+endfacet
+facet normal 0.000 0.000 -1.000
+outer loop
+vertex 2.500 -0.940 0.350
+vertex 1.250 -0.940 0.350
+vertex 1.250 0.940 0.350
+endloop
+endfacet
+facet normal 0.000 0.000 -1.000
+outer loop
+vertex 2.500 -0.940 0.350
+vertex 1.250 0.940 0.350
+vertex 2.500 0.940 0.350
+endloop
+endfacet
+facet normal 0.000 0.000 1.000
+outer loop
+vertex 1.250 -0.940 1.010
+vertex 2.500 -0.940 1.010
+vertex 2.500 0.940 1.010
+endloop
+endfacet
+facet normal 0.000 0.000 1.000
+outer loop
+vertex 1.250 -0.940 1.010
+vertex 2.500 0.940 1.010
+vertex 1.250 0.940 1.010
+endloop
+endfacet
+facet normal 0.035 0.000 0.999
+outer loop
+vertex -1.473 0.800 1.928
+vertex -1.473 -0.800 1.928
+vertex 1.275 -0.800 1.832
+endloop
+endfacet
+facet normal 0.035 0.000 0.999
+outer loop
+vertex -1.473 0.800 1.928
+vertex 1.275 -0.800 1.832
+vertex 1.275 0.800 1.832
+endloop
+endfacet
+facet normal 0.174 0.000 0.985
+outer loop
+vertex 1.263 0.800 1.166
+vertex 1.263 -0.800 1.166
+vertex 2.248 -0.800 0.993
+endloop
+endfacet
+facet normal 0.174 0.000 0.985
+outer loop
+vertex 1.263 0.800 1.166
+vertex 2.248 -0.800 0.993
+vertex 2.248 0.800 0.993
+endloop
+endfacet
+facet normal -0.866 0.000 0.500
+outer loop
+vertex -2.251 -0.600 1.682
+vertex -2.251 0.600 1.682
+vertex -2.501 0.600 1.248
+endloop
+endfacet
+facet normal -0.866 0.000 0.500
+outer loop
+vertex -2.251 -0.600 1.682
+vertex -2.501 0.600 1.248
+vertex -2.501 -0.600 1.248
+endloop
+endfacet
+facet normal -0.000 0.996 0.087
+outer loop
+vertex -2.000 1.003 1.314
+vertex 2.000 1.003 1.314
+vertex 2.000 1.057 0.691
+endloop
+endfacet
+facet normal -0.000 0.996 0.087
+outer loop
+vertex -2.000 1.003 1.314
+vertex 2.000 1.057 0.691
+vertex -2.000 1.057 0.691
+endloop
+endfacet
+facet normal 0.000 -0.996 0.087
+outer loop
+vertex 2.000 -1.003 1.314
+vertex -2.000 -1.003 1.314
+vertex -2.000 -1.057 0.691
+endloop
+endfacet
+facet normal 0.000 -0.996 0.087
+outer loop
+vertex 2.000 -1.003 1.314
+vertex -2.000 -1.057 0.691
+vertex 2.000 -1.057 0.691
+endloop
+endfacet
+endsolid solaris_p0_facets
+```
+
+<details>
+<summary>A 300 m street canyon around the P2 curb as a 3D model</summary>
+
+[`docs/readme/canyon_p2.stl`](docs/readme/canyon_p2.stl) is the lidar surface (buildings plus tree canopy, 2 m cells) for 150 m around the curb on Central Avenue where the downtown archetype parks. Open it on GitHub to rotate and zoom it.
+
+</details>
+
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph SRC["Public data"]
+        L["USGS 3DEP lidar<br/>5.28 billion points"]
+        N["NAIP 2021<br/>near-infrared"]
+        O["Overture buildings<br/>OSM roads, bridges"]
+        W["NSRDB weather<br/>TMY + 5-min 2023"]
+        G["NGS survey marks"]
+        M["Mapillary<br/>street panoramas"]
+    end
+    subgraph GEO["City model (geom_*)"]
+        R["0.5 m DSM / DTM / height above ground"]
+        C["classes: ground, building, tree"]
+        MS["surface mesh + tree mesh<br/>(GLB tiles)"]
+    end
+    subgraph MOVE["Vehicle in the city"]
+        RT["route selection<br/>by sky view factor"]
+        SU["SUMO traffic<br/>120 trips, 1 s"]
+        PK["5 parking sites"]
+        VF["5 facets,<br/>0.25 m samples"]
+    end
+    subgraph ENG["Shading and PV engine"]
+        SH["horizon masks, sky view,<br/>Embree ray casts, tree τ"]
+        PV["facet irradiance, Faiman<br/>temperature, mismatch"]
+    end
+    CM["SOLARIS conference model v1.1.0<br/>hour-by-hour state of charge"]
+    EX["experiments E0-E8"]
+    P["paper/main.pdf<br/>(macros + figures)"]
+    U["Unity 6 + Cesium twin<br/>Google 3D Tiles"]
+    X["cross-checks:<br/>SOLWEIG, Mapillary"]
+
+    L --> R
+    N --> C
+    O --> C
+    R --> C --> MS
+    G -. "check" .-> R
+    O --> RT
+    MS --> SH
+    RT --> SU --> SH
+    PK --> SH
+    VF --> SH
+    W --> PV
+    SH --> PV --> CM --> EX --> P
+    MS --> U
+    SU --> U
+    U -. "E8 agreement" .-> EX
+    X -. "E1, E4, E8" .-> EX
+    M --> X
+```
+
+Python computes every reported number. The Unity twin, SOLWEIG and the Mapillary panoramas are independent checks only.
+
+<details>
+<summary>The Snakemake pipeline, stage by stage</summary>
+
+```mermaid
+flowchart TB
+    subgraph P1["P1 conference baseline"]
+        e0["e0_measured: Table B0, 3 cities"]
+    end
+    subgraph P2["P2 weather"]
+        w["weather_tmy, weather_conus_5min, weather_check"]
+    end
+    subgraph P3["P3 geometry"]
+        g1["geom_aoi, geom_lidar_fetch, geom_lidar_rasters, geom_dem"]
+        g2["geom_naip, geom_overture, geom_osm, geom_covered"]
+        g3["geom_model, geom_freshness, geom_dsm, geom_meshes"]
+        g4["geom_enu_origin, geom_ground_control, geom_summary"]
+        g1 --> g3
+        g2 --> g3 --> g4
+    end
+    subgraph EXP["P4-P8 experiments"]
+        rt["routes_select, sumo_traces"]
+        fs["facet_samples"]
+        e1["e1_verification"]
+        e2["e2_facets"]
+        e3["e3_driving"]
+        e4["e4_parking"]
+        e6["e6_mismatch"]
+        e5["e5_annual"]
+        e7["e7_facets, e7_inversion"]
+        e8["e8_export, e8_unity, e8_twin_agreement,<br/>e8_mapillary_fetch, e8_mapillary_svf"]
+        rt --> e3 & e8
+        fs --> e2 & e3 & e4
+        e3 & e4 --> e6
+        e3 & e4 & e6 --> e5
+        e5 & e6 --> e7
+    end
+    paper["paper_macros, paper_figures, paper"]
+    P2 --> EXP
+    P3 --> EXP
+    e0 --> e5
+    EXP --> paper
+    e0 --> paper
+```
+
+</details>
+
+## The model in two equations
+
+The conference model's PV harvest, with the irradiance $G$ replaced by what facet $f$ actually receives:
+
+$$
+E_{\mathrm{pv}}=A\,\eta_{\mathrm{pv}}\,\kappa_{\mathrm{pv}}\,\frac{G}{1000}\left[1+\beta\,(T_c-25)\right]
+$$
+
+$$
+G_f=\bar v_{b,f}\,G_{b,f}+\mathrm{SVF}_f\,G_{d,f}+\bar v_{h,f}\,G_{h,f}+G_{g,f}
+$$
+
+The Perez model splits sunlight into beam $G_b$, isotropic sky $G_d$, horizon band $G_h$ and ground reflection $G_g$. $\bar v_{b,f}$ is the mean beam state over the facet's samples (1 if the ray to the sun is clear, $\tau = 0.03$ through tree canopy, 0 behind a building), $\mathrm{SVF}_f$ the facet's cosine-weighted sky view factor with trees counted as partly transparent, and $\bar v_{h,f}$ the same over the lowest 6° of sky. All three view terms are 1 in open sky; on covered road all four terms are 0. Cell temperature follows Faiman, $T_c=T_a+G_f/(u_0+u_1 w)$, with the vehicle speed added to the wind $w$. The conference design equation, extended with a shading factor per archetype and solved for the skin area, stays within 2.6 % of the full simulation (3.3 % if the vehicle mass is held fixed).
+
+## Experiments
+
+<details>
+<summary><b>E0 - Reproduce the conference baseline</b> (Phoenix 0.832, Lucknow 0.713, London 0.517)</summary>
+
+The conference code v1.1.0 is kept byte-identical in [`src/solaris/legacy/`](src/solaris/legacy/) (SHA-256 checked by a pre-commit hook), and the refactored core reproduces every output. Table B0 gives self-sufficiency, grid charges, design area and range for three cities on satellite typical years. Code: [`experiments/e0_reproduce/run.py`](experiments/e0_reproduce/run.py).
+
+</details>
+
+<details>
+<summary><b>E1 - Verify the shading engine</b> (40 of 40 tests, 98.0-99.3 % agreement with SOLWEIG)</summary>
+
+Engine tests cover sun position, transposition, shadow length and canyon sky view factor. The raster horizon and the mesh ray caster agree on the beam state for 99.6 % of 1,000 points at 43 sun positions, with a mean sky-view difference of 0.008. SOLWEIG shadow maps agree on 98.0-99.3 % of pixels at 12 times. Code: [`experiments/e1_verify/run.py`](experiments/e1_verify/run.py).
+
+<img src="docs/readme/fig_aoi.png" width="70%" alt="Study area map with building and tree heights and the routes coloured by sky view factor">
+
+</details>
+
+<details>
+<summary><b>E2 - Facet orientation</b> (the five facets harvest 0.805 of a flat skin)</summary>
+
+The sides are nearly vertical, so they collect far less than a roof of the same area. The five facets harvest 0.805 of the PV energy of the same 11.6 m² laid flat (self-sufficiency 0.836 for the flat skin with Faiman cooling); the thermoelectric and suspension terms do not change. Code: [`experiments/e2_facets/run.py`](experiments/e2_facets/run.py).
+
+<img src="docs/readme/fig_facets.png" width="55%" alt="Paper figure 3: the five-facet skin drawn from two views">
+
+</details>
+
+<details>
+<summary><b>E3 - Driving shade</b> (R-DENSE keeps 0.71 of the open-sky energy)</summary>
+
+Every facet sample is shaded once per second along all 120 trips, each driven on 21 March, June, September and December. R-OPEN and R-MIXED lose least; the high-rise core of R-DENSE keeps 0.71 of the open-sky energy, and the two tunnel trips keep 0.67 and 0.79. Code: [`experiments/e3_driving/run.py`](experiments/e3_driving/run.py).
+
+<img src="docs/readme/fig_tod.png" width="55%" alt="Paper figure: driving shade by route and time of day">
+
+</details>
+
+<details>
+<summary><b>E4 - Parking shade</b> (P1 0.94, P4 0.88, P5 0.64, P3 0.45, P2 0.32)</summary>
+
+Each site is evaluated every five minutes for a year at four headings (two at the curb). The canyon curb P2 keeps 0.32 of the open-sky energy. SOLWEIG site maps agree on at least 96.7 % of pixels. Code: [`experiments/e4_parking/run.py`](experiments/e4_parking/run.py).
+
+</details>
+
+<details>
+<summary><b>E5 - A full year for four archetypes</b> (the loss waterfall)</summary>
+
+| Step | A1 commuter | A2 downtown street | A3 downtown shaded | A4 fleet |
+|---|---|---|---|---|
+| Conference baseline | 0.832 | 0.832 | 0.832 | 0.419 |
+| Facet orientation | 0.677 | 0.678 | 0.676 | 0.345 |
+| Parking shade | 0.552 | 0.308 | 0.420 | 0.271 |
+| Driving shade (buildings, trees) | 0.542 | 0.290 | 0.402 | 0.261 |
+| Electrical mismatch | **0.512** | **0.256** | **0.335** | **0.257** |
+
+A4 drives 100 km/day, so its baseline is lower. Code: [`experiments/e5_annual/run.py`](experiments/e5_annual/run.py).
+
+<img src="docs/readme/fig_waterfall.png" width="75%" alt="Paper figure: self-sufficiency waterfall for the four archetypes">
+
+</details>
+
+<details>
+<summary><b>E6 - Electrical mismatch</b> (0.96 in the canyon, 0.56-0.73 under the tree at P3)</summary>
+
+Partial shade costs more than its area: each facet is one module on its own MPPT input with three bypass-diode substrings, and one shaded cell already pushes its substring through the diode. Energy-weighted, the mismatch factor is 0.96 on the R-DENSE trips and at the curb, where whole facets fall into building shadow, but 0.56 to 0.73 in the dappled shade of the tree at P3. Code: [`experiments/e6_mismatch/run.py`](experiments/e6_mismatch/run.py).
+
+<img src="docs/readme/fig_fmm.png" width="55%" alt="Paper figure: mismatch factor against shaded fraction">
+
+</details>
+
+<details>
+<summary><b>E7 - Shading-aware design equation</b> (within 2.6 % of the simulation)</summary>
+
+The conference design equation is extended with the archetype's shading factors and solved for the skin area that reaches a target self-sufficiency; a sweep over area (8 to 20 m²), layout (roof, roof + hood, full skin), κ and the four archetypes checks it against the full simulation. Code: [`experiments/e7_inversion/run.py`](experiments/e7_inversion/run.py).
+
+<img src="docs/readme/fig_nomograph.png" width="75%" alt="Paper figure: design nomograph">
+
+</details>
+
+<details>
+<summary><b>E8 - Cross-verification</b> (Unity 99.1 %, Mapillary sky view MAE 0.054)</summary>
+
+The Unity twin ray-casts the same trips independently and agrees with the Python engine on 99.1 % of 15.5 million sample-seconds. Sky view factors from seven Mapillary street panoramas match the engine with a mean absolute error of 0.054 (r = 0.92). Code: [`experiments/e8_validation/run.py`](experiments/e8_validation/run.py).
+
+<img src="docs/readme/fig_validation.png" width="75%" alt="Paper figure: Unity agreement and Mapillary sky view comparison">
+
+</details>
 
 ## Reproduce
 
-```bash
-pytest -q          # regression and verification tests
-snakemake -n       # dry run of the DAG
-snakemake -c8 all  # rebuild every table and figure
+Everything runs natively on Windows 11 (Linux works the same way). Install [Miniforge](https://conda-forge.org/download/), then in a Miniforge Prompt:
+
+```bat
+git clone https://github.com/jarvisxys/solaris-vipv.git
+cd solaris-vipv
+conda env create -f environment.yml
+conda activate solaris
+projsync --file us_noaa_g2018u0.tif
 ```
 
-Input data is not redistributed; `data/README.md` lists the fetch commands.
+```bash
+pytest -q            # 568 regression and verification tests
+snakemake -n         # dry run of the whole DAG
+snakemake -c8 all    # fetch, build the city, run E0-E8, write the paper
+snakemake -c1 paper  # only rebuild paper/main.pdf from results/ (needs pdflatex)
+```
 
-## Layout
+Input data is public but not redistributed (about 30 GB of lidar and imagery). [`data/README.md`](data/README.md) lists every source and the rule that fetches it; NSRDB downloads need a free NREL API key. The summary tables in `results/` are committed, so the paper builds without the raw data.
+
+The Unity project in [`twin/unity/`](twin/unity/) (Unity 6.3 LTS, Cesium for Unity) reads the exchange files in [`twin/exchange/`](twin/exchange/); streaming Google tiles needs your own Cesium ion token.
+
+<details>
+<summary>Repository layout</summary>
 
 | Path | Contents |
 |---|---|
-| `configs/` | `base.yaml` (conference parameters, frozen), site, vehicle, schedules, experiments |
-| `src/solaris/` | `legacy/` (conference code), `core/`, `weather/`, `geometry/`, `vehicle/`, `trajectory/`, `shading/`, `pv/`, `twin_io/` |
-| `geom/` | scripts that build `data/derived/` from lidar |
-| `routes/v1/` | frozen route and parking GeoJSON with `MANIFEST.json` |
-| `twin/` | Unity project and the Python-Unity exchange schema |
+| `configs/` | `base.yaml` (conference parameters, frozen), site, vehicle, schedules, experiments, paper |
+| `src/solaris/` | `legacy/` (conference code, byte-identical), `core/`, `weather/`, `geometry/`, `vehicle/`, `trajectory/`, `shading/`, `pv/`, `twin_io/`, `paper.py` |
+| `geom/` | QGIS review helper for the building-change step |
+| `routes/v1`, `routes/v2` | frozen route and parking GeoJSON with SHA-256 manifests (v2 is used; v1 was selected on a surface model with power-line artefacts) |
 | `experiments/` | `e0_reproduce/` ... `e8_validation/` |
-| `results/` | outputs (only summary tables are committed) |
-| `paper/` | journal LaTeX; figures written by Snakemake |
+| `results/` | summary tables and JSON (large outputs are not committed) |
+| `twin/` | Unity project, Blender build scripts for the vehicle, Python-Unity exchange schema |
+| `paper/` | journal LaTeX, generated macros and figures, `main.pdf` |
+| `docs/readme/` | the images and 3D files of this page; `make_figures.py` and `blender_renders.py` rebuild them |
+| `PAPER_CHANGELOG.md` | every decision that changed a reported number |
 
-Paper-affecting decisions are logged in `PAPER_CHANGELOG.md`.
+</details>
 
-## Licence
+## Data and attributions
 
-MIT. SOLWEIG/UMEP (GPL-3) are only ever called as external tools.
+| Source | Use | License |
+|---|---|---|
+| USGS 3DEP lidar (AZ_MaricopaPinal_2020_B20) | city geometry | public domain |
+| USDA NAIP 2021 | tree/building separation (NDVI) | public domain |
+| NREL NSRDB (TMY-2023, 5-min 2023) | weather | NREL terms of use |
+| NGS survey marks | ground check | public domain |
+| Overture Maps buildings | building changes | ODbL |
+| OpenStreetMap | roads, bridges, tunnels, SUMO network | ODbL, © OpenStreetMap contributors |
+| Mapillary | street panoramas for sky view | CC BY-SA 4.0 |
+| Google Photorealistic 3D Tiles via Cesium ion | Unity visuals only (screenshots above keep the on-screen attribution) | Google Maps Platform terms |
+| SOLWEIG / UMEP | external cross-check only, never linked | GPL-3.0 |
+
+## Citation
+
+If you use this code, please cite the archived release and the conference paper (the journal paper is under review):
+
+```bibtex
+@software{kumar_solaris_twin_2026,
+  author    = {Kumar, Aditya and Gaikwad, Anandsagar and Deo, Arjun},
+  title     = {{SOLARIS-Twin: Digital twin pipeline for shading-aware assessment of vehicle-integrated photovoltaics}},
+  version   = {v2.0.0-journal},
+  year      = {2026},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.23896001},
+  url       = {https://doi.org/10.5281/zenodo.23896001}
+}
+
+@inproceedings{gaikwad_solaris_2026,
+  author    = {Gaikwad, Anandsagar and Kumar, Aditya and Deo, Arjun},
+  title     = {{SOLARIS}: A first-principles, drive-cycle- and climate-resolved methodology and open toolkit for assessing solar-assisted heavy electric vehicles},
+  booktitle = {IEEE Transportation Electrification Conference and Expo, Asia-Pacific (ITEC-AP 2026)},
+  address   = {Busan, Republic of Korea},
+  year      = {2026},
+  note      = {Accepted}
+}
+```
+
+GitHub's "Cite this repository" button reads [`CITATION.cff`](CITATION.cff).
+
+## Authors
+
+- **Aditya Kumar**, Rajiv Gandhi Institute of Petroleum Technology (RGIPT), [ORCID 0009-0003-5178-0465](https://orcid.org/0009-0003-5178-0465), corresponding author
+- **Anandsagar Gaikwad**, RGIPT, [ORCID 0009-0001-6545-1705](https://orcid.org/0009-0001-6545-1705)
+- **Arjun Deo**, RGIPT Bengaluru Campus
+
+The conference toolkit lives at [Anandsagar18/Solaris](https://github.com/Anandsagar18/Solaris). An AI assistant (Claude, Anthropic) helped write and debug code and draft text; the authors designed the study, checked every result and are responsible for the content.
+
+## License
+
+[MIT](LICENSE). SOLWEIG/UMEP (GPL-3.0) is only ever called as an external tool.

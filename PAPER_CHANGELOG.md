@@ -3,6 +3,42 @@
 Every decision that changes a number, claim or reference in the journal paper,
 newest first, with date and reason.
 
+## 2026-11-03 · P9 / submission version (v2.0.0-journal)
+
+Sources: `src/solaris/paper.py`, `configs/paper.yaml`, `paper/main.tex` (rules
+`paper_macros`, `paper_figures`, `paper`). Two review rounds of the manuscript (an external
+draft review against the T-TE rules, then a final pre-submission check), worked out in a
+separate copy and brought back here. No result, configuration of an experiment or frozen
+input changed; `snakemake -n` reruns only the three paper rules.
+
+- **Numbers.** No result changed. New macros only: `EtwoIINonPv` (thermoelectric and
+  suspension share of demand, 0.029, from `table_e2.csv`) explains why f_ss 0.836 × F_geo
+  0.805 is not 0.678 (F_geo scales PV only: (0.836 − 0.029) × 0.805 + 0.029 = 0.679);
+  `Gap*Two` prints the TMY gap at two decimals (0.11 = 0.06 + 0.05, as in the conference
+  paper); R-TUNNEL covered/total seconds (62/199, 71/381) and ratios (0.67, 0.79) from
+  `summary_e3.json`; status columns of Table V from the summary pass flags (the Unity trips
+  target is reported as not met: one trip at 2.37 pp in the ±1° band).
+- **Claims corrected.** The abstract quotes the waterfall value (0.677, archetype trip hours)
+  instead of E2 (conference trip hours). Mismatch range and grid-charge rise are given for
+  A1–A3 and for A4 separately; A4's F_mm (0.98) is above the curb value because it never parks
+  at P3. Brito's 25 % applies to R-OPEN and R-MIXED only (R-DENSE keeps 0.71). Parking is the
+  largest loss for A2 and A3 and second to orientation for A1 and A4 (0.079 vs 0.074). On
+  covered road all four irradiance terms are 0. The 3.3 % (mass fixed) is stated as outside
+  the 3 % target. Fig. 5 labelled 21 Sep as 22 Sep (fixed).
+- **Figures.** One style (Times/STIX, Okabe–Ito colours per archetype and per loss cause,
+  TrueType fonts). Fig. 1 redrawn in TikZ; Fig. 2 coloured by the 10 m SVF of route
+  selection (reads `data/derived/dem.tif`, `routes/arterial_points_v2.csv.gz` and the route
+  GeoJSON, now Snakefile inputs); Fig. 3 drawn from the facets of `solaris_p0.yaml` (sample
+  dots no longer show through the roof); Fig. 9 is the Unity render
+  `paper/figures/fig_render.png` (an input of rule `paper`).
+- **Front matter and T-TE rules.** 8 pages, abstract 178 words, 5 keywords, 35 references in
+  citation order (43 cut to 34 at the author's request, plus the Zenodo archive), no page or
+  line numbers (T-TE Author Guidelines 10-2024), first-page footnote with the ITEC-AP 2026
+  presentation, corresponding author's postal address and phone, and "no external funding".
+- **Code availability.** Release v2.0.0-journal archived on Zenodo, DOI
+  10.5281/zenodo.23896001 (reserved before the release; ref. [35]); `CITATION.cff` v2.0.0 with
+  the three authors.
+
 ## 2026-10-31 · P9 / E7 design inversion and the journal manuscript
 
 Sources: `configs/experiments/e7.yaml`, `src/solaris/design.py`,

@@ -1,16 +1,65 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
-title: "SOLARIS: An Open Toolkit for Vehicle-Integrated Photovoltaic Feasibility Assessment"
+title: "SOLARIS-Twin: Digital twin pipeline for shading-aware assessment of vehicle-integrated photovoltaics"
 type: software
 authors:
   - family-names: Kumar
     given-names: Aditya
-version: "2.0.0.dev0"
+    orcid: "https://orcid.org/0009-0003-5178-0465"
+    affiliation: "Rajiv Gandhi Institute of Petroleum Technology"
+  - family-names: Gaikwad
+    given-names: Anandsagar
+    orcid: "https://orcid.org/0009-0001-6545-1705"
+    affiliation: "Rajiv Gandhi Institute of Petroleum Technology"
+  - family-names: Deo
+    given-names: Arjun
+    affiliation: "Rajiv Gandhi Institute of Petroleum Technology, Bengaluru Campus"
+version: "v2.0.0-journal"
+doi: "10.5281/zenodo.23896001"
+date-released: "2026-11-03"
 license: MIT
 repository-code: "https://github.com/jarvisxys/solaris-vipv"
+abstract: >-
+  Feasibility studies of vehicle-integrated photovoltaics usually treat the whole solar skin
+  as a horizontal roof that is never shaded. SOLARIS-Twin extends the SOLARIS energy-balance
+  toolkit for a 2.5 t seven-seat electric vehicle with a lidar-built digital twin of central
+  Phoenix, Arizona: traffic-simulated trips, five parking sites and per-facet shading of an
+  11.6 m2 PV skin over a typical year, cross-checked against a Unity ray-casting twin,
+  SOLWEIG and street-level imagery. This release is the code and data pipeline of the
+  journal manuscript submitted to the IEEE Transactions on Transportation Electrification.
 keywords:
   - vehicle-integrated photovoltaics
   - solar electric vehicle
   - digital twin
   - urban shading
-  - energy-balance simulation
+  - energy self-sufficiency
+references:
+  - type: conference-paper
+    title: "SOLARIS: A first-principles, drive-cycle- and climate-resolved methodology and open toolkit for assessing solar-assisted heavy electric vehicles"
+    authors:
+      - family-names: Gaikwad
+        given-names: Anandsagar
+      - family-names: Kumar
+        given-names: Aditya
+      - family-names: Deo
+        given-names: Arjun
+    collection-title: "IEEE Transportation Electrification Conference and Expo, Asia-Pacific (ITEC-AP 2026)"
+    conference:
+      name: "ITEC-AP 2026"
+      city: Busan
+      country: KR
+      date-start: "2026-12-01"
+      date-end: "2026-12-04"
+    year: 2026
+    notes: "Accepted for presentation"
+  - type: software
+    title: "SOLARIS: An open toolkit for solar-assisted heavy EV feasibility assessment"
+    authors:
+      - family-names: Gaikwad
+        given-names: Anandsagar
+      - family-names: Kumar
+        given-names: Aditya
+      - family-names: Deo
+        given-names: Arjun
+    version: "1.1.0"
+    repository-code: "https://github.com/Anandsagar18/Solaris"

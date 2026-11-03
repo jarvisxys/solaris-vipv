@@ -1,0 +1,240 @@
+solid solaris_p0_facets
+facet normal -1.000 0.000 0.000
+outer loop
+vertex -2.500 0.940 0.350
+vertex -2.500 -0.940 0.350
+vertex -2.500 -0.940 1.810
+endloop
+endfacet
+facet normal -1.000 0.000 0.000
+outer loop
+vertex -2.500 0.940 0.350
+vertex -2.500 -0.940 1.810
+vertex -2.500 0.940 1.810
+endloop
+endfacet
+facet normal 1.000 0.000 0.000
+outer loop
+vertex 1.250 -0.940 0.350
+vertex 1.250 0.940 0.350
+vertex 1.250 0.940 1.810
+endloop
+endfacet
+facet normal 1.000 0.000 0.000
+outer loop
+vertex 1.250 -0.940 0.350
+vertex 1.250 0.940 1.810
+vertex 1.250 -0.940 1.810
+endloop
+endfacet
+facet normal 0.000 -1.000 0.000
+outer loop
+vertex -2.500 -0.940 1.810
+vertex -2.500 -0.940 0.350
+vertex 1.250 -0.940 0.350
+endloop
+endfacet
+facet normal 0.000 -1.000 0.000
+outer loop
+vertex -2.500 -0.940 1.810
+vertex 1.250 -0.940 0.350
+vertex 1.250 -0.940 1.810
+endloop
+endfacet
+facet normal 0.000 1.000 0.000
+outer loop
+vertex -2.500 0.940 0.350
+vertex -2.500 0.940 1.810
+vertex 1.250 0.940 1.810
+endloop
+endfacet
+facet normal 0.000 1.000 0.000
+outer loop
+vertex -2.500 0.940 0.350
+vertex 1.250 0.940 1.810
+vertex 1.250 0.940 0.350
+endloop
+endfacet
+facet normal 0.000 0.000 -1.000
+outer loop
+vertex 1.250 -0.940 0.350
+vertex -2.500 -0.940 0.350
+vertex -2.500 0.940 0.350
+endloop
+endfacet
+facet normal 0.000 0.000 -1.000
+outer loop
+vertex 1.250 -0.940 0.350
+vertex -2.500 0.940 0.350
+vertex 1.250 0.940 0.350
+endloop
+endfacet
+facet normal 0.000 0.000 1.000
+outer loop
+vertex -2.500 -0.940 1.810
+vertex 1.250 -0.940 1.810
+vertex 1.250 0.940 1.810
+endloop
+endfacet
+facet normal 0.000 0.000 1.000
+outer loop
+vertex -2.500 -0.940 1.810
+vertex 1.250 0.940 1.810
+vertex -2.500 0.940 1.810
+endloop
+endfacet
+facet normal -1.000 0.000 0.000
+outer loop
+vertex 1.250 0.940 0.350
+vertex 1.250 -0.940 0.350
+vertex 1.250 -0.940 1.010
+endloop
+endfacet
+facet normal -1.000 0.000 0.000
+outer loop
+vertex 1.250 0.940 0.350
+vertex 1.250 -0.940 1.010
+vertex 1.250 0.940 1.010
+endloop
+endfacet
+facet normal 1.000 0.000 0.000
+outer loop
+vertex 2.500 -0.940 0.350
+vertex 2.500 0.940 0.350
+vertex 2.500 0.940 1.010
+endloop
+endfacet
+facet normal 1.000 0.000 0.000
+outer loop
+vertex 2.500 -0.940 0.350
+vertex 2.500 0.940 1.010
+vertex 2.500 -0.940 1.010
+endloop
+endfacet
+facet normal 0.000 -1.000 0.000
+outer loop
+vertex 1.250 -0.940 1.010
+vertex 1.250 -0.940 0.350
+vertex 2.500 -0.940 0.350
+endloop
+endfacet
+facet normal 0.000 -1.000 0.000
+outer loop
+vertex 1.250 -0.940 1.010
+vertex 2.500 -0.940 0.350
+vertex 2.500 -0.940 1.010
+endloop
+endfacet
+facet normal 0.000 1.000 0.000
+outer loop
+vertex 1.250 0.940 0.350
+vertex 1.250 0.940 1.010
+vertex 2.500 0.940 1.010
+endloop
+endfacet
+facet normal 0.000 1.000 0.000
+outer loop
+vertex 1.250 0.940 0.350
+vertex 2.500 0.940 1.010
+vertex 2.500 0.940 0.350
+endloop
+endfacet
+facet normal 0.000 0.000 -1.000
+outer loop
+vertex 2.500 -0.940 0.350
+vertex 1.250 -0.940 0.350
+vertex 1.250 0.940 0.350
+endloop
+endfacet
+facet normal 0.000 0.000 -1.000
+outer loop
+vertex 2.500 -0.940 0.350
+vertex 1.250 0.940 0.350
+vertex 2.500 0.940 0.350
+endloop
+endfacet
+facet normal 0.000 0.000 1.000
+outer loop
+vertex 1.250 -0.940 1.010
+vertex 2.500 -0.940 1.010
+vertex 2.500 0.940 1.010
+endloop
+endfacet
+facet normal 0.000 0.000 1.000
+outer loop
+vertex 1.250 -0.940 1.010
+vertex 2.500 0.940 1.010
+vertex 1.250 0.940 1.010
+endloop
+endfacet
+facet normal 0.035 0.000 0.999
+outer loop
+vertex -1.473 0.800 1.928
+vertex -1.473 -0.800 1.928
+vertex 1.275 -0.800 1.832
+endloop
+endfacet
+facet normal 0.035 0.000 0.999
+outer loop
+vertex -1.473 0.800 1.928
+vertex 1.275 -0.800 1.832
+vertex 1.275 0.800 1.832
+endloop
+endfacet
+facet normal 0.174 0.000 0.985
+outer loop
+vertex 1.263 0.800 1.166
+vertex 1.263 -0.800 1.166
+vertex 2.248 -0.800 0.993
+endloop
+endfacet
+facet normal 0.174 0.000 0.985
+outer loop
+vertex 1.263 0.800 1.166
+vertex 2.248 -0.800 0.993
+vertex 2.248 0.800 0.993
+endloop
+endfacet
+facet normal -0.866 0.000 0.500
+outer loop
+vertex -2.251 -0.600 1.682
+vertex -2.251 0.600 1.682
+vertex -2.501 0.600 1.248
+endloop
+endfacet
+facet normal -0.866 0.000 0.500
+outer loop
+vertex -2.251 -0.600 1.682
+vertex -2.501 0.600 1.248
+vertex -2.501 -0.600 1.248
+endloop
+endfacet
+facet normal -0.000 0.996 0.087
+outer loop
+vertex -2.000 1.003 1.314
+vertex 2.000 1.003 1.314
+vertex 2.000 1.057 0.691
+endloop
+endfacet
+facet normal -0.000 0.996 0.087
+outer loop
+vertex -2.000 1.003 1.314
+vertex 2.000 1.057 0.691
+vertex -2.000 1.057 0.691
+endloop
+endfacet
+facet normal 0.000 -0.996 0.087
+outer loop
+vertex 2.000 -1.003 1.314
+vertex -2.000 -1.003 1.314
+vertex -2.000 -1.057 0.691
+endloop
+endfacet
+facet normal 0.000 -0.996 0.087
+outer loop
+vertex 2.000 -1.003 1.314
+vertex -2.000 -1.057 0.691
+vertex 2.000 -1.057 0.691
+endloop
+endfacet
+endsolid solaris_p0_facets

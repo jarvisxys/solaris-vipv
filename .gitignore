@@ -78,3 +78,9 @@ paper/*.toc
 paper/*.blg
 paper/*.bbl
 paper/*.synctex.gz
+
+# Raw Blender renders for the README (docs/readme/blender_renders.py default output)
+docs/readme/_renders/
+
+# Local assistant instructions (kept on the author's machine only)
+CLAUDE.md

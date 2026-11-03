@@ -1,5 +1,5 @@
-"""P9 journal paper: LaTeX macros and figures, built only from results/ (CLAUDE.md: no
-hand-typed results). Snakemake rules paper_macros, paper_figures and paper call this.
+"""P9 journal paper: LaTeX macros and figures, built only from results/ (no hand-typed
+results). Snakemake rules paper_macros, paper_figures and paper call this.
 
 macros(out)        paper/generated/macros.tex, one \\newcommand per reported number
 figures(out_dir)   paper/figures/*.pdf, journal versions (IEEE column widths, no titles)
@@ -64,6 +64,10 @@ def thousands(x):
     return f"{round(float(x)):,}".replace(",", "{,}")
 
 
+def status(ok):
+    return "met" if ok else "not met"
+
+
 class Macros(dict):
     def __setitem__(self, k, v):
         if k in self:
@@ -110,6 +114,7 @@ def _b0(m):
         gd = s["gap_decomposition_II"][city]
         for k in ("magnitude", "distribution", "total"):
             m[name("Gap", c, k.capitalize())] = f(gd[k], 3)
+            m[name("Gap", c, k.capitalize(), "Two")] = f(gd[k], 2)
     rel = [r for r in s["tmy_releases_phoenix"] if r["scenario"].startswith("II")]
     m["BzRelLo"] = f(min(r["fss"] for r in rel), 3)
     m["BzRelHi"] = f(max(r["fss"] for r in rel), 3)
@@ -162,11 +167,19 @@ def _weather_geometry(m):
 def _e1_e4(m):
     s = _json("e1/summary_e1.json")
     m["EoneTotal"], m["EonePassed"] = s["total"], s["passed"]
+    m["EoneStatus"] = status(s["passed"] == s["total"])
     ce = s["cross_engine_buildings+trees"]
-    m["EoneBeam"] = pct(_json("e1/summary_e1.json")["cross_engine_buildings"]["beam_agreement"], 1)
+    beam = s["cross_engine_buildings"]["beam_agreement"]
+    m["EoneBeam"] = pct(beam, 1)
+    m["EoneBeamStatus"] = status(beam >= 0.98)
     m["EoneDsvf"] = f(ce["dsvf_mean"], 3)
+    m["EoneDsvfStatus"] = status(ce["dsvf_mean"] < 0.02)
     sw = [r["agreement"] for r in s["solweig"]]
     m["EoneSolweigLo"], m["EoneSolweigHi"] = pct(min(sw), 1), pct(max(sw), 1)
+    m["EoneSolweigN"] = len(sw)
+    m["EoneSolweigStatus"] = status(min(sw) >= 0.95)
+    m["EoneSuns"] = s["cross_engine"]["suns"]
+    m["EonePoints"] = s["cross_engine"]["points"]
     e2 = _json("e2/summary_e2.json")
     for sc in ("II", "I"):
         d = e2[f"scenario_{sc}"]
@@ -178,12 +191,29 @@ def _e1_e4(m):
             m[name("Etwo", sc, "Charges", k)] = v
     m["EtwoFgeo"] = f(e2["scenario_II"]["F_geo_2c"], 3)
     m["EtwoFgeoRoof"] = f(e2["scenario_II"]["F_geo_2d"], 3)
+    # F_geo scales PV only: share of demand met by the thermoelectric and suspension terms
+    t2 = pd.read_csv(R / "e2" / "table_e2.csv", dtype={"scenario": str}).set_index(
+        ["scenario", "case"]
+    )
+    a, b = t2.loc[("II", "2b+F")], t2.loc[("II", "2c")]
+    demand = (a.pv_kWh_yr - b.pv_kWh_yr) / (a.fss - b.fss)  # same demand in both cases
+    m["EtwoIINonPv"] = f(b.fss - b.pv_kWh_yr / demand, 3)
     ft = pd.read_csv(R / "e2" / "table_e2_facets.csv")
     ft = ft[ft.heading == "mean"].set_index("facet")["vs_ghi"]
     for fid, v in ft.items():
         m[name("Facet", fid.replace("_", " ").title(), "Ghi")] = f(v, 2)
-    m["EthreeTrips"] = _json("e3/summary_e3.json")["trips_in_matrix"]
-    m["PsixTraces"] = len(pd.read_csv(R / "p6" / "table_traces.csv"))
+    e3s = _json("e3/summary_e3.json")
+    m["EthreeTrips"] = e3s["trips_in_matrix"]
+    tun = {r["trip"].split("_")[1]: r for r in e3s["tunnel_check"] if r["sky"] == "tmy"}
+    for d, r in tun.items():
+        k = name("EthreeTunnel", d.capitalize())
+        m[k] = f(r["ratio_to_A"], 2)
+        m[k + "Covered"] = r["covered_s"]
+        m[k + "Duration"] = r["duration_s"]
+    tr = pd.read_csv(R / "p6" / "table_traces.csv")
+    m["PsixTraces"] = len(tr)
+    m["PsixRoutes"] = tr.route.nunique()
+    m["PsixDenseTraces"] = int((tr.route == "R-DENSE").sum())
     e3 = pd.read_csv(R / "e3" / "table_e3_summary.csv")
     e3 = e3[e3.sky == "tmy"].groupby(["route", "case"])
     ratio = e3.apply(lambda g: np.average(g.ratio_to_A, weights=g.trips), include_groups=False)
@@ -198,7 +228,10 @@ def _e1_e4(m):
     e4 = _json("e4/summary_e4.json")
     for site, v in e4["F_park_year_mean_heading"].items():
         m[name("Efour", site)] = f(v, 2)
-    m["EfourSolweigLo"] = pct(min(r["agreement"] for r in e4["solweig"]), 1)
+    lo = min(r["agreement"] for r in e4["solweig"])
+    m["EfourSolweigLo"] = pct(lo, 1)
+    m["EfourSolweigN"] = len(e4["solweig"])
+    m["EfourSolweigStatus"] = status(lo >= 0.95)
 
 
 def _e5_e6(m):
@@ -218,11 +251,18 @@ def _e5_e6(m):
         m[name("Efive", a, "Loss")] = pct(
             1 - base.loc[(a, "mismatch")].fss / base.loc[(a, "B0")].fss
         )
+        # share of the shading loss (parking + buildings + trees) that happens while parked
+        sh = sum(-base.loc[(a, st)].delta_fss for st in ("parking", "buildings", "trees"))
+        m[name("Efive", a, "ParkShare")] = pct(-base.loc[(a, "parking")].delta_fss / sh)
     s = _json("e5/summary_e5.json")
     m["EfiveBalance"] = sci(s["energy_balance"]["max_rel"])
+    m["EfiveBalanceStatus"] = status(s["energy_balance"]["pass"])
     for a, d in s["sensitivity_subhourly"].items():
         m[name("Efive", a, "YearEffect")] = f(d["year_effect_tmy_minus_2023_hourly"], 3)
         m[name("Efive", a, "ResEffect")] = f(d["resolution_effect_5min_minus_hourly"], 3)
+    sens = s["sensitivity_subhourly"].values()
+    m["EfiveYearEffectMax"] = f(max(abs(d["year_effect_tmy_minus_2023_hourly"]) for d in sens), 3)
+    m["EfiveResEffectMax"] = f(max(abs(d["resolution_effect_5min_minus_hourly"]) for d in sens), 3)
     e6 = _json("e6/summary_e6.json")
     for k in ("k", "alpha", "beta"):
         m[name("Esix", k.capitalize())] = f(e6["fit"][k], 2)
@@ -257,6 +297,7 @@ def _e7(m):
     m["EsevenMaxErr"] = f(100 * s["closed_form_check"]["max_abs_rel_err"], 1)
     m["EsevenMaxErrFixed"] = f(100 * s["closed_form_check"]["max_abs_rel_err_fixed_mass"], 1)
     m["EsevenN"] = s["closed_form_check"]["n"]
+    m["EsevenStatus"] = status(s["closed_form_check"]["pass"])
     sw = pd.read_csv(R / "e7" / "table_e7_sweep.csv")
     for a in ARCHS:
         for alloc in ("roof", "roof_hood", "full_skin"):
@@ -271,8 +312,10 @@ def _e8(m, c):
     u = _json("e8/summary_e8_unity.json")
     ru = u["python_raster_vs_unity"]
     m["EeightAgree"] = pct(ru["agreement"], 1)
+    m["EeightAgreeStatus"] = status(ru["pass_agreement"])
     m["EeightWithin"] = ru["trips_within_2pp"]
     m["EeightTrips"] = ru["trips"]
+    m["EeightTripsStatus"] = status(ru["pass_lit_fraction"])
     m["EeightMaxPp"] = f(ru["lit_diff_pp_max_abs"], 2)
     m["EeightMeanPp"] = f(ru["lit_diff_pp_mean"], 2)
     m["EeightRecords"] = f(ru["sample_records"] / 1e6, 1)
@@ -310,8 +353,32 @@ def macros(out):
 
 
 # ---------------------------------------------------------------- figures
-INK, INK2, GRID = "#111111", "#444444", "#dddddd"
-LINE = ["#1f5fbf", "#d1495b", "#2e9e6a", "#e09f1f", "#7a5195"]
+# Okabe-Ito colour-blind-safe set. One colour per archetype and per loss cause, in every figure.
+INK, INK2, GRID = "#111111", "#555555", "#e3e3e3"
+OI = {
+    "blue": "#0072B2",
+    "verm": "#D55E00",
+    "green": "#009E73",
+    "orange": "#E69F00",
+    "purple": "#CC79A7",
+    "sky": "#56B4E9",
+    "yellow": "#F0E442",
+}
+ARCH_COL = {"A1": OI["blue"], "A2": OI["verm"], "A3": OI["green"], "A4": OI["orange"]}
+CAUSE_COL = {
+    "facets": OI["sky"],
+    "parking": OI["purple"],
+    "buildings": "#5a5a5a",
+    "trees": "#a8a8a8",
+    "mismatch": OI["yellow"],
+}
+FACET_COL = {
+    "roof": OI["blue"],
+    "hood": OI["orange"],
+    "tailgate": OI["purple"],
+    "side_left": OI["green"],
+    "side_right": OI["verm"],
+}
 
 
 def _style():
@@ -335,10 +402,13 @@ def _style():
             "axes.spines.right": False,
             "axes.grid": True,
             "grid.color": GRID,
-            "grid.linewidth": 0.5,
+            "grid.linewidth": 0.4,
             "axes.axisbelow": True,
             "axes.linewidth": 0.6,
-            "lines.linewidth": 1.2,
+            "xtick.major.width": 0.6,
+            "ytick.major.width": 0.6,
+            "lines.linewidth": 1.0,
+            "lines.markersize": 3.5,
             "legend.frameon": False,
             "figure.facecolor": "white",
             "savefig.facecolor": "white",
@@ -357,114 +427,244 @@ def _arch_names():
     return {k: v["name"] for k, v in a.items()}
 
 
-def fig_aoi(path, c):
-    import rasterio
+def _route_lines():
     from pyproj import Transformer
-    from rasterio.enums import Resampling
 
-    plt = _style()
-    k = c["fig_aoi"]["decimate"]
-    with rasterio.open(REPO_ROOT / "data" / "derived" / "dsm.tif") as r:
-        h, w = r.height // k, r.width // k
-        z = r.read(1, out_shape=(h, w), resampling=Resampling.average).astype(float)
-        b = r.bounds
-    dx = (b.right - b.left) / w
-    gy, gx = np.gradient(z, dx)
-    az, alt = np.radians(315), np.radians(40)
-    slope = np.arctan(np.hypot(gx, gy))
-    aspect = np.arctan2(-gx, gy)
-    hs = np.sin(alt) * np.cos(slope) + np.cos(alt) * np.sin(slope) * np.cos(az - aspect)
-    ext = np.array([b.left, b.right, b.bottom, b.top]) / 1000
-    fig, ax = plt.subplots(figsize=(COL_W, COL_W * 1.12))
-    ax.imshow(hs, cmap="gray", extent=ext, vmin=-0.2, vmax=1.0, interpolation="bilinear")
     tr = Transformer.from_crs(4269, 26912, always_xy=True)
-    rdir = REPO_ROOT / "routes" / "v2"
-    for i, rid in enumerate(("R-OPEN", "R-MIXED", "R-DENSE", "R-TUNNEL")):
-        g = json.loads((rdir / f"{rid}.geojson").read_text(encoding="utf-8"))
+    out = {}
+    for rid in ("R-OPEN", "R-MIXED", "R-DENSE", "R-TUNNEL"):
+        g = json.loads((REPO_ROOT / "routes" / "v2" / f"{rid}.geojson").read_text("utf-8"))
+        xs, ys = [], []
         for feat in g["features"]:
             xy = np.array(feat["geometry"]["coordinates"])
             x, y = tr.transform(xy[:, 0], xy[:, 1])
-            ax.plot(
-                np.asarray(x) / 1000,
-                np.asarray(y) / 1000,
-                color=LINE[i],
-                lw=1.6 if rid != "R-TUNNEL" else 1.0,
-                ls="-" if rid != "R-TUNNEL" else "--",
-                label=rid,
-            )
-    sites = json.loads((rdir / "parking_sites.geojson").read_text(encoding="utf-8"))
-    seen = {}
+            xs.append(np.asarray(x))
+            ys.append(np.asarray(y))
+        out[rid] = (np.concatenate(xs) / 1000, np.concatenate(ys) / 1000)
+    return out
+
+
+def fig_aoi(path, c):
+    """Study area: building and tree height, routes coloured by the 10 m SVF used to pick them."""
+    import rasterio
+    from matplotlib.collections import LineCollection
+    from rasterio.enums import Resampling
+
+    plt = _style()
+    ca = c["fig_aoi"]
+    k = ca["decimate"]
+    dd = REPO_ROOT / "data" / "derived"
+    with rasterio.open(dd / "dsm.tif") as r:
+        h, w = r.height // k, r.width // k
+        dsm = r.read(1, out_shape=(h, w), resampling=Resampling.average).astype(float)
+        b = r.bounds
+    with rasterio.open(dd / "dem.tif") as r:
+        dem = r.read(1, out_shape=(h, w), resampling=Resampling.average).astype(float)
+    hag = np.clip(dsm - dem, 0, ca["height_max_m"])
+    ext = np.array([b.left, b.right, b.bottom, b.top]) / 1000
+
+    man = json.loads((REPO_ROOT / "routes" / "v2" / "MANIFEST.json").read_text("utf-8"))
+    pts = pd.read_csv(dd / "routes" / f"arterial_points_{man['version']}.csv.gz")
+    lines = _route_lines()
+
+    fig, ax = plt.subplots(figsize=(COL_W, COL_W * 0.95))
+    ax.imshow(hag, cmap="Greys", extent=ext, vmin=-4, vmax=ca["height_max_m"],
+              interpolation="bilinear")  # fmt: skip
+    norm = plt.Normalize(0.3, 1.0)
+    cmap = plt.get_cmap("viridis")
+    for rid, sel in man["selection"].items():
+        p = pts[(pts.street == sel["street"]) & (pts.orientation == sel["orientation"])]
+        p = p[(p.s >= sel["window_from_m"]) & (p.s <= sel["window_to_m"])].sort_values("s")
+        xy = np.c_[p.x, p.y] / 1000
+        seg = np.stack([xy[:-1], xy[1:]], axis=1)
+        lc = LineCollection(seg, cmap=cmap, norm=norm, linewidths=2.6, capstyle="butt")
+        lc.set_array(0.5 * (p.svf.to_numpy()[:-1] + p.svf.to_numpy()[1:]))
+        ax.add_collection(lc)
+        frac, dx, dy = ca["route_labels"][rid]
+        x, y = xy[int(frac * (len(xy) - 1))]
+        ax.annotate(rid, (x, y), xytext=(dx, dy), textcoords="offset points", fontsize=7,
+                    color=INK, ha="center" if dx == 0 else ("left" if dx > 0 else "right"),
+                    va="center" if dy == 0 else ("bottom" if dy > 0 else "top"),
+                    bbox=dict(boxstyle="round,pad=0.1", fc="white", ec="none",
+                              alpha=0.85))  # fmt: skip
+    tx, ty = lines["R-TUNNEL"]
+    ax.plot(tx, ty, color=INK, lw=1.0, ls=(0, (3, 1.5)), label="R-TUNNEL (covered-road check)")
+
+    sites = json.loads((REPO_ROOT / "routes" / "v2" / "parking_sites.geojson").read_text("utf-8"))
+    from pyproj import Transformer
+
+    tr = Transformer.from_crs(4269, 26912, always_xy=True)
+    groups = {}
     for feat in sites["features"]:
         lon, lat = feat["geometry"]["coordinates"][:2]
         x, y = tr.transform(lon, lat)
         key = (round(x / 50), round(y / 50))
-        seen.setdefault(key, []).append((feat["properties"]["id"], x / 1000, y / 1000))
-    offsets = c["fig_aoi"].get("label_offsets", {})
-    pts = []
-    for group in seen.values():
-        label = "/".join(g[0] for g in group)
-        _, x, y = group[0]
-        pts.append((x, y))
-        ax.plot(x, y, "o", ms=3.5, mfc="white", mec=INK, mew=0.8)
-        ax.annotate(
-            label,
-            (x, y),
-            xytext=offsets.get(label, (3, 2)),
-            textcoords="offset points",
-            fontsize=6.5,
-            color=INK,
-            ha="right" if offsets.get(label, (1,))[0] < 0 else "left",
-            bbox=dict(boxstyle="round,pad=0.1", fc="white", ec="none", alpha=0.8),
-        )
-    xs = (
-        [p[0] for p in pts]
-        + [ln.get_xdata().min() for ln in ax.lines[:4]]
-        + [ln.get_xdata().max() for ln in ax.lines[:4]]
-    )
-    ys = (
-        [p[1] for p in pts]
-        + [ln.get_ydata().min() for ln in ax.lines[:4]]
-        + [ln.get_ydata().max() for ln in ax.lines[:4]]
-    )
-    pad = c["fig_aoi"]["margin_km"]
-    ax.set_xlim(min(xs) - pad, max(xs) + pad)
-    ax.set_ylim(min(ys) - pad, max(ys) + pad)
-    ax.set_xlabel("Easting, km (UTM 12N)")
-    ax.set_ylabel("Northing, km")
+        groups.setdefault(key, []).append((feat["properties"]["id"], x / 1000, y / 1000))
+    allx, ally = [], []
+    for g in groups.values():
+        label = "/".join(sorted(s[0] for s in g))
+        _, x, y = g[0]
+        allx.append(x)
+        ally.append(y)
+        ax.plot(x, y, "o", ms=3.6, mfc="white", mec=INK, mew=0.9, zorder=5)
+        dx, dy = ca["label_offsets"].get(label, (8, 8))
+        ax.annotate(label, (x, y), xytext=(dx, dy), textcoords="offset points", fontsize=7,
+                    ha="right" if dx < 0 else "left", va="center",
+                    bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.9),
+                    arrowprops=dict(arrowstyle="-", lw=0.5, color=INK, shrinkA=0, shrinkB=2),
+                    zorder=6)  # fmt: skip
+    for x, y in lines.values():
+        allx += [x.min(), x.max()]
+        ally += [y.min(), y.max()]
+    pad = ca["margin_km"]
+    x0, x1, y0, y1 = min(allx) - pad, max(allx) + pad, min(ally) - pad, max(ally) + pad
+    ax.set_xlim(x0, x1)
+    ax.set_ylim(y0, y1)
+    ax.set_aspect("equal")
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for s in ax.spines.values():
+        s.set_visible(True)
+        s.set_linewidth(0.6)
     ax.grid(False)
-    ax.legend(loc="lower left", fontsize=6.5, frameon=True, framealpha=0.85, edgecolor="none")
-    fig.tight_layout()
+    # scale bar and north arrow (UTM grid north, within 0.6 deg of true north here)
+    L = ca["scale_km"]
+    sx, sy = x1 - pad * 0.5 - L, y0 + pad * 0.6
+    ax.plot([sx, sx + L], [sy, sy], color=INK, lw=2.0, solid_capstyle="butt")
+    ax.text(sx + L / 2, sy + 0.25, f"{L:g} km", ha="center", va="bottom", fontsize=7)
+    nx, ny = x1 - pad * 0.7, y1 - pad * 2.2
+    ax.annotate("N", (nx, ny + 1.2), xytext=(nx, ny), ha="center", va="top", fontsize=7,
+                arrowprops=dict(arrowstyle="-|>", lw=0.8, color=INK))  # fmt: skip
+    sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+    cb = fig.colorbar(sm, ax=ax, orientation="horizontal", fraction=0.04, pad=0.02, aspect=40)
+    cb.set_label("Sky view factor along the route (10 m spacing)", fontsize=7)
+    cb.outline.set_linewidth(0.5)
+    cb.ax.tick_params(labelsize=7, width=0.5)
+    ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), fontsize=7, handlelength=2.2,
+              borderaxespad=0.2)  # fmt: skip
     _save(fig, path)
     plt.close(fig)
 
 
+def _facet_corners(fc):
+    a, t = np.radians(fc.azimuth_body_deg), np.radians(fc.tilt_deg)
+    edge = np.array([np.sin(a), np.cos(a), 0.0])
+    up = np.array([-np.cos(t) * np.cos(a), np.cos(t) * np.sin(a), np.sin(t)])
+    c = np.asarray(fc.centre_m, float)
+    hu, hv = fc.across_m / 2, fc.slope_m / 2
+    return np.array([c - hu * edge - hv * up, c + hu * edge - hv * up,
+                     c + hu * edge + hv * up, c - hu * edge + hv * up])  # fmt: skip
+
+
+def _body_profile(fs, L, H):
+    """Side profile (x, z) of a plain body that carries the assumed facets exactly."""
+    c = {fc.id: _facet_corners(fc) for fc in fs}
+    roof, hood, tail = c["roof"], c["hood"], c["tailgate"]
+    z0 = 0.30
+    return np.array([
+        (-L / 2, z0), (-L / 2, tail[:, 2].min()),
+        (tail[:, 0].max(), tail[:, 2].max()), (roof[:, 0].min(), H),
+        (roof[:, 0].max(), H), (hood[:, 0].min(), hood[:, 2].max()),
+        (hood[:, 0].max(), hood[:, 2].min()), (L / 2, hood[:, 2].min() - 0.08), (L / 2, z0),
+    ])  # fmt: skip
+
+
 def fig_facets(path):
+    """Assumed design layout: two axonometric views of the exact facets on a plain body."""
+    from matplotlib.patches import Polygon
+
     from .vehicle import facets, samples, vehicle_config
 
     plt = _style()
     v = vehicle_config()
     fs = facets(v)
-    s = samples(fs, v["sample_spacing_m"])
-    fig, (ax, bx) = plt.subplots(1, 2, figsize=(COL_W, 1.55), gridspec_kw={"width_ratios": [1, 1]})
-    for i, fc in enumerate(fs):
-        d = s[s.facet_id == fc.id]
-        lab = f"{fc.id.replace('_', ' ')}: {fc.area_m2:g} mÂ², {fc.tilt_deg:g}Â°"
-        ax.scatter(d.x_body, d.y_body, s=1.2, color=LINE[i], label=lab, lw=0)
-        bx.scatter(d.x_body, d.z_body, s=1.2, color=LINE[i], lw=0)
+    sm = samples(fs, v["sample_spacing_m"])
     L, W, H = v["body"]["length_m"], v["body"]["width_m"], v["body"]["height_m"]
-    ax.add_patch(plt.Rectangle((-L / 2, -W / 2), L, W, fill=False, ec=INK2, lw=0.6))
-    bx.add_patch(plt.Rectangle((-L / 2, 0), L, H, fill=False, ec=INK2, lw=0.6))
-    ax.annotate("", (L / 2 + 0.5, 0), (L / 2 - 0.2, 0), arrowprops=dict(arrowstyle="->", lw=0.7))
-    for a, t, yl in ((ax, "(a) plan", "y (left), m"), (bx, "(b) side", "z, m")):
-        a.set_aspect("equal")
-        a.set_title(t, loc="left")
-        a.set_xlabel("x (forward), m")
-        a.set_ylabel(yl)
-        a.grid(False)
-    fig.legend(loc="lower center", ncol=2, fontsize=6, markerscale=4, bbox_to_anchor=(0.5, -0.2))
-    fig.tight_layout()
+    prof = _body_profile(fs, L, H)
+
+    def proj(p, phi, th):
+        p = np.atleast_2d(p)
+        cp, sp, ct, st = np.cos(phi), np.sin(phi), np.cos(th), np.sin(th)
+        u = -p[:, 0] * sp + p[:, 1] * cp
+        w = -p[:, 0] * cp * st - p[:, 1] * sp * st + p[:, 2] * ct
+        d = p[:, 0] * cp * ct + p[:, 1] * sp * ct + p[:, 2] * st
+        return u, w, d
+
+    # body faces: two side walls and the strips between profile points
+    faces = []
+    for y in (W / 2, -W / 2):
+        faces.append(
+            (np.c_[prof[:, 0], np.full(len(prof), y), prof[:, 1]], np.array([0, np.sign(y), 0]))
+        )
+    for i in range(len(prof)):
+        p0, p1 = prof[i], prof[(i + 1) % len(prof)]
+        q = np.array([[p0[0], W / 2, p0[1]], [p1[0], W / 2, p1[1]],
+                      [p1[0], -W / 2, p1[1]], [p0[0], -W / 2, p0[1]]])  # fmt: skip
+        t = np.array([p1[0] - p0[0], 0, p1[1] - p0[1]])
+        n = np.array([-t[2], 0, t[0]])  # outward: left of travel on the clockwise (x, z) profile
+        n = n / (np.linalg.norm(n) or 1)
+        faces.append((q, n))
+    labels = {
+        "roof": "Roof", "hood": "Hood", "tailgate": "Tailgate",
+        "side_left": "Left side", "side_right": "Right side",
+    }  # fmt: skip
+    views = (  # label: (x, y) in axes fraction, leader start as a corner of the label box
+        ("(a) front left", np.radians(35), np.radians(24),
+         {"roof": (0.72, 0.97, (0, 0)), "hood": (0.1, 0.1, (1, 1)),
+          "side_left": (0.82, 0.1, (0, 1))}),
+        ("(b) rear right", np.radians(215), np.radians(24),
+         {"roof": (0.62, 0.97, (0, 0)), "tailgate": (0.15, 0.08, (1, 1)),
+          "side_right": (0.84, 0.08, (0, 1))}),
+    )  # fmt: skip
+    fig, axes = plt.subplots(1, 2, figsize=(COL_W, 1.65))
+    for ax, (title, phi, th, lab_pos) in zip(axes, views, strict=True):
+        cam = np.array([np.cos(phi) * np.cos(th), np.sin(phi) * np.cos(th), np.sin(th)])
+
+        def host(fc):  # body face that carries the facet: nearest plane through its centre
+            c = np.asarray(fc.centre_m, float)
+            return int(
+                np.argmin([abs((c - q[0]) @ n) + (1 - n @ fc.normal_body()) for q, n in faces])
+            )
+
+        on = {}
+        for fc in fs:
+            on.setdefault(host(fc), []).append(fc)
+        order = sorted((i for i, (_, n) in enumerate(faces) if n @ cam > 1e-6),
+                       key=lambda i: proj(faces[i][0], phi, th)[2].mean())  # fmt: skip
+        for z, i in enumerate(order):  # painter's order: explicit zorder, markers would float
+            u, w, _ = proj(faces[i][0], phi, th)
+            ax.add_patch(Polygon(np.c_[u, w], closed=True, fc="#f2f2f2", ec="#8a8a8a", lw=0.45,
+                                 zorder=1 + z))  # fmt: skip
+            for fc in on.get(i, []):
+                _draw_facet(ax, fc, proj, phi, th, sm, lab_pos, labels, 1.5 + z)
+        ax.set_aspect("equal")
+        ax.autoscale_view()
+        ax.margins(0.12, 0.25)
+        ax.axis("off")
+        ax.set_title(title, loc="left", fontsize=7, pad=1)
+    fig.tight_layout(w_pad=0.2)
     _save(fig, path)
     plt.close(fig)
+
+
+def _draw_facet(ax, fc, proj, phi, th, sm, lab_pos, labels, z):
+    from matplotlib.patches import Polygon
+
+    u, w, _ = proj(_facet_corners(fc), phi, th)
+    col = FACET_COL[fc.id]
+    ax.add_patch(Polygon(np.c_[u, w], closed=True, fc=col, alpha=0.30, ec=col, lw=0.7, zorder=z))
+    d = sm[sm.facet_id == fc.id]
+    pu, pw, _ = proj(d[["x_body", "y_body", "z_body"]].to_numpy(), phi, th)
+    ax.plot(pu, pw, ".", ms=0.9, color=col, mew=0, zorder=z + 0.1)
+    if fc.id not in lab_pos:
+        return
+    fx, fy, rel = lab_pos[fc.id]
+    ax.annotate(
+        f"{labels[fc.id]}\n{fc.area_m2:g} m$^2$, {fc.tilt_deg:g}$^\\circ$",
+        (u.mean(), w.mean()), xytext=(fx, fy), textcoords="axes fraction", fontsize=7,
+        ha="center", va="center", color=INK, linespacing=1.0, zorder=100,
+        arrowprops=dict(arrowstyle="-", lw=0.45, color=INK2, shrinkA=1.5, shrinkB=0, relpos=rel),
+    )  # fmt: skip
 
 
 def fig_tod(path):
@@ -474,70 +674,75 @@ def fig_tod(path):
     t = t[(t.sky == "tmy") & (t.case == "C0.03")]
     g = t.groupby(["route", "day", "departure"]).ratio_to_A.mean().reset_index()
     routes = ("R-OPEN", "R-MIXED", "R-DENSE")
-    fig, axes = plt.subplots(1, 3, figsize=(COL_W, 1.75), sharey=True)
-    labels = {"03-": "21 Mar", "06-": "21 Jun", "09-": "22 Sep", "12-": "21 Dec"}
+    days = sorted(g.day.unique())
+    deps = sorted(g.departure.unique())
+    import datetime as dt
+
+    dlab = [dt.date.fromisoformat(d).strftime("%d %b").lstrip("0") for d in days]
+    fig, axes = plt.subplots(1, 3, figsize=(COL_W, 1.45), sharey=True)
+    norm = plt.Normalize(40, 100)
     for ax, route in zip(axes, routes, strict=True):
-        d = g[g.route == route]
-        for i, (day, dd) in enumerate(d.groupby("day")):
-            lab = next(v for k, v in labels.items() if day[5:8] == k)
-            hours = dd.departure.str.slice(0, 2).astype(int)
-            ax.plot(hours, dd.ratio_to_A, "-o", ms=2.2, lw=0.9, color=LINE[i], label=lab)
-        ax.set_title(route, loc="left")
-        ax.set_xticks([8, 12, 16])
-        ax.set_xlabel("Departure, h")
-        ax.set_ylim(0.3, 1.02)
-    axes[0].set_ylabel("PV relative to open sky")
-    h, lab = axes[0].get_legend_handles_labels()
-    fig.legend(h, lab, loc="lower center", ncol=4, fontsize=6.3, bbox_to_anchor=(0.5, -0.04))
-    fig.tight_layout(w_pad=0.4, rect=(0, 0.08, 1, 1))
+        z = g[g.route == route].pivot(index="day", columns="departure", values="ratio_to_A")
+        z = z.loc[days, deps].to_numpy()
+        im = ax.imshow(100 * z, cmap="cividis", norm=norm, aspect="auto")
+        for i in range(z.shape[0]):
+            for j in range(z.shape[1]):
+                ax.text(j, i, f"{100 * z[i, j]:.0f}", ha="center", va="center", fontsize=5.8,
+                        color="white" if z[i, j] < 0.72 else INK)  # fmt: skip
+        ax.set_xticks(range(len(deps)), [d[:2] for d in deps])
+        ax.set_yticks(range(len(days)), dlab)
+        ax.tick_params(length=0, pad=1.5)
+        ax.set_title(route, loc="left", fontsize=7, pad=2)
+        ax.grid(False)
+        for s in ax.spines.values():
+            s.set_visible(False)
+    axes[1].set_xlabel("Departure (h)", labelpad=1)
+    cb = fig.colorbar(im, ax=axes, fraction=0.03, pad=0.02, aspect=18)
+    cb.set_label("PV relative to open sky (%)", fontsize=7)
+    cb.outline.set_linewidth(0.4)
+    cb.ax.tick_params(labelsize=6.5, width=0.4)
     _save(fig, path)
     plt.close(fig)
 
 
 def fig_waterfall(path):
+    """Annual loss breakdown per archetype: final f_ss to B0, split by cause."""
+    from matplotlib.patches import Patch
+
     plt = _style()
     t = pd.read_csv(R / "e5" / "table_e5.csv")
     t = t[t.weather == "tmy"]
-    names = _arch_names()
-    labels = [
-        "B0",
-        "trip\nhours",
-        "Perez,\nFaiman",
-        "facets",
-        "parking\nshade",
-        "driving\nbldgs",
-        "driving\ntrees",
-        "mis-\nmatch",
-    ]
-    fig, ax = plt.subplots(figsize=(COL_W, 2.15))
-    x = np.arange(len(STEPS))
-    ends = {}
-    for i, a in enumerate(ARCHS):
-        y = t[t.archetype == a].set_index("step").loc[list(STEPS), "fss"].to_numpy()
-        ax.plot(x, y, "-o", ms=2.8, color=LINE[i], label=f"{a} {names[a]}")
-        ends[a] = y[-1]
-    # end labels, spread so that close values (e.g. A2 vs A4) do not overlap
-    order = sorted(ends, key=ends.get)
-    ylab = {}
-    for a in order:
-        lo = max([ylab[b] + 0.035 for b in ylab], default=-1)
-        ylab[a] = max(ends[a], lo)
-    for i, a in enumerate(ARCHS):
-        ax.annotate(
-            f"{a} {ends[a]:.3f}",
-            (x[-1], ends[a]),
-            xytext=(x[-1] + 0.15, ylab[a]),
-            textcoords="data",
-            va="center",
-            fontsize=6.3,
-            color=LINE[i],
-        )
-    ax.set_xticks(x, labels, fontsize=6.3)
-    ax.set_xlim(-0.3, len(STEPS) + 0.6)
-    ax.set_ylim(0, 0.9)
-    ax.set_ylabel(r"Solar self-sufficiency $f_{\mathrm{ss}}$")
-    ax.legend(loc="upper right", fontsize=6.3)
-    fig.tight_layout()
+    names = cfg()["archetype_short"]
+    causes = ("facets", "parking", "buildings", "trees", "mismatch")
+    clab = {"facets": "facet orientation", "parking": "parking shade",
+            "buildings": "driving, buildings", "trees": "driving, trees",
+            "mismatch": "electrical mismatch"}  # fmt: skip
+    fig, ax = plt.subplots(figsize=(COL_W, 1.95))
+    for row, a in enumerate(ARCHS):
+        d = t[t.archetype == a].set_index("step")
+        y = len(ARCHS) - 1 - row
+        x = d.loc["mismatch", "fss"]
+        for cs in reversed(causes):  # from the final value rightwards to the chain value
+            w = -d.loc[cs, "delta_fss"]
+            ax.barh(y, w, left=x, height=0.62, color=CAUSE_COL[cs], ec="white", lw=0.4)
+            x += w
+        b0, top = d.loc["B0", "fss"], d.loc["chain", "fss"]
+        ax.barh(y, top - b0, left=b0, height=0.62, fc="white", ec=INK2, lw=0.4, hatch="//////")
+        ax.plot([b0, b0], [y - 0.38, y + 0.38], color=INK, lw=0.9)
+        ax.text(d.loc["mismatch", "fss"] - 0.012, y, f"{d.loc['mismatch', 'fss']:.3f}",
+                ha="right", va="center", fontsize=6.8)  # fmt: skip
+        ax.text(top + 0.012, y, f"B0 {b0:.3f}", ha="left", va="center", fontsize=6.8)
+    ax.set_yticks(range(len(ARCHS)), [f"{a} {names[a]}" for a in reversed(ARCHS)], fontsize=7)
+    ax.set_xlim(0, 1.0)
+    ax.set_ylim(-0.6, len(ARCHS) - 0.4)
+    ax.set_xlabel(r"Annual solar self-sufficiency $f_{\mathrm{ss}}$")
+    ax.tick_params(axis="y", length=0)
+    ax.grid(axis="y", visible=False)
+    ax.spines["left"].set_visible(False)
+    hs = [Patch(fc=CAUSE_COL[cs], label=clab[cs]) for cs in causes]
+    hs.append(Patch(fc="white", ec=INK2, hatch="//////", lw=0.4, label="trip hours, Perez, Faiman"))
+    ax.legend(handles=hs, loc="lower left", bbox_to_anchor=(-0.02, 1.0), ncol=3, fontsize=6.3,
+              handlelength=1.2, handleheight=0.8, columnspacing=0.8, borderaxespad=0.1)  # fmt: skip
     _save(fig, path)
     plt.close(fig)
 
@@ -547,57 +752,105 @@ def fig_fmm(path):
     t = pd.read_csv(R / "e6" / "table_e6.csv")
     fit = _json("e6/summary_e6.json")["fit"]
     fig, ax = plt.subplots(figsize=(COL_W, 1.9))
-    for i, (src, lab) in enumerate(
-        (("driving", "R-DENSE driving (1 s)"), ("parking", "P2, P3 parked (5 min)"))
+    for src, lab, col in (
+        ("driving", "R-DENSE driving (1 s)", OI["blue"]),
+        ("parking", "P2, P3 parked (5 min)", OI["verm"]),
     ):
         d = t[(t.source == src) & (t.s_mean > 0)]
-        ax.plot(d.s_mean, d.F_mm_mean, "o", ms=2.6, color=LINE[i], label=lab)
+        ax.scatter(d.s_mean, d.F_mm_mean, s=4 + 900 * d.energy_share, color=col, alpha=0.75,
+                   lw=0.3, ec="white", label=lab, clip_on=False, zorder=3)  # fmt: skip
     s = np.linspace(0, 1, 401)
-    ax.plot(
-        s, 1 - fit["k"] * s ** fit["alpha"] * (1 - s) ** fit["beta"], color=INK, lw=1.0, label="fit"
-    )
+    ax.plot(s, 1 - fit["k"] * s ** fit["alpha"] * (1 - s) ** fit["beta"], color=INK2, lw=0.8,
+            label="fit")  # fmt: skip
+    ax.text(0.5, 0.97,
+            rf"$F_{{\mathrm{{mm}}}}=1-{fit['k']:.2f}\,s^{{{fit['alpha']:.2f}}}(1-s)^{{{fit['beta']:.2f}}}$"
+            rf",  $R^2={fit['r2']:.2f}$",
+            transform=ax.transAxes, ha="center", va="top", fontsize=7)  # fmt: skip
     ax.set_xlabel("Beam-shaded fraction of the facet, $s$")
     ax.set_ylabel(r"Mismatch factor $F_{\mathrm{mm}}$")
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1.05)
-    ax.legend(loc="lower center", ncol=3, fontsize=6.3, bbox_to_anchor=(0.5, -0.02))
-    fig.tight_layout()
+    lg = ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), ncol=3, fontsize=6.8,
+                   borderaxespad=0.1, handletextpad=0.3, columnspacing=1.0)  # fmt: skip
+    for h in lg.legend_handles:
+        if hasattr(h, "set_sizes"):
+            h.set_sizes([12])
     _save(fig, path)
     plt.close(fig)
 
 
 def fig_nomograph(path):
+    from matplotlib.lines import Line2D
+
     plt = _style()
     nomo = pd.read_csv(R / "e7" / "table_e7_nomograph.csv")
     inv = pd.read_csv(R / "e7" / "table_e7_inversion.csv")
     fa = pd.read_csv(R / "e7" / "table_e7_fss_area.csv")
     s = _json("e7/summary_e7.json")
     inv = inv[(inv.allocation == s["allocation_base"]) & (inv.kappa == s["kappa_base"])]
-    fig, (ax, bx) = plt.subplots(1, 2, figsize=(PAGE_W, 2.2))
-    names = _arch_names()
-    for i, a in enumerate(ARCHS):
+    v = yaml.safe_load((REPO_ROOT / "configs" / "vehicle" / "solaris_p0.yaml").read_text("utf-8"))
+    A0 = sum(fc["area_m2"] for fc in v["facets"])
+    fig, (ax, bx) = plt.subplots(1, 2, figsize=(PAGE_W, 1.95))
+    ymax = 80
+
+    def spread(ends, gap):
+        """End-label positions, pushed apart so that close line ends do not overlap."""
+        out = {}
+        for k in sorted(ends, key=ends.get):
+            out[k] = max([ends[k]] + [out[j] + gap for j in out])
+        return out
+
+    ends_a, ends_b = {}, {}
+    for a in ARCHS:
+        col = ARCH_COL[a]
         c = nomo[nomo.curve == a]
-        ax.plot(c.km_day, c.A_req_m2, color=LINE[i], label=f"{a} {names[a]}")
+        ax.plot(c.km_day, c.A_req_m2, color=col, lw=1.2)
         r = inv[inv.archetype == a].iloc[0]
-        ax.plot(r.km_day, r.A_fss1_sim_m2, "o", ms=4, mfc="white", mec=LINE[i], mew=1.0)
+        ax.plot(r.km_day, r.A_fss1_sim_m2, "o", ms=4.2, mfc="white", mec=col, mew=1.0, zorder=4)
+        inside = c[c.A_req_m2 <= ymax]
+        xe, ye = inside.km_day.iloc[-1], inside.A_req_m2.iloc[-1]
+        if ye < ymax - 3:
+            ends_a[a] = (xe, ye)
+        else:
+            ax.annotate(a, (xe, ye), xytext=(0, 2), textcoords="offset points", fontsize=7,
+                        color=col, ha="center", va="bottom")  # fmt: skip
         d = fa[fa.archetype == a]
-        bx.plot(d.A_m2, d.fss, color=LINE[i], label=a)
-    for sc, ls in (("II", "--"), ("I", ":")):
+        bx.plot(d.A_m2, d.fss, color=col, lw=1.2)
+        ends_b[a] = (d.A_m2.iloc[-1], d.fss.iloc[-1])
+    for sc, ls in (("II", (0, (4, 2))), ("I", (0, (1, 1.5)))):
         c = nomo[nomo.curve == f"B0-{sc}"]
-        ax.plot(c.km_day, c.A_req_m2, ls, color=INK2, lw=0.9, label=f"conference Eq., Scen. {sc}")
-    for a_ in (ax, bx):
-        a_.axhline(11.6, color=INK2, lw=0.5) if a_ is ax else a_.axvline(11.6, color=INK2, lw=0.5)
+        ax.plot(c.km_day, c.A_req_m2, ls=ls, color=INK2, lw=1.0)
+        ends_a[f"B0 Scen. {sc}"] = (c.km_day.iloc[-1], c.A_req_m2.iloc[-1])
+    for ends, a_, gap, dx in ((ends_a, ax, 5.0, 1.5), (ends_b, bx, 0.11, 0.5)):
+        ys = spread({k: v[1] for k, v in ends.items()}, gap)
+        for k, (xe, _ye) in ends.items():
+            a_.text(xe + dx, ys[k], k, fontsize=7 if k in ARCH_COL else 6.5,
+                    color=ARCH_COL.get(k, INK2), va="center", ha="left")  # fmt: skip
+    ax.axhline(A0, color=INK2, lw=0.5, ls=(0, (1, 1)))
+    ax.text(62, A0 - 1, f"assumed skin, {A0:g} m$^2$", fontsize=6.5, color=INK2, va="top")
+    bx.axvline(A0, color=INK2, lw=0.5, ls=(0, (1, 1)))
+    bx.text(A0 + 0.4, 1.45, f"assumed skin\n{A0:g} m$^2$", fontsize=6.5, color=INK2, va="center")
     bx.axhline(1.0, color=INK2, lw=0.5)
-    ax.set_xlabel("Daily distance $D$, km/day")
-    ax.set_ylabel(r"PV area for $f_{\mathrm{ss}}=1$, m$^2$")
-    ax.set_ylim(0, 100)
-    ax.set_xlim(0, nomo.km_day.max())
-    ax.set_title("(a) Shading-aware design curve; circles: SoC simulation", loc="left")
-    ax.legend(loc="upper left", fontsize=6.3)
-    bx.set_xlabel("PV area $A$, m$^2$ (assumed layout scaled)")
-    bx.set_ylabel(r"$f_{\mathrm{ss}}$")
-    bx.set_title("(b) SoC simulation, mass fed back", loc="left")
-    fig.tight_layout()
+    bx.text(
+        fa.A_m2.min() + 0.3, 1.02, r"$f_{\mathrm{ss}}=1$", fontsize=6.5, color=INK2, va="bottom"
+    )
+    ax.set_xlabel("Daily distance $D$ (km/day)")
+    ax.set_ylabel(r"PV area for $f_{\mathrm{ss}}=1$ (m$^2$)")
+    ax.set_ylim(0, ymax)
+    ax.set_xlim(0, nomo.km_day.max() * 1.07)
+    ax.set_title("(a) Required area against daily distance", loc="left", fontsize=7.5)
+    bx.set_xlabel("PV area $A$ (m$^2$), assumed layout scaled")
+    bx.set_ylabel(r"$f_{\mathrm{ss}}$, SoC simulation")
+    bx.set_xlim(fa.A_m2.min(), fa.A_m2.max() * 1.06)
+    bx.set_title("(b) Self-sufficiency against area (mass fed back)", loc="left", fontsize=7.5)
+    hs = [
+        Line2D([], [], color=INK, lw=1.2, label="shading-aware equation"),
+        Line2D([], [], ls="", marker="o", mfc="white", mec=INK, ms=4.2, label="SoC simulation"),
+        Line2D([], [], color=INK2, lw=1.0, ls=(0, (4, 2)), label="conference equation, Scen. II"),
+        Line2D([], [], color=INK2, lw=1.0, ls=(0, (1, 1.5)), label="conference equation, Scen. I"),
+    ]
+    fig.legend(handles=hs, loc="upper center", ncol=4, fontsize=7, bbox_to_anchor=(0.5, 1.07))
+    fig.tight_layout(w_pad=1.5)
     _save(fig, path)
     plt.close(fig)
 
@@ -606,29 +859,40 @@ def fig_validation(path, c):
     plt = _style()
     t = pd.read_csv(R / "e8" / "table_e8_trips.csv")
     sv = pd.read_csv(R / "e8" / "table_e8_svf.csv", dtype={"id": str})
-    fig, (ax, bx) = plt.subplots(1, 2, figsize=(COL_W, 1.85))
-    ax.fill_between([0, 100], [-2, 98], [2, 102], color=GRID, lw=0)
-    ax.plot([0, 100], [0, 100], color=INK2, lw=0.6)
-    ax.plot(100 * t.lit_raster, 100 * t.lit_unity, "o", ms=2.2, color=LINE[0])
+    fig, (ax, bx) = plt.subplots(1, 2, figsize=(COL_W, 1.9))
+    xr, yu = 100 * t.lit_raster, 100 * t.lit_unity
+    ax.fill_between([0, 100], [-2, 98], [2, 102], color="#cfe3f2", lw=0, label=r"$\pm2$ pp")
+    ax.plot([0, 100], [0, 100], color=INK2, lw=0.5)
+    ax.plot(xr, yu, "o", ms=2.3, color=OI["blue"], mew=0)
+    i = int(np.argmax(np.abs(yu - xr)))
+    ax.plot(xr[i], yu[i], "o", ms=4.5, mfc="none", mec=OI["verm"], mew=0.9)
+    ax.annotate(f"{abs(yu[i] - xr[i]):.2f} pp", (xr[i], yu[i]), xytext=(-24, 10),
+                textcoords="offset points", fontsize=6.5, color=OI["verm"],
+                arrowprops=dict(arrowstyle="-", lw=0.5, color=OI["verm"]))  # fmt: skip
     ax.set_xlim(0, 100)
     ax.set_ylim(0, 100)
     ax.set_xlabel("Lit, Python raster (%)")
     ax.set_ylabel("Lit, Unity (%)")
-    ax.set_title("(a) 120 R-DENSE trips", loc="left")
+    ax.set_title(f"(a) {len(t)} R-DENSE trip-dates", loc="left", fontsize=7)
+    ax.legend(loc="lower right", fontsize=6.5, handlelength=1.2)
     ex = sv.id == c["e8_svf"]["exclude_id"]
-    bx.plot([0, 1], [0, 1], color=INK2, lw=0.6)
-    for i, route in enumerate(("R-DENSE", "R-MIXED")):
+    bx.plot([0, 1], [0, 1], color=INK2, lw=0.5)
+    for route, col in (("R-DENSE", OI["blue"]), ("R-MIXED", OI["green"])):
         d = sv[(sv.route == route) & ~ex]
-        bx.plot(d.svf_image, d.svf_engine_a_2, "o", ms=3, color=LINE[i], label=route)
+        bx.plot(d.svf_image, d.svf_engine_a_2, "o", ms=3, color=col, mew=0, label=route)
     d = sv[ex]
-    bx.plot(d.svf_image, d.svf_engine_a_2, "x", ms=4, color=INK, label="overpass deck")
-    bx.set_xlim(0, 1.02)
-    bx.set_ylim(0, 1.02)
+    bx.plot(d.svf_image, d.svf_engine_a_2, "x", ms=4, mew=1.0, color=OI["verm"], label="overpass")
+    e_all = (sv.svf_engine_a_2 - sv.svf_image).abs().mean()
+    e_kept = (sv[~ex].svf_engine_a_2 - sv[~ex].svf_image).abs().mean()
+    mae = f"MAE {e_all:.3f} (n = {len(sv)})\nMAE {e_kept:.3f} (n = {int((~ex).sum())})"
+    bx.text(0.02, 0.98, mae, transform=bx.transAxes, ha="left", va="top", fontsize=6.3)
+    bx.set_xlim(-0.04, 1.04)
+    bx.set_ylim(-0.04, 1.04)
     bx.set_xlabel("SVF, panorama")
     bx.set_ylabel("SVF, engine")
-    bx.set_title("(b) Mapillary SVF", loc="left")
-    bx.legend(loc="upper left", fontsize=5.8, handletextpad=0.2, borderaxespad=0.1)
-    fig.tight_layout()
+    bx.set_title("(b) Mapillary SVF", loc="left", fontsize=7)
+    bx.legend(loc="lower right", fontsize=6, handletextpad=0.2, borderaxespad=0.1, handlelength=1)
+    fig.tight_layout(w_pad=0.6)
     _save(fig, path)
     plt.close(fig)
 
@@ -644,15 +908,20 @@ FIGURES = {
 }
 
 
-def figures(out_dir):
+def figures(out_dir, only=None):
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     c = cfg()
-    fig_aoi(out / "fig_aoi.pdf", c)
-    fig_facets(out / "fig_facets.pdf")
-    fig_tod(out / "fig_tod.pdf")
-    fig_waterfall(out / "fig_waterfall.pdf")
-    fig_fmm(out / "fig_fmm.pdf")
-    fig_nomograph(out / "fig_nomograph.pdf")
-    fig_validation(out / "fig_validation.pdf", c)
+    jobs = {
+        "aoi": lambda: fig_aoi(out / "fig_aoi.pdf", c),
+        "facets": lambda: fig_facets(out / "fig_facets.pdf"),
+        "tod": lambda: fig_tod(out / "fig_tod.pdf"),
+        "waterfall": lambda: fig_waterfall(out / "fig_waterfall.pdf"),
+        "fmm": lambda: fig_fmm(out / "fig_fmm.pdf"),
+        "nomograph": lambda: fig_nomograph(out / "fig_nomograph.pdf"),
+        "validation": lambda: fig_validation(out / "fig_validation.pdf", c),
+    }
+    for k, job in jobs.items():
+        if only is None or k in only:
+            job()
     return sorted(p.name for p in out.glob("*.pdf"))

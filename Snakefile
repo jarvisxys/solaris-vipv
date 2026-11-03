@@ -785,7 +785,10 @@ rule paper_figures:
     input:
         PAPER_RESULTS,
         f"{DD}/dsm.tif",
+        f"{DD}/dem.tif",
+        f"{DD}/routes/arterial_points_v2.csv.gz",
         f"{ROUTES}/MANIFEST.json",
+        [f"{ROUTES}/{r}.geojson" for r in ("R-OPEN", "R-MIXED", "R-DENSE", "R-TUNNEL", "parking_sites")],
         vehicle=VEHICLE_CFG,
         sched=SCHED_CFG,
         cfg="configs/paper.yaml",
@@ -803,6 +806,7 @@ rule paper:
     input:
         "paper/generated/macros.tex",
         [f"paper/figures/{f}" for f in PAPER_FIGS],
+        "paper/figures/fig_render.png",
         tex="paper/main.tex",
         cls="paper/IEEEtran.cls",
     output:

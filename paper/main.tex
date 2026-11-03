@@ -1,4 +1,4 @@
-\documentclass[journal]{IEEEtran}
+\documentclass[lettersize,journal]{IEEEtran}
 % SOLARIS-Twin, journal extension of the ITEC-AP 2026 paper. Build: snakemake -c1 paper.
 % Every result number is a macro from generated/macros.tex (solaris.paper.macros, results/).
 \usepackage[T1]{fontenc}
@@ -12,7 +12,8 @@
 \usepackage{textcomp}
 \usepackage{siunitx}
 \usepackage{tikz}
-\usetikzlibrary{positioning,arrows.meta,calc,fit}
+\usepackage{needspace}
+\usetikzlibrary{positioning,arrows.meta,calc,fit,backgrounds}
 \sisetup{per-mode=symbol}
 \graphicspath{{./figures/}}
 \input{generated/macros}
@@ -21,45 +22,68 @@
 \newcommand{\Fsh}{F_{\mathrm{sh}}}
 \newcommand{\Fmm}{F_{\mathrm{mm}}}
 \newcommand{\Fpark}{F_{\mathrm{park}}}
-\newcommand{\todo}[1]{\textbf{[#1]}}
 
 \begin{document}
 
 \title{A Digital Twin for Shading-Aware Assessment of Vehicle-Integrated Photovoltaics on a Heavy Electric Vehicle}
 
 \author{Aditya~Kumar, Anandsagar~Gaikwad, and Arjun~Deo%
+\thanks{Manuscript received XX Month 2026; revised XX Month 2026; accepted XX Month 2026. This work received no external funding. \emph{(Corresponding author: Aditya Kumar.)}}%
 \thanks{This work extends the paper ``SOLARIS: A first-principles, drive-cycle- and climate-resolved methodology and open toolkit for assessing solar-assisted heavy electric vehicles,'' accepted for presentation at the IEEE Transportation Electrification Conference and Expo, Asia-Pacific (ITEC-AP 2026), Busan, Republic of Korea, 1--4 December 2026~\cite{ref_conf}.}%
-\thanks{A. Kumar and A. Gaikwad are with the Department of Computer Science and Engineering, Rajiv Gandhi Institute of Petroleum Technology, Jais, Amethi, Uttar Pradesh, India (e-mail: 23cs2006@rgipt.ac.in; 23cs3008@rgipt.ac.in). A. Deo is with the Rajiv Gandhi Institute of Petroleum Technology, Bengaluru Campus, Karnataka, India (e-mail: arjund@rgipt.ac.in).}%
-\thanks{Corresponding author: Aditya Kumar, \todo{postal address}, \todo{phone}, 23cs2006@rgipt.ac.in.}}
-
-\markboth{IEEE Transactions on Transportation Electrification}{Kumar \MakeLowercase{\textit{et al.}}: Shading-Aware Assessment of Vehicle-Integrated Photovoltaics}
+\thanks{A. Kumar and A. Gaikwad are with the Department of Computer Science and Engineering, Rajiv Gandhi Institute of Petroleum Technology (RGIPT), Jais, Amethi, Uttar Pradesh 229304, India (e-mail: 23cs2006@rgipt.ac.in; 23cs3008@rgipt.ac.in; phone of A. Kumar: +91 7201006080).}%
+\thanks{A. Deo is with the Rajiv Gandhi Institute of Petroleum Technology, Bengaluru Campus, Karnataka, India (e-mail: arjund@rgipt.ac.in).}}
 
 \maketitle
+% T-TE: no page or line numbers in the uploaded file (the portal adds its own)
+\thispagestyle{empty}
+\pagestyle{empty}
 
 \begin{abstract}
-Feasibility studies of vehicle-integrated photovoltaics (VIPV) usually take the irradiance on a horizontal, unshaded roof. We extend SOLARIS, an hour-by-hour energy-balance toolkit for a \SI{2.5}{t} seven-seat electric vehicle, with a digital twin of central Phoenix, Arizona. The twin builds a \SI{0.5}{m} city model from \GeoPoints~billion lidar points, drives the vehicle on traffic-simulated trips along three arterials, parks it at five sites and resolves the shadow on each facet of an assumed \SI{11.6}{m^2} skin every second while driving and every five minutes while parked. On a satellite-derived typical year the conference model gives a solar self-sufficiency of \BzPhxIIfss{} at \SI{50}{km/day}. Facet orientation lowers it to \EtwoIITwoc; with parking shade, street shade and electrical mismatch, a suburban commuter ends at \EfiveAOneMismatch{} and a downtown street parker at \EfiveATwoMismatch. Most of the shading loss occurs while parked. We extend the conference design equation with orientation, shading and mismatch factors; it stays within \EsevenMaxErr\% of the full simulation. A Unity twin agrees with the Python shading engine on \EeightAgree\% of \EeightRecords~million sample-seconds. The pipeline and data recipes are open.
+Feasibility studies of vehicle-integrated photovoltaics (VIPV) usually treat the whole solar skin as a horizontal roof that is never shaded. We extend SOLARIS, an hour-by-hour energy-balance toolkit for a \SI{2.5}{t} seven-seat electric vehicle, with a digital twin of central Phoenix, Arizona. The twin builds a \SI{0.5}{m} city model from \GeoPoints~billion lidar points, drives the vehicle on traffic-simulated trips along three arterials, parks it at five sites and computes the shadow on each flat facet of an assumed \SI{11.6}{m^2} skin every second while driving and every five minutes while parked. On a satellite-derived typical year the conference model gives a solar self-sufficiency of \BzPhxIIfss{} at \SI{50}{km/day}. Facet orientation lowers it to \EfiveAOneFacets. After parking shade, driving shade and electrical mismatch, a suburban commuter keeps \EfiveAOneMismatch{} and a car parked at a downtown curb \EfiveATwoMismatch; most of the shading loss occurs while parked. A shading-aware design equation stays within \EsevenMaxErr\% of the full simulation, and a Unity twin agrees with the Python shading engine on \EeightAgree\% of \EeightRecords~million sample-seconds. The code is open source.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Vehicle-integrated photovoltaics, digital twin, urban shading, electric vehicles, energy self-sufficiency.
+Digital twin, electric vehicles, energy self-sufficiency, urban shading, vehicle-integrated photovoltaics.
 \end{IEEEkeywords}
 
+\section*{Nomenclature}
+\begin{IEEEdescription}[\IEEEusemathlabelsep\IEEEsetlabelwidth{$\Fgeo,\Fsh,\Fmm$}]
+\item[$\fss$] Self-sufficiency, harvest over demand.
+\item[$A$, $A_{\mathrm{req}}$] PV area; area for $\fss=1$ (\si{m^2}).
+\item[$D$] Daily distance (km).
+\item[$c$] Battery-side consumption (Wh/km).
+\item[$E_{\mathrm{aux}}$] Daily auxiliary energy (kWh).
+\item[$\eta_{\mathrm{pv}}$, $\kappa_{\mathrm{pv}}$] Cell efficiency; system derating.
+\item[PSH, $f_T$] Peak-sun hours; temperature factor.
+\item[$G_f$] Irradiance on facet $f$ (\si{W/m^2}).
+\item[$\bar v_{b,f}$, $\bar v_{h,f}$] Beam visibility; horizon-band view.
+\item[$\mathrm{SVF}_f$] Cosine-weighted sky view of facet $f$.
+\item[$\tau$, $s$] Tree transmissivity; shaded fraction.
+\item[$\Fgeo,\Fsh,\Fmm$] Orientation, shading, mismatch factors.
+\item[$\Fpark$] Parked harvest relative to open sky.
+\end{IEEEdescription}
+
+\needspace{4\baselineskip}
 \section{Introduction}
-\IEEEPARstart{S}{olar} cells built into the body of an electric vehicle (EV) can supply part of the energy it would otherwise draw from the grid. How large that part is depends on sunlight, consumption and their timing. In an earlier paper~\cite{ref_conf} we built SOLARIS, an open toolkit that charges every harvesting component to the vehicle's mass, computes consumption on the WLTP cycle and steps the battery through a year hour by hour. For a \SI{2.5}{t} seven-seat vehicle with an \SI{11.6}{m^2} skin, satellite-derived weather gave a solar self-sufficiency $\fss$ of \BzPhxIIfssTwo{} in Phoenix, \BzLkoIIfssTwo{} in Lucknow and \BzLonIIfssTwo{} in London for \SI{50}{km/day} of urban driving.
+\IEEEPARstart{S}{olar} cells built into the body of an electric vehicle (EV), known as vehicle-integrated photovoltaics (VIPV), can supply part of the energy it would otherwise draw from the grid. How large that part is depends on sunlight, consumption and their timing. In an earlier paper~\cite{ref_conf} we built SOLARIS, an open toolkit~\cite{ref_code} that charges every harvesting component to the vehicle's mass, computes consumption on the Worldwide harmonized Light vehicles Test Procedure (WLTP) cycle and steps the battery through a year hour by hour. For a \SI{2.5}{t} seven-seat vehicle with an \SI{11.6}{m^2} skin, satellite-derived weather gave a solar self-sufficiency $\fss$ of \BzPhxIIfssTwo{} in Phoenix, \BzLkoIIfssTwo{} in Lucknow and \BzLonIIfssTwo{} in London for \SI{50}{km/day} of urban driving.
 
-Those numbers rest on two simplifications that most VIPV feasibility studies share. The whole skin receives global horizontal irradiance (GHI), although side panels are nearly vertical. Nothing shades the vehicle, although a car is parked for most of the day, often next to buildings or under trees, and drives through street canyons. Both make the result optimistic, and the size of the error depends on where the car is driven and parked.
+Those numbers rest on two simplifications that most VIPV feasibility studies share. The whole skin receives global horizontal irradiance (GHI), although the sides of the vehicle are nearly vertical. Nothing shades the vehicle, although a car is parked for most of the day, often next to buildings or under trees, and drives through street canyons. Both make the result optimistic, and the size of the error depends on where the car is driven and parked. The conference paper named route-level urban shading as its planned extension~\cite{ref_conf}.
 
-This paper replaces both simplifications with a digital twin of central Phoenix and keeps the rest of the conference model unchanged, so each correction can be measured on its own. The contributions are:
+This paper carries out that extension. A digital twin of central Phoenix replaces both simplifications and keeps the rest of the conference model unchanged, so each correction can be measured on its own. The contributions are:
 \begin{enumerate}
-\item a reproducible pipeline from public lidar, building and street data to a \SI{0.5}{m} city model with buildings and trees separated, checked against survey marks and updated for buildings built or demolished since the lidar flight;
-\item a facet-resolved irradiance, thermal and electrical model of the vehicle skin, driven by traffic-simulated trips at \SI{1}{s} and by parking at \SI{5}{min}, with energy closure checked at every step;
-\item an annual loss waterfall from the conference baseline to four daily-use archetypes, which separates the effects of facet orientation, parking shade, driving shade and electrical mismatch;
-\item a shading-aware form of the conference design equation and a nomograph, checked against the full simulation;
-\item a cross-check of the shading engines against an independent Unity ray-casting twin, an urban-climate model and street-level imagery.
+\item a reproducible pipeline that turns public lidar, building and street data into a \SI{0.5}{m} city model, with buildings and trees kept separate, the ground checked against survey marks and later building changes corrected;
+\item a facet-by-facet model (a facet is one flat PV panel of the skin) of sunlight, cell temperature and electrical output, run every second while the car drives in simulated traffic and every five minutes while it is parked, with the energy balance checked at every step;
+\item for four daily uses of the car, a year-long breakdown of the self-sufficiency lost to facet orientation, parking shade, driving shade and electrical mismatch;
+\item a shading-aware version of the conference design equation and a design chart, checked against the full simulation;
+\item an independent check of the shading engines against a Unity ray-casting twin, the SOLWEIG urban-climate model and street-level photographs.
 \end{enumerate}
 
 \section{Related Work}
-Reviews of VIPV agree that yield is set by geometry, curvature, shading and climate~\cite{ref_commault,ref_samadi}. Yield models compute harvest for fleets~\cite{ref_carr} or along shaded city routes~\cite{ref_sanjose} but take the vehicle's consumption as given; power-electronics studies optimize the converter and the auxiliary battery~\cite{ref_yavasoglu}. Urban shading has been estimated from geographic data: Brito \emph{et al.}~\cite{ref_brito} found annual shading losses of up to 25\% on Lisbon roads and over 50\% at urban parking spaces, and Hoth \emph{et al.}~\cite{ref_hoth} report a median shading loss of 61\% (quartiles 38\% and 76\%) for parked cars in Berlin. San Jos\'e \emph{et al.}~\cite{ref_sanjose} recorded shadows on a driving car with a camera and showed how partial shading of cells degrades the current--voltage curve. Sky view factors (SVF) for street routing in Phoenix have been computed from synthetic fisheye images~\cite{ref_middel}, and the SOLWEIG model in UMEP~\cite{ref_solweig,ref_umep} is a standard reference for shadow patterns in urban climate work. To our knowledge no study has combined trajectory-level driving and parking shade, facet orientation and electrical mismatch with drive-cycle demand and an annual battery simulation, or done so for a heavy vehicle.
+Reviews of VIPV agree that yield is set by geometry, curvature, shading and climate~\cite{ref_commault,ref_samadi,ref_coleneso}. Measurements with a pyranometer array on a moving car showed how unevenly the roof and sides are lit~\cite{ref_ota}, and three-dimensional irradiance models for curved car bodies followed~\cite{ref_araki}. Yield models compute harvest for fleets~\cite{ref_carr} or along shaded city routes~\cite{ref_sanjose}, but take consumption as given. From geographic data, Brito \emph{et al.}~\cite{ref_brito} found annual shading losses of up to 25\% on Lisbon roads and over 50\% at urban parking spaces, and Hoth \emph{et al.}~\cite{ref_hoth} report a median shading loss of 61\% (quartiles 38\% and 76\%) for parked cars in Berlin.
+
+Building-scale solar potential is routinely computed from lidar surface models with hourly sky and shadow calculations~\cite{ref_jakubiec}. In urban climate work, the SOLWEIG model in the Urban Multi-scale Environmental Predictor (UMEP)~\cite{ref_solweig,ref_umep} is a standard reference for shadow patterns, and sky view factors (SVF) for street routing in Phoenix have been computed from synthetic fisheye images~\cite{ref_middel}. These tools describe fixed surfaces; a vehicle moves through them and changes heading every second.
+
+Partial shade reduces output more than the shaded area suggests, because shaded cells force bypass diodes to conduct~\cite{ref_bishop}; distributed converters recover part of that loss~\cite{ref_macalpine}. On the vehicle side, studies optimize the PV converter and charger~\cite{ref_shafiei,ref_yavasoglu} or quantify how cabin climate control changes consumption~\cite{ref_ramsey}. San Jos\'e \emph{et al.}~\cite{ref_sanjose} recorded shadows on a driving car with a camera and showed how partial shading degrades the current--voltage curve. To our knowledge no study has combined trajectory-level driving and parking shade, facet orientation and electrical mismatch with drive-cycle demand and an annual battery simulation, or done so for a heavy vehicle.
 
 \section{Conference Baseline}
 \label{sec:baseline}
@@ -68,17 +92,17 @@ The conference model~\cite{ref_conf,ref_code} is used unchanged as the reference
 E_{\mathrm{pv}}=A\,\eta_{\mathrm{pv}}\,\kappa_{\mathrm{pv}}\,\frac{G}{1000}\left[1+\beta(T_c-25)\right]
 \label{eq:pv}
 \end{equation}
-with $A=\SI{11.6}{m^2}$, $\eta_{\mathrm{pv}}=0.22$, $\kappa_{\mathrm{pv}}=0.80$, $\beta=-0.4\%/\mathrm{K}$, $T_c=T_a+25G/1000$ and $G$ the GHI, plus small thermoelectric and suspension terms. The \SI{250}{kWh} pack is simulated hour by hour over a periodic year; it is recharged from 10\% to 80\% when needed. Scenario~II is \SI{50}{km/day} on the city cycle and Scenario~I \SI{100}{km/day} on the full cycle, and $\fss$ is annual harvest over annual demand. Setting harvest equal to demand gives the design area
+with $A=\SI{11.6}{m^2}$, $\eta_{\mathrm{pv}}=0.22$, $\kappa_{\mathrm{pv}}=0.80$, $\beta=-0.4\%/\mathrm{K}$, $T_c=T_a+25G/1000$ and $G$ the GHI, plus small thermoelectric and suspension terms. The state of charge (SoC) of the \SI{250}{kWh} pack is simulated hour by hour over a periodic year and recharged from 10\% to 80\% when needed. Scenario~II is \SI{50}{km/day} on the city cycle and Scenario~I \SI{100}{km/day} on the full cycle, both with trips at 08:00 and 18:00, and $\fss$ is annual harvest over annual demand. Setting harvest equal to demand gives the design area
 \begin{equation}
 A_{\mathrm{req}}=\frac{D\,c+E_{\mathrm{aux}}}{\eta_{\mathrm{pv}}\,\mathrm{PSH}\,\kappa_{\mathrm{pv}}\,f_T},
 \label{eq:areq}
 \end{equation}
 where $D$ is the daily distance, $c$ the battery-side consumption, PSH the daily peak-sun hours, $f_T$ the irradiance-weighted temperature factor and $E_{\mathrm{aux}}$ the daily auxiliary energy.
 
-Table~\ref{tab:b0} is the baseline on satellite-derived hourly typical meteorological years (TMY): NSRDB for Phoenix and Lucknow~\cite{ref_nsrdb} and PVGIS for London~\cite{ref_pvgis}. Everything that follows is for Phoenix, Scenario~II unless stated, starting from $\fss=\BzPhxIIfss$, \BzPhxIIcharges{} grid charges per year (\BzPhxIIchargesNoSolar{} without solar) and $A_{\mathrm{req}}=\SI{\BzPhxIIAreq}{m^2}$. The idealized synthetic climate of the conference paper gives \BzPhxIIfssSyn{}; of the gap of \GapPhxTotal{}, \GapPhxMagnitude{} comes from the annual irradiation and \GapPhxDistribution{} from the timing of cloud.
+Table~\ref{tab:b0} is the baseline (B0) on satellite-derived hourly typical meteorological years (TMY): National Solar Radiation Database (NSRDB) data for Phoenix and Lucknow~\cite{ref_nsrdb} and Photovoltaic Geographical Information System (PVGIS) data for London~\cite{ref_pvgis}. Everything that follows is for Phoenix, Scenario~II unless stated, starting from $\fss=\BzPhxIIfss$, \BzPhxIIcharges{} grid charges per year (\BzPhxIIchargesNoSolar{} without solar) and $A_{\mathrm{req}}=\SI{\BzPhxIIAreq}{m^2}$. The idealized synthetic climate of the conference paper gives \BzPhxIIfssSyn{}; of the gap of \GapPhxTotalTwo{}, \GapPhxMagnitudeTwo{} comes from the annual irradiation and \GapPhxDistributionTwo{} from the timing of cloud.
 
 \begin{table}[t]
-\caption{Conference Baseline on Satellite-Derived Hourly TMY (Table B0)}
+\caption{Conference Baseline on Satellite-Derived Hourly TMY}
 \label{tab:b0}
 \centering\footnotesize
 \setlength{\tabcolsep}{3.2pt}
@@ -95,68 +119,88 @@ London  & II & \BzLonIIfss & \BzLonIIcharges{} (\BzLonIIchargesNoSolar) & \BzLon
         & I  & \BzLonIfss  & \BzLonIcharges{} (\BzLonIchargesNoSolar)   & \BzLonIrelief  & \BzLonIAreq  & \BzLonIDmax \\
 \bottomrule
 \end{tabular}\\[2pt]
-{\footnotesize Relief: harvest used (harvest minus curtailment) over demand. $D_{\max}$: distance that \SI{11.6}{m^2} makes self-sufficient. TMY annual GHI \BzPhxghi, \BzLkoghi{} and \BzLonghi{} \si{kWh/m^2}.}
+{\footnotesize Relief: harvest used (harvest minus curtailment) over demand. $D_{\max}$: daily distance that \SI{11.6}{m^2} makes self-sufficient. TMY annual GHI \BzPhxghi, \BzLkoghi{} and \BzLonghi{} \si{kWh/m^2}.}
 \end{table}
 
 \section{Digital Twin}
 \label{sec:twin}
-Fig.~\ref{fig:arch} shows the twin. Python does all physics; Unity replays the same trips against the same geometry and is used only to check visibility (Section~\ref{sec:validation}). A Snakemake workflow builds every number and figure in this paper from the raw data, with fixed seeds.
+Fig.~\ref{fig:arch} shows the twin. Python computes all physics; Unity replays the same trips against the same geometry and is used only to check visibility (Section~\ref{sec:validation}). A Snakemake workflow~\cite{ref_snakemake} builds every number and figure in this paper from the raw data, with fixed seeds.
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\begin{tikzpicture}[font=\scriptsize, >={Stealth[length=3.5pt]},
-  box/.style={draw, rounded corners=1.5pt, align=center, inner sep=2.5pt, text width=#1},
-  box/.default=2.45cm]
-\node[box] (data) {\textbf{Data}: 3DEP lidar, NAIP, Overture, OSM, NSRDB};
-\node[box, right=2mm of data] (geo) {\textbf{City model}: DSM, trees, DEM at \SI{0.5}{m}; meshes};
-\node[box, right=2mm of geo] (traj) {\textbf{Trips}: SUMO traces at \SI{1}{s}; parking sites};
-\node[box, below=4mm of geo] (shade) {\textbf{Shading engines}: horizon raster, Embree mesh};
-\node[box, below=4mm of data] (veh) {\textbf{Vehicle skin}: facets, \SI{0.25}{m} samples};
-\node[box, below=4mm of traj] (unity) {\textbf{Unity twin}: same meshes and trips, PhysX rays};
-\node[box=7.65cm, below=4mm of shade] (irr) {\textbf{Facet irradiance and thermal model}: Perez components, beam visibility, sky and horizon views, Faiman cell temperature};
-\node[box=3.7cm, below=3mm of irr.south west, anchor=north west] (el) {\textbf{Electrical}: cell strings, bypass diodes, mismatch $\Fmm$};
-\node[box=3.7cm, below=3mm of irr.south east, anchor=north east] (soc) {\textbf{Conference SoC loop}: 8760 h, $\fss$, charges, relief};
-\draw[->] (data) -- (geo); \draw[->] (geo) -- (traj);
-\draw[->] (geo) -- (shade); \draw[->] (traj) -- (unity);
-\draw[->] (veh) -- (irr.north -| veh); \draw[->] (shade) -- (irr); \draw[->] (traj.south west) -- (shade.north east);
-\draw[->] (irr.south -| el) -- (el); \draw[->] (el) -- (soc);
-\draw[<->, dashed] (unity.west) -- node[above, font=\tiny]{check} (shade.east);
+\begin{tikzpicture}[font=\footnotesize, >={Stealth[length=4pt,width=3pt]}, line width=0.6pt,
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=2pt, fill=white},
+  hd/.style={font=\footnotesize\bfseries}]
+\node[box, text width=2.9cm, minimum height=2.3cm] (data) at (1.6,0) {{\bfseries Public data}\\3DEP lidar, NAIP,\\footprints, OSM,\\NSRDB weather};
+\node[box, text width=2.7cm, minimum height=1.05cm] (city) at (5.25,0.62) {{\bfseries City model}\\\SI{0.5}{m} DSM, trees, meshes};
+\node[box, text width=2.7cm, minimum height=1.05cm] (trips) at (5.25,-0.62) {{\bfseries Trips}\\SUMO at \SI{1}{s}; parked, \SI{5}{min}};
+\node[box, text width=2.8cm, minimum height=2.3cm] (shade) at (8.95,0) {{\bfseries Shading}\\raster horizons,\\Embree mesh rays};
+\node[box, text width=3.0cm, minimum height=2.3cm] (panel) at (12.7,0) {{\bfseries Facet model}\\five facets, Perez sky,\\Faiman temperature,\\bypass diodes};
+\node[box, text width=2.8cm, minimum height=2.3cm, draw=blue!60!black, fill=blue!6, line width=0.8pt] (soc) at (16.45,0) {{\bfseries\color{blue!60!black} SoC loop}\\8760~h, $\fss$, charges,\\$F$ factors, $A_{\mathrm{req}}$};
+\draw[->] (data.east |- city) -- (city.west);
+\draw[->] (data.east |- trips) -- (trips.west);
+\draw[->] (city.east) -- (shade.west |- city);
+\draw[->] (trips.east) -- (shade.west |- trips);
+\draw[->] (shade) -- (panel);
+\draw[->] (panel) -- (soc);
+\draw[->, black!60] (data.north) -- ++(0,0.35) -| node[pos=0.25, above, font=\footnotesize\itshape, black!70]{weather} (panel.north);
+\node[box, text width=2.5cm, minimum height=0.9cm] (unity) at (5.6,-2.55) {{\bfseries Unity twin}\\PhysX rays};
+\node[box, text width=2.5cm, minimum height=0.9cm] (solweig) at (8.95,-2.55) {{\bfseries SOLWEIG}\\shadow maps};
+\node[box, text width=2.5cm, minimum height=0.9cm] (mapi) at (12.3,-2.55) {{\bfseries Mapillary}\\photo SVF};
+\begin{scope}[on background layer]
+\fill[black!7, rounded corners=3pt] (0.15,-1.55) rectangle (18.0,-3.3);
+\end{scope}
+\node[anchor=north west, font=\footnotesize\bfseries] at (0.25,-1.6) {Independent checks};
+\node[anchor=south west, font=\scriptsize, black!70] at (0.25,-3.25) {no numbers flow into results};
+\draw[->, dashed] (unity.north) |- ($(shade.south)+(-0.9,-0.35)$) -- ($(shade.south)+(-0.9,0)$);
+\draw[->, dashed] (solweig.north) -- (shade.south);
+\draw[->, dashed] (mapi.north) |- ($(shade.south)+(0.9,-0.35)$) -- ($(shade.south)+(0.9,0)$);
 \end{tikzpicture}
-\caption{Structure of the twin. Solid arrows carry data into the energy chain; the dashed link is the independent visibility check.}
+\caption{Model chain of the twin (top) and the independent checks (bottom). Python computes every energy value; the checks compare only visibility or sky view with the shading engines.}
 \label{fig:arch}
-\end{figure}
+\end{figure*}
 
 \subsection{City Model}
-The area of interest is a \SI{\GeoArea}{km^2} box around the routes and parking sites (Fig.~\ref{fig:aoi}). USGS 3DEP lidar flown in 2020~\cite{ref_3dep} gives \GeoPoints~billion points after noise removal, \GeoDensity~points/\si{m^2}. Each return is binned into its own \SI{0.5}{m} cell to form a surface model (DSM), a ground model (DEM) and a canopy model; \GeoPctBuilding\% of the area is building and \GeoPctTree\% tree. Buildings and trees are separated with 2021 NAIP imagery~\cite{ref_naip} and Overture building footprints~\cite{ref_overture}. Two corrections were needed. NAIP relief displacement paints tower walls green, so pixels taller than \SI{35}{m} are never trees. Power lines, poles and signal arms formed thin walls along the arterials and shaded even the most open route at noon, so height-only structures narrower than \SI{1.5}{m} are removed. Against \GeoMarks{} survey marks of the National Geodetic Survey the DEM has a median offset of \GeoMarkMedian{}~m (MAD \GeoMarkMad{}~m). Of \FreshCandidates{} buildings that differ between the lidar and current footprints along the routes, the largest \FreshReviewed{} were checked against current imagery: \FreshAdded{} added (among them a 23-floor tower on the dense route), \FreshDemolished{} removed and \FreshRejected{} rejected as bridges, decks or trees. OpenStreetMap~\cite{ref_osm} bridges and tunnels mark covered road. Delatin meshes of the DSM and the trees feed the mesh engine and Unity.
+The area of interest is a \SI{\GeoArea}{km^2} box around the routes and parking sites (Fig.~\ref{fig:aoi}). U.S. Geological Survey (USGS) 3D Elevation Program (3DEP) lidar flown between October 2020 and December 2021~\cite{ref_3dep} gives \GeoPoints~billion points after noise removal, \GeoDensity~points/\si{m^2}. Each lidar return is assigned to the \SI{0.5}{m} grid cell it falls in, giving a digital surface model (DSM), a ground model (DEM) and a canopy height model; \GeoPctBuilding\% of the area is building and \GeoPctTree\% tree. Buildings and trees are separated with 2021 National Agriculture Imagery Program (NAIP) imagery~\cite{ref_naip} and Overture building footprints~\cite{ref_overture}. Two corrections were needed. In aerial images tall buildings lean outward, so tower walls can look like vegetation in NAIP; pixels taller than \SI{35}{m} are therefore never classed as trees. Power lines, poles and signal arms formed thin walls along the arterials and shaded even the most open route at noon, so height-only structures narrower than \SI{1.5}{m} are removed. Against \GeoMarks{} survey marks of the National Geodetic Survey the DEM has a median offset of \GeoMarkMedian{}~m (median absolute deviation \GeoMarkMad{}~m). Of \FreshCandidates{} buildings that differ between the lidar and current footprints along the routes, the largest \FreshReviewed{} were checked against current imagery: \FreshAdded{} added (among them a 23-floor tower on the dense route), \FreshDemolished{} removed and \FreshRejected{} rejected as bridges, decks or trees. OpenStreetMap (OSM)~\cite{ref_osm} bridges and tunnels mark covered road. Simplified triangle meshes of the DSM and of the trees feed the mesh engine and Unity.
 
 \begin{figure}[t]
 \centering\includegraphics[width=\columnwidth]{fig_aoi.pdf}
-\caption{Routes and parking sites over a hillshade of the DSM (UTM zone 12N). P5 is the P1 stall under a modelled shade roof.}
+\caption{Study area: building and tree height above ground (gray), the three routes colored by the sky view factor used to select them, the covered-road check route and the parking sites (UTM zone 12N). P5 is the P1 stall under a modeled shade roof.}
 \label{fig:aoi}
 \end{figure}
 
 \subsection{Routes, Traffic and Parking Sites}
-Routes were chosen by a fixed rule from \RouteCandidates{} candidate \SI{8}{km} windows on the named arterials: the highest mean SVF (R-OPEN, Southern Avenue, SVF \RouteOpenSvf), the lowest (R-DENSE, Central Avenue through downtown, \RouteDenseSvf) and the highest SVF variance in the middle band (R-MIXED, 19th Avenue, \RouteMixedSvf). SUMO~\cite{ref_sumo} on an OpenStreetMap network produced \PsixTraces{} ego traces at \SI{1}{Hz}: both directions, five departures from 08:00 to 16:00 and three traffic demands. The five parking sites (Table~\ref{tab:sites}) span an open lot (P1), a curb in the downtown canyon (P2), a residential driveway beside a tree (P3), a garage roof deck (P4) and the P1 stall under a \SI{4}{m}$\times$\SI{3}{m} shade roof (P5).
+Routes were chosen by a fixed rule from \RouteCandidates{} candidate windows, \SI{8}{km} long along the axis of the named arterials (the driven lines are \RouteMixedLen{} to \RouteOpenLen~km): the highest mean SVF (R-OPEN, Southern Avenue, SVF \RouteOpenSvf), the lowest (R-DENSE, Central Avenue through downtown, \RouteDenseSvf) and the highest SVF variance in the middle band (R-MIXED, 19th Avenue, \RouteMixedSvf). A fourth route, R-TUNNEL through the I-10 Deck Park Tunnel, tests covered road only. Simulation of Urban Mobility (SUMO)~\cite{ref_sumo} on an OpenStreetMap network produced \PsixTraces{} ego traces at \SI{1}{Hz}, \PsixDenseTraces{} per route: both directions, five departures from 08:00 to 16:00 and three traffic demands. Each trace is driven on four dates, 21 March, 21 June, 21 September and 21 December. The five parking sites (Table~\ref{tab:sites}) are an open lot (P1), a curb in the downtown canyon (P2), a residential driveway beside a tree (P3), a garage roof deck (P4) and the P1 stall under a \SI{4}{m}$\times$\SI{3}{m} shade roof (P5).
 
 \subsection{Shading Engines}
-The raster engine marches horizons through the DSM in 360 azimuths at \SI{0.5}{\degree} elevation steps out to \SI{1}{km}, once with trees transparent and once with trees opaque, and corrects azimuths for meridian convergence. Beam visibility of a sample is 1 when lit, 0 behind a building and $\tau=0.03$ behind a tree. The mesh engine casts Embree rays~\cite{ref_embree} against the meshes. Sun positions come from the NREL SPA algorithm~\cite{ref_spa} in pvlib~\cite{ref_pvlib}. The two engines and SOLWEIG were verified in \EoneTotal{} checks covering sun position, transposition, shadow length and canyon SVF; all passed (Table~\ref{tab:valid}).
+The raster engine computes, for every sample point, the horizon in 360 azimuths out to \SI{1}{km}, once over the building surface ($h^{\mathrm{b}}$) and once over buildings and trees ($h^{\mathrm{bt}}$), with azimuths corrected for meridian convergence. A ray from each facet sample toward the sun decides its beam state at every time step, and the mean over the $N_f$ samples of facet $f$ is
+\begin{equation}
+\bar v_{b,f}=\frac{1}{N_f}\sum_{i\in f}\begin{cases}1 & \text{ray clears buildings and trees,}\\ \tau & \text{ray blocked by trees only,}\\ 0 & \text{ray blocked by a building,}\end{cases}
+\label{eq:vb}
+\end{equation}
+with $\tau=0.03$. The sky terms use the horizon at the roof center. With $w_f(\omega)=\max(0,\mathbf n_f\cdot\omega)$ the cosine weight of sky direction $\omega$ for a facet with normal $\mathbf n_f$, and $S_f(h)=\int_{\omega>h}w_f\,d\Omega\big/\!\int_{\Omega}w_f\,d\Omega$ the weighted share of the sky above horizon $h$,
+\begin{equation}
+\mathrm{SVF}_f=S_f(h^{\mathrm{bt}})+\tau\left[S_f(h^{\mathrm{b}})-S_f(h^{\mathrm{bt}})\right],
+\label{eq:svf}
+\end{equation}
+integrated on a \SI{1}{\degree}$\times$\SI{0.5}{\degree} sky grid; the horizon-band view $\bar v_{h,f}$ is the same share over the lowest \SI{6}{\degree} of sky. The mesh engine casts Embree rays~\cite{ref_embree} against the meshes. Sun positions come from the solar position algorithm (SPA) of the National Renewable Energy Laboratory (NREL)~\cite{ref_spa}, as implemented in pvlib~\cite{ref_pvlib}. The two engines and SOLWEIG were checked in \EoneTotal{} tests covering sun position, transposition, shadow length and canyon SVF (Section~\ref{sec:validation}).
 
 \section{Vehicle Skin and Energy Chain}
 \label{sec:vehicle}
-The intended panel layout of the vehicle is not fixed, so we use an assumed design layout (Fig.~\ref{fig:facets}) that totals the conference \SI{11.6}{m^2}: roof \SI{4.4}{m^2} at \SI{2}{\degree}, hood \SI{1.6}{m^2} at \SI{10}{\degree}, tailgate \SI{0.6}{m^2} at \SI{60}{\degree} and two sides of \SI{2.5}{m^2} at \SI{85}{\degree}. Like the mass audit, it is a design estimate; the roof alone is reported as a bound. Each facet is sampled on a \SI{0.25}{m} grid. With the Perez model~\cite{ref_perez} split into beam (with circumsolar) $G_b$, isotropic $G_d$ and horizon $G_h$ components and ground reflection $G_g$ (albedo 0.2), facet $f$ receives
+The intended skin layout of the vehicle is not fixed, so we use an assumed design layout of five facets (Fig.~\ref{fig:facets}) that totals the conference \SI{11.6}{m^2}: roof \SI{4.4}{m^2} at \SI{2}{\degree}, hood \SI{1.6}{m^2} at \SI{10}{\degree}, tailgate \SI{0.6}{m^2} at \SI{60}{\degree} and two sides of \SI{2.5}{m^2} at \SI{85}{\degree}. Like the mass audit in~\cite{ref_conf}, this layout is a design estimate; results for the roof alone are given as a bound. Each facet is sampled on a \SI{0.25}{m} grid. With the Perez model~\cite{ref_perez} split into beam (with circumsolar) $G_b$, isotropic $G_d$ and horizon $G_h$ components and ground reflection $G_g$ (albedo 0.2), facet $f$ receives
 \begin{equation}
-G_f=\bar v_{b,f}\,G_{b,f}+\mathrm{SVF}_f\,G_{d,f}+\bar v_{h,f}\,G_{h,f}+G_{g,f},
+G_f=\bar v_{b,f}\,G_{b,f}+\mathrm{SVF}_f\,G_{d,f}+\bar v_{h,f}\,G_{h,f}+G_{g,f};
 \label{eq:gf}
 \end{equation}
-where $\bar v_{b,f}$ is the mean beam visibility of its samples, $\mathrm{SVF}_f$ the cosine-weighted sky view and $\bar v_{h,f}$ the view of the horizon band; all three are 1 in open sky and the sky terms are 0 on covered road. Cell temperature follows Faiman~\cite{ref_faiman}, $T_c=T_a+G_f/(u_0+u_1 w)$ with pvlib's open-rack coefficients and $w$ the wind plus the vehicle speed, and energy follows~\eqref{eq:pv} with $G_f$ for $G$.
+all three view terms are 1 in open sky, and all four terms are 0 on covered road. Cell temperature follows Faiman~\cite{ref_faiman}, $T_c=T_a+G_f/(u_0+u_1 w)$ with pvlib's open-rack coefficients and $w$ the wind plus the vehicle speed, and energy follows~\eqref{eq:pv} with $G_f$ for $G$.
 
 \begin{figure}[t]
 \centering\includegraphics[width=\columnwidth]{fig_facets.pdf}
-\caption{Assumed design layout of the \SI{11.6}{m^2} skin with the \SI{0.25}{m} shading samples (area and tilt per facet).}
+\caption{Assumed design layout of the \SI{11.6}{m^2} skin on a plain body, with the \SI{0.25}{m} shading samples (area and tilt per facet). The hood shows in both views.}
 \label{fig:facets}
 \end{figure}
 
-Partial shade costs more electrically than its area suggests. Each facet is one module on its own MPPT input, its samples are cells, and the cells form three bypass-diode substrings. The current--voltage curves come from pvlib's implementation of Bishop's model~\cite{ref_bishop} with reverse breakdown, using area-scaled parameters of a 22.1\%-efficient back-contact cell. Under uniform light the string reproduces the averaged model within \EsixUniform. Over all R-DENSE trips and the P2 and P3 parking steps, the mismatch factor $\Fmm=P_{\mathrm{el}}/P_{\mathrm{avg}}$ is fitted against the beam-shaded fraction $s$ of the facet (Fig.~\ref{fig:fmm}):
+Partial shade costs more electrically than its area suggests. Each facet is one module on its own maximum power point tracking (MPPT) input, its samples are cells, and the cells form three bypass-diode substrings. The current--voltage curves come from pvlib's implementation of Bishop's model~\cite{ref_bishop} with reverse breakdown, using area-scaled parameters of a 22.1\%-efficient back-contact cell. Under uniform light the string reproduces the averaged model within \EsixUniform. Over all R-DENSE trips and the P2 and P3 parking steps, the mismatch factor $\Fmm=P_{\mathrm{el}}/P_{\mathrm{avg}}$ is fitted against the beam-shaded fraction $s$ of the facet (Fig.~\ref{fig:fmm}):
 \begin{equation}
 \Fmm=1-\EsixK\,s^{\EsixAlpha}(1-s)^{\EsixBeta},\qquad R^2=\EsixRsq.
 \label{eq:fmm}
@@ -165,23 +209,23 @@ One shaded cell already pushes its substring through the bypass diode, so $\Fmm$
 
 \begin{figure}[t]
 \centering\includegraphics[width=\columnwidth]{fig_fmm.pdf}
-\caption{Electrical mismatch factor against the beam-shaded fraction of a facet (energy-weighted bin means) and the fit~\eqref{eq:fmm}.}
+\caption{Electrical mismatch factor against the beam-shaded fraction of a facet. Points are bin means; marker area is proportional to the energy in the bin. The line is the fit~\eqref{eq:fmm}.}
 \label{fig:fmm}
 \end{figure}
 
-Four daily-use archetypes keep the demand of their baseline scenario and change only where the car is when the sun shines. A1, a suburban commuter, drives R-MIXED and R-OPEN at 08:00 and 17:00 and parks at the open lot P1 by day and the driveway P3 at night. A2 and A3 drive R-DENSE and R-OPEN at the same hours and park downtown, at the canyon curb P2 (A2) or under the shade roof P5 (A3). A4, a fleet vehicle, drives \SI{100}{km/day} on all three routes at 08:00 to 16:00 and alternates P2 and P1 between trips. Weekend daytime parking moves to the night site. Parked energy averages the headings that fit each site. Driving at \SI{1}{s} and parking at \SI{5}{min} are binned into the 8760~h of the conference loop; binned and fine energies agree to \EfiveBalance{} and driving plus parked seconds make 3600 in every hour.
+Four daily-use archetypes keep the demand of their baseline scenario and change only where the car is when the sun shines. A1, a suburban commuter, drives R-MIXED and R-OPEN at 08:00 and 17:00 and parks at the open lot P1 by day and the driveway P3 at night. A2 and A3 drive R-DENSE and R-OPEN at the same hours and park downtown by day, at the canyon curb P2 (A2) or under the shade roof P5 (A3), and at P3 at night. A4, a fleet vehicle, drives \SI{100}{km/day} on all three routes from 08:00 to 16:00, alternates P2 and P1 between trips and stays at P1 otherwise. On weekends the daytime parking moves to the night site. The evening trip runs at 17:00 instead of the conference's 18:00 because the traffic traces end with the 16:00 departure; it replays the 16:00 traces one hour later, and the ``trip hours'' step of the waterfall isolates this change. At each parking site, harvest is averaged over the directions in which a car can stand there. The \SI{1}{s} driving steps and \SI{5}{min} parking steps are summed into the 8760 hourly steps of the conference model. Hourly sums match the fine-step totals to a relative \EfiveBalance, and every hour holds exactly \SI{3600}{s} of driving or parking.
 
 \section{Results}
 \label{sec:results}
 \subsection{Facet Orientation}
-Laid flat through the new chain, the skin reproduces the conference harvest within \EtwoIIGate\% (target $\pm0.5\%$); Faiman cooling adds \EtwoIIThermal\%. Averaged over headings, the roof and hood see \FacetRoofGhi{} and \FacetHoodGhi{} of GHI, the tailgate \FacetTailgateGhi{} and the sides \FacetSideLeftGhi. Facet orientation alone lowers $\fss$ from \EtwoIITwoa{} to \EtwoIITwoc{} ($\Fgeo=\EtwoFgeo$) and raises grid charges from \EtwoIIChargesTwoa{} to \EtwoIIChargesTwoc{} per year. The roof alone would give \EtwoIITwod.
+With every facet set horizontal, the new model reproduces the conference harvest to within \EtwoIIGate\% (target $\pm0.5\%$); Faiman cooling adds \EtwoIIThermal\%. Averaged over headings, the roof and hood see \FacetRoofGhi{} and \FacetHoodGhi{} of GHI, the tailgate \FacetTailgateGhi{} and the sides \FacetSideLeftGhi. On the conference trip hours, facet orientation alone lowers $\fss$ from \EtwoIITwoa{} to \EtwoIITwoc{} and raises grid charges from \EtwoIIChargesTwoa{} to \EtwoIIChargesTwoc{} per year. The PV harvest falls to $\Fgeo=\EtwoFgeo$ of the horizontal skin with Faiman cooling ($\fss=\EtwoIITwobF$); the thermoelectric and suspension terms, \EtwoIINonPv{} of demand, do not change. The roof alone would give \EtwoIITwod.
 
 \subsection{Driving and Parking Shade}
-Table~\ref{tab:sites} lists the shading factors of the \EthreeTrips{} trips and five sites on the TMY. While driving, buildings leave \EthreeOpenB{} of the open-sky harvest on R-OPEN and \EthreeDenseB{} on R-DENSE, and street trees take slightly more. Shading is strongest at the 08:00 and 16:00 departures, when the sun is low, and on R-DENSE the December noon trips also lose far more than the noon trips of the other dates (Fig.~\ref{fig:tod}). Parking spans a much wider range: annual $\Fpark$ is \EfourPOne{} at the open lot, \EfourPThree{} beside the tree and \EfourPTwo{} at the canyon curb, and the shade roof leaves \EfourPFive. Against SOLWEIG the parked shadow maps agree on at least \EfourSolweigLo\% of pixels. The driving losses fall within the 25\% that Brito \emph{et al.}~\cite{ref_brito} found for Lisbon roads, and the curb and driveway losses lie between the Berlin quartiles of Hoth \emph{et al.}~\cite{ref_hoth}.
+Table~\ref{tab:sites} lists the shading factors of the \EthreeTrips{} trips and five sites on the TMY. While driving, buildings leave \EthreeOpenB{} of the open-sky harvest on R-OPEN and \EthreeDenseB{} on R-DENSE, and street trees take slightly more. Shading is strongest at the 08:00 and 16:00 departures, when the sun is low, and on R-DENSE the December noon trips also lose far more than the noon trips of the other dates (Fig.~\ref{fig:tod}). On R-TUNNEL the covered segment receives no light, and the whole trip, covered for \EthreeTunnelFwdCovered{} of \EthreeTunnelFwdDuration{}~s in one direction and \EthreeTunnelRevCovered{} of \EthreeTunnelRevDuration{}~s in the other, keeps \EthreeTunnelFwd{} and \EthreeTunnelRev{} of the open-sky energy. Parking spans a much wider range: annual $\Fpark$ is \EfourPOne{} at the open lot, \EfourPThree{} beside the tree and \EfourPTwo{} at the canyon curb, and the shade roof leaves \EfourPFive. Against SOLWEIG the parked shadow maps agree on at least \EfourSolweigLo\% of pixels. The driving losses on R-OPEN and R-MIXED stay within the 25\% that Brito \emph{et al.}~\cite{ref_brito} found for Lisbon roads, while R-DENSE, keeping only \EthreeDenseCZeroZeroThree{} of the open-sky energy, loses more; the curb and driveway losses lie between the Berlin quartiles of Hoth \emph{et al.}~\cite{ref_hoth}.
 
 \begin{figure}[t]
 \centering\includegraphics[width=\columnwidth]{fig_tod.pdf}
-\caption{Driving PV energy relative to open sky by departure time and date (buildings and trees, TMY, mean of both directions and three traffic demands).}
+\caption{Driving PV energy relative to open sky (\%) by date and departure hour (buildings and trees, TMY, mean of both directions and three traffic demands).}
 \label{fig:tod}
 \end{figure}
 
@@ -192,30 +236,33 @@ Table~\ref{tab:sites} lists the shading factors of the \EthreeTrips{} trips and 
 \begin{tabular}{@{}lccccc@{}}
 \toprule
 Route & Length & SVF & Buildings & + trees & Beam \\
- & (km) & & $B/A$ & $C/A$ & shaded \\
+ & (km) & & $B/A$ & $C/A$ & shaded (\%) \\
 \midrule
-R-OPEN  & \RouteOpenLen  & \RouteOpenSvf  & \EthreeOpenB  & \EthreeOpenCZeroZeroThree  & \EthreeOpenCZeroZeroThreeShaded\% \\
-R-MIXED & \RouteMixedLen & \RouteMixedSvf & \EthreeMixedB & \EthreeMixedCZeroZeroThree & \EthreeMixedCZeroZeroThreeShaded\% \\
-R-DENSE & \RouteDenseLen & \RouteDenseSvf & \EthreeDenseB & \EthreeDenseCZeroZeroThree & \EthreeDenseCZeroZeroThreeShaded\% \\
+R-OPEN  & \RouteOpenLen  & \RouteOpenSvf  & \EthreeOpenB  & \EthreeOpenCZeroZeroThree  & \EthreeOpenCZeroZeroThreeShaded \\
+R-MIXED & \RouteMixedLen & \RouteMixedSvf & \EthreeMixedB & \EthreeMixedCZeroZeroThree & \EthreeMixedCZeroZeroThreeShaded \\
+R-DENSE & \RouteDenseLen & \RouteDenseSvf & \EthreeDenseB & \EthreeDenseCZeroZeroThree & \EthreeDenseCZeroZeroThreeShaded \\
+\bottomrule
+\end{tabular}\\[5pt]
+\begin{tabular}{@{}llcc@{}}
+\toprule
+Site & Setting & SVF & $\Fpark$ \\
 \midrule
-Site & \multicolumn{2}{c}{Setting} & SVF & $\Fpark$ & \\
-\midrule
-P1 & \multicolumn{2}{l}{open lot}          & \SitePOneSvf   & \EfourPOne   & \\
-P2 & \multicolumn{2}{l}{canyon curb}       & \SitePTwoSvf   & \EfourPTwo   & \\
-P3 & \multicolumn{2}{l}{driveway, tree}    & \SitePThreeSvf & \EfourPThree & \\
-P4 & \multicolumn{2}{l}{garage roof deck}  & \SitePFourSvf  & \EfourPFour  & \\
-P5 & \multicolumn{2}{l}{P1 under shade roof} & ---          & \EfourPFive  & \\
+P1 & open surface lot          & \SitePOneSvf   & \EfourPOne \\
+P2 & curb in the downtown canyon & \SitePTwoSvf & \EfourPTwo \\
+P3 & driveway beside a tree    & \SitePThreeSvf & \EfourPThree \\
+P4 & garage roof deck          & \SitePFourSvf  & \EfourPFour \\
+P5 & P1 stall under shade roof & \SitePFiveSvf$^{*}$ & \EfourPFive \\
 \bottomrule
 \end{tabular}\\[2pt]
-{\footnotesize Driving: \EthreeTrips{} trips on the TMY days (four dates, both directions, five departures, three demands), trees at $\tau=0.03$. Parking: annual, heading-averaged.}
+{\footnotesize Driving: \EthreeTrips{} trips on the TMY days (four dates, both directions, five departures, three demands), trees at $\tau=0.03$; $A$ open sky, $B$ buildings, $C$ buildings and trees. Parking: annual, averaged over headings. $^{*}$SVF of the stall without the modeled roof.}
 \end{table}
 
 \subsection{Annual Loss Waterfall}
-Fig.~\ref{fig:waterfall} and Table~\ref{tab:annual} carry the baseline to each archetype one correction at a time. The archetype trip hours and the Perez--Faiman chain raise $\fss$ slightly (A1: \EfiveAOneBZero{} to \EfiveAOneChain). Facets then remove \EfiveAOneFacetsDrop{} for the \SI{50}{km} archetypes. Parking shade is the largest and most variable step: \EfiveAOneParkingDrop{} for the commuter, \EfiveAThreeParkingDrop{} under the shade roof and \EfiveATwoParkingDrop{} at the canyon curb. Driving past buildings costs \EfiveAOneBuildingsDrop{} to \EfiveATwoBuildingsDrop, and street trees \EfiveATwoTreesDrop{} or less. Electrical mismatch costs \EfiveAOneMismatchDrop{} to \EfiveAThreeMismatchDrop. Energy-weighted, $\Fmm$ is \EsixDriving{} on the R-DENSE trips and \EsixPtwo{} at the curb, where whole facets fall into building shadow, but \EsixPthreeLo{} to \EsixPthreeHi{} in the dappled shade of the tree at P3. In total the archetypes lose \EfiveAOneLoss\% (A1) to \EfiveATwoLoss\% (A2) of the baseline $\fss$, and grid charges rise from \EfiveAOneBZeroCharges{} to between \EfiveAOneMismatchCharges{} and \EfiveATwoMismatchCharges{} a year. Replacing the hourly TMY with 2023 weather at \SI{5}{min} changes final $\fss$ by at most \EfiveAOneYearEffect, so hourly weather suffices for annual totals.
+Fig.~\ref{fig:waterfall} and Table~\ref{tab:annual} carry the baseline to each archetype one correction at a time. The archetype trip hours and the Perez--Faiman chain raise $\fss$ slightly (A1: \EfiveAOneBZero{} to \EfiveAOneChain). Facets then remove \EfiveAOneFacetsDrop{} for the \SI{50}{km} archetypes, leaving \EfiveAOneFacets{}; this differs from the \EtwoIITwoc{} above only by the 17:00 return trip. Parking shade is the largest and most variable shading step: \EfiveAOneParkingDrop{} for the commuter, \EfiveAThreeParkingDrop{} under the shade roof and \EfiveATwoParkingDrop{} at the canyon curb, which is \EfiveAOneParkShare\% to \EfiveATwoParkShare\% of the shading loss. Driving past buildings costs \EfiveAOneBuildingsDrop{} to \EfiveATwoBuildingsDrop, and street trees \EfiveATwoTreesDrop{} or less. Electrical mismatch costs \EfiveAOneMismatchDrop{} to \EfiveAThreeMismatchDrop{} for A1--A3 and \EfiveAFourMismatchDrop{} for A4. Energy-weighted, $\Fmm$ is \EsixDriving{} both on the R-DENSE trips and at the curb, where whole facets fall into building shadow, but \EsixPthreeLo{} to \EsixPthreeHi{} in the dappled shade of the tree at P3. The nights and weekends at P3 therefore pull the factors of A1--A3 in Table~\ref{tab:design} below the curb value, while A4, which never parks there, reaches \EsevenAFourFullSkinFmm. A3 loses more to mismatch than A2 (\EfiveAThreeMismatchDrop{} against \EfiveATwoMismatchDrop), which differs only in parking at the curb instead of under the roof. In total the archetypes lose \EfiveAOneLoss\% (A1) to \EfiveATwoLoss\% (A2) of the baseline $\fss$, and grid charges rise from \EfiveAOneBZeroCharges{} to between \EfiveAOneMismatchCharges{} and \EfiveATwoMismatchCharges{} a year for A1--A3 and from \EfiveAFourBZeroCharges{} to \EfiveAFourMismatchCharges{} for A4. Using 2023 weather instead of the TMY changes final $\fss$ by at most \EfiveYearEffectMax{}, and 5-min instead of hourly 2023 weather by at most \EfiveResEffectMax, so hourly weather suffices for annual totals.
 
 \begin{figure}[t]
 \centering\includegraphics[width=\columnwidth]{fig_waterfall.pdf}
-\caption{Annual $\fss$ from the baseline (B0) to each archetype, one correction at a time (Phoenix, TMY).}
+\caption{Annual loss breakdown per archetype (Phoenix, TMY). Each bar runs from the final $\fss$ (left) to the baseline B0 (tick); colored segments are the losses by cause and the hatched segment is the small gain from trip hours and the Perez--Faiman chain.}
 \label{fig:waterfall}
 \end{figure}
 
@@ -223,30 +270,37 @@ Fig.~\ref{fig:waterfall} and Table~\ref{tab:annual} carry the baseline to each a
 \caption{Annual Results per Archetype (Phoenix, TMY)}
 \label{tab:annual}
 \centering\footnotesize
-\setlength{\tabcolsep}{3.5pt}
+\setlength{\tabcolsep}{3.0pt}
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
- & \multicolumn{2}{c}{$\fss$} & Loss & Charges/yr & Relief & Grid \\
+ & \multicolumn{2}{c}{$\fss$} & Loss & Charges/yr & Relief (\%) & Grid \\
 \cmidrule(lr){2-3}
-Archetype & B0 & final & (\%) & B0$\to$final & (\%) & (kWh/yr) \\
+Archetype & B0 & final & (\%) & B0$\to$final & B0$\to$final & (kWh/yr) \\
 \midrule
-A1 commuter     & \EfiveAOneBZero   & \EfiveAOneMismatch   & \EfiveAOneLoss   & \EfiveAOneBZeroCharges$\to$\EfiveAOneMismatchCharges     & \EfiveAOneMismatchRelief   & \EfiveAOneMismatchGrid \\
-A2 street       & \EfiveATwoBZero   & \EfiveATwoMismatch   & \EfiveATwoLoss   & \EfiveATwoBZeroCharges$\to$\EfiveATwoMismatchCharges     & \EfiveATwoMismatchRelief   & \EfiveATwoMismatchGrid \\
-A3 shade roof   & \EfiveAThreeBZero & \EfiveAThreeMismatch & \EfiveAThreeLoss & \EfiveAThreeBZeroCharges$\to$\EfiveAThreeMismatchCharges & \EfiveAThreeMismatchRelief & \EfiveAThreeMismatchGrid \\
-A4 fleet        & \EfiveAFourBZero  & \EfiveAFourMismatch  & \EfiveAFourLoss  & \EfiveAFourBZeroCharges$\to$\EfiveAFourMismatchCharges   & \EfiveAFourMismatchRelief  & \EfiveAFourMismatchGrid \\
+A1 commuter     & \EfiveAOneBZero   & \EfiveAOneMismatch   & \EfiveAOneLoss   & \EfiveAOneBZeroCharges$\to$\EfiveAOneMismatchCharges     & \EfiveAOneBZeroRelief$\to$\EfiveAOneMismatchRelief     & \EfiveAOneMismatchGrid \\
+A2 street       & \EfiveATwoBZero   & \EfiveATwoMismatch   & \EfiveATwoLoss   & \EfiveATwoBZeroCharges$\to$\EfiveATwoMismatchCharges     & \EfiveATwoBZeroRelief$\to$\EfiveATwoMismatchRelief     & \EfiveATwoMismatchGrid \\
+A3 shade roof   & \EfiveAThreeBZero & \EfiveAThreeMismatch & \EfiveAThreeLoss & \EfiveAThreeBZeroCharges$\to$\EfiveAThreeMismatchCharges & \EfiveAThreeBZeroRelief$\to$\EfiveAThreeMismatchRelief & \EfiveAThreeMismatchGrid \\
+A4 fleet        & \EfiveAFourBZero  & \EfiveAFourMismatch  & \EfiveAFourLoss  & \EfiveAFourBZeroCharges$\to$\EfiveAFourMismatchCharges   & \EfiveAFourBZeroRelief$\to$\EfiveAFourMismatchRelief   & \EfiveAFourMismatchGrid \\
 \bottomrule
 \end{tabular}\\[2pt]
-{\footnotesize A1--A3: \SI{50}{km/day}, city cycle; A4: \SI{100}{km/day}, full cycle. Loss: share of the B0 $\fss$.}
+{\footnotesize A1--A3: \SI{50}{km/day}, city cycle; A4: \SI{100}{km/day}, full cycle. Loss: share of the B0 $\fss$. Grid: final state.}
 \end{table}
 
 \section{Shading-Aware Design Inversion}
 \label{sec:design}
-The waterfall suggests three factors that the conference design equation lacks. From the annual harvest of each archetype at successive steps, $\Fgeo=E_{\mathrm{facets}}/E_{\mathrm{flat}}$, $\Fsh=E_{\mathrm{shaded}}/E_{\mathrm{facets}}$ (parking and driving, weighted by where the car actually is) and $\Fmm=E_{\mathrm{final}}/E_{\mathrm{shaded}}$, and
+The waterfall suggests three factors that the conference design equation lacks. Each factor is the ratio of an archetype's annual harvest at two consecutive steps of the waterfall:
+\begin{equation}
+\Fgeo=\frac{E_{\mathrm{facets}}}{E_{\mathrm{flat}}},\quad
+\Fsh=\frac{E_{\mathrm{shaded}}}{E_{\mathrm{facets}}},\quad
+\Fmm=\frac{E_{\mathrm{final}}}{E_{\mathrm{shaded}}},
+\label{eq:factors}
+\end{equation}
+where $E_{\mathrm{flat}}$ is the horizontal skin through the Perez--Faiman chain and $E_{\mathrm{shaded}}$ includes parking and driving shade, weighted by where the car actually is. Then
 \begin{equation}
 A_{\mathrm{req}}=\frac{D\,c+E_{\mathrm{aux}}}{\eta_{\mathrm{pv}}\,\mathrm{PSH}\,\kappa_{\mathrm{pv}}\,f_T\,\Fgeo\,\Fsh\,\Fmm}.
 \label{eq:areqx}
 \end{equation}
-To test it, the per-facet harvest of each archetype was recomputed and scaled to other areas and allocations (roof only, roof and hood, full skin, with the area spread over the allocated facets in proportion), and the hour-by-hour simulation, with the vehicle mass fed back at \SI{3.5}{kg/m^2}, was solved for the area at which $\fss=1$. Over \EsevenN{} cases (four archetypes, three allocations, $\kappa_{\mathrm{pv}}=0.60$ to 0.80) \eqref{eq:areqx} stays within \EsevenMaxErr\% of the simulation (\EsevenMaxErrFixed\% with the mass held fixed), inside the 3\% target. Table~\ref{tab:design} lists the factors for the full skin and Fig.~\ref{fig:nomo} the resulting design curves.
+To test it, the per-facet harvest of each archetype was recomputed and scaled to other areas and allocations (roof only, roof and hood, full skin, with the area spread over the allocated facets in proportion), and the hour-by-hour simulation, with the vehicle mass fed back at \SI{3.5}{kg/m^2}, was solved for the area at which $\fss=1$. Over \EsevenN{} cases (four archetypes, three allocations, $\kappa_{\mathrm{pv}}=0.60$ to 0.80) \eqref{eq:areqx} stays within \EsevenMaxErr\% of the simulation, inside the 3\% target (\EsevenMaxErrFixed\% if the mass is held fixed). Table~\ref{tab:design} lists the factors for the full skin and Fig.~\ref{fig:nomo} the resulting design curves.
 
 \begin{table}[t]
 \caption{Loss Factors and Required Area (Full Skin, $\kappa_{\mathrm{pv}}=0.80$)}
@@ -257,7 +311,7 @@ To test it, the per-facet harvest of each archetype was recomputed and scaled to
 \toprule
  & $\Fgeo$ & $\Fsh$ & $\Fmm$ & \multicolumn{2}{c}{$A_{\mathrm{req}}$ (\si{m^2})} & Error & $D_{\max}$ \\
 \cmidrule(lr){5-6}
- & & & & \eqref{eq:areqx} & sim. & (\%) & (km/d) \\
+ & & & & \eqref{eq:areqx} & simul. & (\%) & (km/day) \\
 \midrule
 A1 & \EsevenAOneFullSkinFgeo   & \EsevenAOneFullSkinFsh   & \EsevenAOneFullSkinFmm   & \EsevenAOneAreq   & \EsevenAOneAsim   & \EsevenAOneErr   & \EsevenAOneDmax \\
 A2 & \EsevenATwoFullSkinFgeo   & \EsevenATwoFullSkinFsh   & \EsevenATwoFullSkinFmm   & \EsevenATwoAreq   & \EsevenATwoAsim   & \EsevenATwoErr   & \EsevenATwoDmax \\
@@ -265,26 +319,26 @@ A3 & \EsevenAThreeFullSkinFgeo & \EsevenAThreeFullSkinFsh & \EsevenAThreeFullSki
 A4 & \EsevenAFourFullSkinFgeo  & \EsevenAFourFullSkinFsh  & \EsevenAFourFullSkinFmm  & \EsevenAFourAreq  & \EsevenAFourAsim  & \EsevenAFourErr  & \EsevenAFourDmax \\
 \bottomrule
 \end{tabular}\\[2pt]
-{\footnotesize B0 for comparison: $A_{\mathrm{req}}=\BzPhxIIAreq$ (Scen.~II) and \BzPhxIAreq{} \si{m^2} (Scen.~I). $D_{\max}$ at \SI{11.6}{m^2}.}
+{\footnotesize Simul.: hour-by-hour simulation solved for $\fss=1$. Error $=$ (Eq.~\eqref{eq:areqx} $-$ simul.)/simul. B0 for comparison: $A_{\mathrm{req}}=\BzPhxIIAreq$ (Scen.~II) and \BzPhxIAreq{} \si{m^2} (Scen.~I). $D_{\max}$ at \SI{11.6}{m^2}.}
 \end{table}
 
 \begin{figure*}[t]
 \centering\includegraphics[width=\textwidth]{fig_nomograph.pdf}
-\caption{(a) Area for $\fss=1$ against daily distance from~\eqref{eq:areqx} for each archetype (full skin, $\kappa_{\mathrm{pv}}=0.80$), with the hour-by-hour simulation (circles) and the conference equation~\eqref{eq:areq} (gray). (b) $\fss$ against area in the simulation.}
+\caption{(a) Area for $\fss=1$ against daily distance from~\eqref{eq:areqx} for each archetype (full skin, $\kappa_{\mathrm{pv}}=0.80$), with the hour-by-hour simulation (circles) and the conference equation~\eqref{eq:areq} (gray). (b) $\fss$ against area in the simulation, with the vehicle mass fed back.}
 \label{fig:nomo}
 \end{figure*}
 
-On the full skin, a commuter would need \EsevenAOneAreq{}~\si{m^2} instead of \BzPhxIIAreq{}~\si{m^2}, and a downtown street parker \EsevenATwoAreq{}~\si{m^2}, more than the roof, hood and sides of the vehicle can hold. Put the other way, the \SI{11.6}{m^2} skin covers \EsevenAOneDmax{}~km/day for the commuter against \BzPhxIIDmax{}~km/day in the baseline. A roof-only skin of the same area would have a higher $\Fgeo$ but does not fit on the roof; the sweep table in the repository gives $\fss$ for every area, allocation, $\kappa_{\mathrm{pv}}$ and archetype.
+On the full skin, a commuter would need \EsevenAOneAreq{}~\si{m^2} instead of \BzPhxIIAreq{}~\si{m^2}, and a downtown street parker \EsevenATwoAreq{}~\si{m^2}, more than the roof, hood and sides of the vehicle can hold. Put the other way, the \SI{11.6}{m^2} skin covers \EsevenAOneDmax{}~km/day for the commuter against \BzPhxIIDmax{}~km/day in the baseline. Putting all \SI{11.6}{m^2} on near-horizontal surfaces would raise $\Fgeo$, but the roof holds only \SI{4.4}{m^2}; the sweep table in the repository gives $\fss$ for every area, allocation, $\kappa_{\mathrm{pv}}$ and archetype.
 
 \section{Validation of the Twin}
 \label{sec:validation}
-Without measured on-vehicle irradiance, the twin is cross-verified rather than physically validated (Table~\ref{tab:valid}, Fig.~\ref{fig:valid}). Unity~6 with Cesium for Unity imported the same meshes around R-DENSE, replayed all \EeightTrips{} trip-dates and cast PhysX rays from every sample once per second. Its surface lies within \EeightMarksMax{}~m of the lidar at \EeightMarksN{} survey marks. Unity and the raster engine agree on \EeightAgree\% of \EeightRecords~million sample-seconds; trip lit fractions agree within 2 percentage points (pp) on \EeightWithin{} of \EeightTrips{} trips (largest \EeightMaxPp~pp). Embree on the same meshes reproduces Unity to \EeightEmbreeMaxPp~pp, which locates the remaining difference in the surface representation: the raster treats each pixel as a flat-topped column, while the mesh rounds roof edges. The \SI{\pm1}{\degree} band around the horizon line holds \EeightBandShare\% of sample-seconds but \EeightBandDis\% of disagreements; outside it every trip agrees within \EeightBeyondMaxPp~pp.
+Without measured on-vehicle irradiance, the twin is cross-verified, not physically validated; Table~\ref{tab:valid} lists every check with its target and status. Unity~6 with Cesium for Unity imported the same meshes around R-DENSE, replayed its \PsixDenseTraces{} traces on the four dates (\EeightTrips{} trip-dates) and cast PhysX rays from every sample once per second; Fig.~\ref{fig:render} shows one moment. Its surface lies within \EeightMarksMax{}~m of the lidar at \EeightMarksN{} survey marks. Unity and the raster engine agree on \EeightAgree\% of \EeightRecords~million sample-seconds. Trip lit fractions agree within 2 percentage points (pp) on \EeightWithin{} of \EeightTrips{} trip-dates, so this target was not met; the largest difference is \EeightMaxPp~pp (Fig.~\ref{fig:valid}a). Embree rays on the same meshes match Unity to \EeightEmbreeMaxPp~pp, so the remaining disagreement comes from how the surface is represented, not from the ray tracing: the raster treats each pixel as a flat-topped column, while the mesh rounds roof edges. The \SI{\pm1}{\degree} band around the horizon line holds \EeightBandShare\% of sample-seconds but \EeightBandDis\% of disagreements; outside it every trip agrees within \EeightBeyondMaxPp~pp.
 
-Mapillary panoramas~\cite{ref_mapillary} within \SI{10}{m} of R-DENSE and R-MIXED and at least \SI{250}{m} apart give \EeightSvfAllN{} test points. Their sky segmentation gives SVF with the engine's cosine weighting. Of these, \EeightSvfKeptN{} agree with MAE \EeightSvfKeptMae{} and $r=\EeightSvfKeptR$; the remaining panorama was taken on an overpass deck that the route passes beneath, where the engine correctly sees the deck (all \EeightSvfAllN: MAE \EeightSvfAllMae). With so few points this is a plausibility check.
+Mapillary panoramas~\cite{ref_mapillary} within \SI{10}{m} of R-DENSE and R-MIXED and at least \SI{250}{m} apart give \EeightSvfAllN{} test points. Their sky segmentation gives SVF with the engine's cosine weighting. All \EeightSvfAllN{} give a mean absolute error (MAE) of \EeightSvfAllMae. One panorama was taken on an overpass deck that the route passes beneath, where the engine correctly sees the deck; without it, the remaining \EeightSvfKeptN{} give MAE \EeightSvfKeptMae{} and $r=\EeightSvfKeptR$ (Fig.~\ref{fig:valid}b). With so few points this is a plausibility check.
 
 \begin{figure}[t]
 \centering\includegraphics[width=\columnwidth]{fig_validation.pdf}
-\caption{(a) Trip lit fraction, Unity against the raster engine (band $\pm2$~pp). (b) SVF from Mapillary panoramas against the engine at \SI{2}{m}.}
+\caption{(a) Trip lit fraction, Unity against the raster engine; the band is $\pm2$~pp and the circled trip has the largest difference. (b) SVF from Mapillary panoramas against the engine at \SI{2}{m}.}
 \label{fig:valid}
 \end{figure}
 
@@ -292,45 +346,45 @@ Mapillary panoramas~\cite{ref_mapillary} within \SI{10}{m} of R-DENSE and R-MIXE
 \caption{Verification and Validation Metrics}
 \label{tab:valid}
 \centering\footnotesize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}p{0.47\columnwidth}cc@{}}
+\setlength{\tabcolsep}{2.4pt}
+\begin{tabular}{@{}lccc@{}}
 \toprule
-Check & Result & Target \\
+Check & Result & Target & Status \\
 \midrule
-Engine checks (sun, transposition, shadows, SVF) & \EonePassed/\EoneTotal & all \\
-Raster vs.\ mesh beam, 1000 points, 43 suns & \EoneBeam\% & $\ge98\%$ \\
-Raster vs.\ mesh SVF, mean $|\Delta|$ & \EoneDsvf & $<0.02$ \\
-SOLWEIG shadow pixels, 12 times & \EoneSolweigLo--\EoneSolweigHi\% & $\ge95\%$ \\
-SOLWEIG at parking sites & $\ge$\EfourSolweigLo\% & $\ge95\%$ \\
-Unity vs.\ raster, sample-seconds & \EeightAgree\% & $\ge97\%$ \\
-Unity vs.\ raster, trips within 2~pp & \EeightWithin/\EeightTrips & all \\
-Mapillary SVF, MAE ($n=\EeightSvfKeptN$) & \EeightSvfKeptMae & reported \\
-Energy closure, all steps & $\EfiveBalance$ & $\le10^{-3}$ \\
+Engine tests & \EonePassed/\EoneTotal & all & \EoneStatus \\
+Raster vs.\ mesh, beam state & \EoneBeam\% & $\ge98\%$ & \EoneBeamStatus \\
+Raster vs.\ mesh, SVF mean $|\Delta|$ & \EoneDsvf & $<0.02$ & \EoneDsvfStatus \\
+SOLWEIG, shadow pixels & \EoneSolweigLo--\EoneSolweigHi\% & $\ge95\%$ & \EoneSolweigStatus \\
+SOLWEIG, parking sites & $\ge$\EfourSolweigLo\% & $\ge95\%$ & \EfourSolweigStatus \\
+Unity vs.\ raster, sample-seconds & \EeightAgree\% & $\ge97\%$ & \EeightAgreeStatus \\
+Unity vs.\ raster, trips within 2~pp & \EeightWithin/\EeightTrips & all & \EeightTripsStatus \\
+Mapillary SVF MAE, $n=\EeightSvfAllN$ / \EeightSvfKeptN & \EeightSvfAllMae{} / \EeightSvfKeptMae & reported & -- \\
+Energy closure, all steps & $\EfiveBalance$ & $\le10^{-3}$ & \EfiveBalanceStatus \\
+Design equation vs.\ simulation & \EsevenMaxErr\% & $\le3\%$ & \EsevenStatus \\
 \bottomrule
-\end{tabular}
+\end{tabular}\\[2pt]
+{\footnotesize Engine tests: sun position, transposition, shadow length, canyon SVF. Beam: \EonePoints{} points, \EoneSuns{} suns. SOLWEIG: \EoneSolweigN{} times, \EfourSolweigN{} site maps. Mapillary $n=\EeightSvfKeptN$ leaves out the overpass panorama. The missed trip target is one trip at \EeightMaxPp~pp inside the \SI{\pm1}{\degree} horizon band.}
 \end{table}
 
-\begin{figure}[t]
-\centering
-\fbox{\parbox{0.92\columnwidth}{\centering\footnotesize\textbf{[Figure placeholder: Unity render]}\\[2pt]
-R-DENSE northbound, 21 December, 08:00 departure, medium traffic, analysis geometry in shadows-only mode under Google Photorealistic 3D Tiles. Scene as specified in PAPER\_CHANGELOG.md (P8). Rendered by the authors.\\[16mm]}}
-\caption{The Unity twin on R-DENSE on a winter morning, with the shadow on the skin from the analysis geometry. Imagery: Google; Cesium.}
+\begin{figure*}[t]
+\centering\includegraphics[width=\textwidth]{fig_render.png}
+\caption{The Unity twin on R-DENSE northbound at 08:03:52 MST on 21 December (08:00 departure, medium traffic). The analysis geometry casts the shadows in shadows-only mode under Google Photorealistic 3D Tiles. Dots on the skin are the \SI{0.25}{m} samples: yellow lit, blue in building shadow, green in tree shadow. The inset at right gives the lit share and power of each facet. Imagery: Google; Cesium.}
 \label{fig:render}
-\end{figure}
+\end{figure*}
 
 \section{Discussion and Limitations}
 \label{sec:discussion}
-Where the car parks matters more than where it drives: the commuter keeps \EfiveAOneMismatch{} because it parks in the open by day, while the same vehicle with the same trips keeps \EfiveATwoMismatch{} at a downtown curb. For design, \eqref{eq:areqx} turns a site survey into three multiplicative factors that can be estimated from shade maps without a full simulation, and the error of the closed form is smaller than the spread between archetypes.
+Where the car parks matters more than where it drives: the commuter keeps \EfiveAOneMismatch{} because it parks in the open by day, while the downtown street parker keeps \EfiveATwoMismatch, and for both, parking causes most of the shading loss (\EfiveAOneParkShare\% and \EfiveATwoParkShare\%). For design, \eqref{eq:areqx} turns a site survey into three multiplicative factors that can be estimated from shade maps without a full simulation, and the error of the closed form is smaller than the spread between archetypes.
 
-The method transfers to other cities. London's PVGIS weather is already in Table~\ref{tab:b0}; the geometry needs national lidar (the Environment Agency survey in England) and the same building and street sources. A lower sun and narrower streets would likely raise the parking and orientation losses there, so the London baseline of \BzLonIIfss{} should be read as an upper bound.
+The method transfers to other cities: London's weather is already in Table~\ref{tab:b0}, and the geometry needs national lidar and the same building and street sources. A lower sun and narrower streets would likely raise the parking and orientation losses there, so the London baseline of \BzLonIIfss{} is an upper bound.
 
-The limitations are as follows. The panel layout is an assumed design; side panels dominate $\Fgeo$, so a roof-heavy design would lose less to orientation. Mismatch depends on the module layout (three diodes per facet module and \SI{0.25}{m} cells); more diodes or per-substring tracking would reduce it. Trees use one transmissivity and the lidar canopy of 2020, without seasonal leaf change. Traffic is simulated and the arterials stay below saturation, so queues in shade are underrepresented. The weather is a typical year, the shading and SVF were verified against models and imagery rather than measured irradiance on a vehicle, and \FreshUnreviewed{} smaller building changes along the routes were not reviewed.
+The limitations are as follows. The skin layout is an assumed design; side panels dominate $\Fgeo$, so a roof-heavy design would lose less to orientation. Mismatch depends on the module layout (three diodes per facet module and \SI{0.25}{m} cells); more diodes or per-substring tracking would reduce it~\cite{ref_macalpine}. Trees use one transmissivity and the lidar canopy of 2020--2021, without seasonal leaf change. Traffic is simulated and the arterials stay below saturation, so queues in shade are underrepresented. The weather is a typical year; the shading and SVF were checked against models and imagery, and no irradiance was measured on a vehicle~\cite{ref_ota}; and \FreshUnreviewed{} smaller building changes along the routes were not reviewed.
 
 \section{Conclusion}
-A digital twin of central Phoenix shows that the usual horizontal, unshaded roof overstates the solar self-sufficiency of a heavy VIPV vehicle: the four archetypes lose \EfiveAOneLoss\% to \EfiveATwoLoss\% of the baseline value. Starting from \BzPhxIIfss{} at \SI{50}{km/day}, facet orientation and shade leave \EfiveAOneMismatch{} for a suburban commuter and \EfiveATwoMismatch{} for a car parked at a downtown curb, and grid charges rise from \EfiveAOneBZeroCharges{} to \EfiveAOneMismatchCharges--\EfiveATwoMismatchCharges{} a year. Parking shade is the largest loss after orientation; driving through street canyons costs at most \EfiveATwoBuildingsDrop. A shading-aware design equation reproduces the full simulation within \EsevenMaxErr\% and gives the required area for a new site from three factors.
+A digital twin of central Phoenix shows that the usual horizontal, unshaded roof overstates the solar self-sufficiency of a heavy VIPV vehicle: the four archetypes lose \EfiveAOneLoss\% to \EfiveATwoLoss\% of the baseline value. Starting from \BzPhxIIfss{} at \SI{50}{km/day}, facet orientation and shade leave \EfiveAOneMismatch{} for a suburban commuter and \EfiveATwoMismatch{} for a car parked at a downtown curb, and grid charges rise from \EfiveAOneBZeroCharges{} to \EfiveAOneMismatchCharges--\EfiveATwoMismatchCharges{} a year. Parking shade is the largest loss for the two downtown parkers and second to orientation for the commuter and the fleet vehicle; driving through street canyons costs at most \EfiveATwoBuildingsDrop. A shading-aware design equation reproduces the full simulation within \EsevenMaxErr\% and gives the required area for a new site from three factors.
 
 \section*{Code and Data Availability}
-The pipeline, configuration, frozen route manifest and result tables are at \url{https://github.com/jarvisxys/solaris-vipv}; the conference toolkit is at \url{https://github.com/Anandsagar18/Solaris}~\cite{ref_code}. Lidar, NAIP and NSRDB data are public and fetched by the pipeline; Overture and OpenStreetMap data are under ODbL and Mapillary imagery under CC BY-SA 4.0.
+The pipeline, configuration, frozen route manifest and result tables are at \url{https://github.com/jarvisxys/solaris-vipv}, and the release used for this paper (v2.0.0-journal) is archived on Zenodo, doi: 10.5281/zenodo.23896001~\cite{ref_zenodo}; the conference toolkit is at \url{https://github.com/Anandsagar18/Solaris}~\cite{ref_code}. Lidar, NAIP and NSRDB data are public and fetched by the pipeline; Overture and OpenStreetMap data are under ODbL and Mapillary imagery under CC BY-SA 4.0.
 
 \section*{Acknowledgment}
 \emph{Use of generative AI.} Following IEEE policy, the authors disclose that Claude (Anthropic) was used to help write, refactor and debug the analysis code and to help draft and edit the manuscript text. The study design, modeling choices, interpretation and conclusions are the authors'. The authors reviewed and edited all AI-assisted code and text, every number in the paper is generated by the released pipeline, and the authors take full responsibility for the content.
@@ -341,16 +395,25 @@ The pipeline, configuration, frozen route manifest and result tables are at \url
 \bibitem{ref_code} A.~Gaikwad, A.~Kumar, and A.~Deo, ``SOLARIS: An open toolkit for solar-assisted heavy EV feasibility assessment,'' version~1.1.0, 2026. [Online]. Available: \url{https://github.com/Anandsagar18/Solaris}
 \bibitem{ref_commault} B.~Commault, T.~Duigou, V.~Maneval, J.~Gaume, F.~Chabuel, and E.~Voroshazi, ``Overview and perspectives for vehicle-integrated photovoltaics,'' \emph{Appl.\ Sci.}, vol.~11, no.~24, Art.~no.~11598, Dec.\ 2021, doi: 10.3390/app112411598.
 \bibitem{ref_samadi} H.~Samadi, G.~Ala, V.~Lo~Brano, P.~Romano, and F.~Viola, ``Investigation of effective factors on vehicles integrated photovoltaic (VIPV) performance: A review,'' \emph{World Electr.\ Veh.\ J.}, vol.~14, no.~6, Art.~no.~154, Jun.\ 2023, doi: 10.3390/wevj14060154.
+\bibitem{ref_coleneso} D.~Coleneso, M.~Al-Mandhari, S.~N.~Hussain, and A.~Ghosh, ``Vehicle-integrated photovoltaics (VIPV) in electrified mobility: A structured systematic review of technical performance, system integration, and strategic deployment,'' \emph{Solar}, vol.~6, no.~3, Art.~no.~26, May 2026, doi: 10.3390/solar6030026.
+\bibitem{ref_ota} Y.~Ota, T.~Masuda, K.~Araki, and M.~Yamaguchi, ``A mobile multipyranometer array for the assessment of solar irradiance incident on a photovoltaic-powered vehicle,'' \emph{Sol.\ Energy}, vol.~184, pp.~84--90, May 2019, doi: 10.1016/j.solener.2019.03.084.
+\bibitem{ref_araki} K.~Araki, Y.~Ota, and M.~Yamaguchi, ``Measurement and modeling of 3D solar irradiance for vehicle-integrated photovoltaic,'' \emph{Appl.\ Sci.}, vol.~10, no.~3, Art.~no.~872, Jan.\ 2020, doi: 10.3390/app10030872.
 \bibitem{ref_carr} A.~J.~Carr \emph{et al.}, ``Solar Moves: Part 1, modelling the impact of VIPV,'' \emph{Sol.\ Energy Mater.\ Sol.\ Cells}, vol.~275, Art.~no.~113023, Sep.\ 2024, doi: 10.1016/j.solmat.2024.113023.
 \bibitem{ref_sanjose} L.~San~Jos\'e, R.~Moruno, R.~N\'u\~nez, R.~Herrero, J.~Mac\'ias, and I.~Ant\'on, ``Performance evaluation of MPPT algorithm of VIPV systems in realistic urban routes using image processing,'' \emph{Sol.\ Energy Mater.\ Sol.\ Cells}, vol.~276, Art.~no.~113061, Oct.\ 2024, doi: 10.1016/j.solmat.2024.113061.
-\bibitem{ref_yavasoglu} H.~Yavasoglu, B.~Shani, A.~Hasnain, B.~Parlak, and A.~Khaligh, ``Analysis and system design optimization of PV panel and auxiliary battery integration for VIPV electric vehicles,'' \emph{IEEE Trans.\ Transport.\ Electrific.}, vol.~11, no.~6, pp.~13535--13545, Dec.\ 2025, doi: 10.1109/TTE.2025.3600891.
 \bibitem{ref_brito} M.~C.~Brito, T.~Santos, F.~Moura, D.~Pera, and J.~Rocha, ``Urban solar potential for vehicle integrated photovoltaics,'' \emph{Transp.\ Res.\ Part D: Transp.\ Environ.}, vol.~94, Art.~no.~102810, May 2021, doi: 10.1016/j.trd.2021.102810.
 \bibitem{ref_hoth} P.~Hoth, L.~Heide, A.~Grahle, and D.~G\"ohlich, ``Vehicle-integrated photovoltaics---A case study for Berlin,'' \emph{World Electr.\ Veh.\ J.}, vol.~15, no.~3, Art.~no.~113, Mar.\ 2024, doi: 10.3390/wevj15030113.
-\bibitem{ref_middel} A.~Middel, J.~Lukasczyk, and R.~Maciejewski, ``Sky view factors from synthetic fisheye photos for thermal comfort routing---A case study in Phoenix, Arizona,'' \emph{Urban Planning}, vol.~2, no.~1, pp.~19--30, 2017, doi: 10.17645/up.v2i1.855.
+\bibitem{ref_jakubiec} J.~A.~Jakubiec and C.~F.~Reinhart, ``A method for predicting city-wide electricity gains from photovoltaic panels based on LiDAR and GIS data combined with hourly Daysim simulations,'' \emph{Sol.\ Energy}, vol.~93, pp.~127--143, Jul.\ 2013, doi: 10.1016/j.solener.2013.03.022.
 \bibitem{ref_solweig} F.~Lindberg, B.~Holmer, and S.~Thorsson, ``SOLWEIG 1.0---Modelling spatial variations of 3D radiant fluxes and mean radiant temperature in complex urban settings,'' \emph{Int.\ J.\ Biometeorol.}, vol.~52, no.~7, pp.~697--713, 2008, doi: 10.1007/s00484-008-0162-7.
 \bibitem{ref_umep} F.~Lindberg \emph{et al.}, ``Urban Multi-scale Environmental Predictor (UMEP): An integrated tool for city-based climate services,'' \emph{Environ.\ Model.\ Softw.}, vol.~99, pp.~70--87, Jan.\ 2018, doi: 10.1016/j.envsoft.2017.09.020.
+\bibitem{ref_middel} A.~Middel, J.~Lukasczyk, and R.~Maciejewski, ``Sky view factors from synthetic fisheye photos for thermal comfort routing---A case study in Phoenix, Arizona,'' \emph{Urban Planning}, vol.~2, no.~1, pp.~19--30, 2017, doi: 10.17645/up.v2i1.855.
+\bibitem{ref_bishop} J.~W.~Bishop, ``Computer simulation of the effects of electrical mismatches in photovoltaic cell interconnection circuits,'' \emph{Solar Cells}, vol.~25, no.~1, pp.~73--89, 1988, doi: 10.1016/0379-6787(88)90059-2.
+\bibitem{ref_macalpine} S.~M.~MacAlpine, R.~W.~Erickson, and M.~J.~Brandemuehl, ``Characterization of power optimizer potential to increase energy capture in photovoltaic systems operating under nonuniform conditions,'' \emph{IEEE Trans.\ Power Electron.}, vol.~28, no.~6, pp.~2936--2945, Jun.\ 2013, doi: 10.1109/TPEL.2012.2226476.
+\bibitem{ref_shafiei} N.~Shafiei, M.~Ordonez, M.~A.~Saket~Tokaldani, and S.~A.~Arefifar, ``PV battery charger using an $L3C$ resonant converter for electric vehicle applications,'' \emph{IEEE Trans.\ Transport.\ Electrific.}, vol.~4, no.~1, pp.~108--121, Mar.\ 2018, doi: 10.1109/TTE.2018.2792323.
+\bibitem{ref_yavasoglu} H.~Yavasoglu, B.~Shani, A.~Hasnain, B.~Parlak, and A.~Khaligh, ``Analysis and system design optimization of PV panel and auxiliary battery integration for VIPV electric vehicles,'' \emph{IEEE Trans.\ Transport.\ Electrific.}, vol.~11, no.~6, pp.~13535--13545, Dec.\ 2025, doi: 10.1109/TTE.2025.3600891.
+\bibitem{ref_ramsey} D.~Ramsey, A.~Bouscayrol, L.~Boulon, A.~Desreveaux, and A.~Vaudrey, ``Flexible simulation of an electric vehicle to estimate the impact of thermal comfort on the energy consumption,'' \emph{IEEE Trans.\ Transport.\ Electrific.}, vol.~8, no.~2, pp.~2288--2298, Jun.\ 2022, doi: 10.1109/TTE.2022.3144526.
 \bibitem{ref_nsrdb} M.~Sengupta, Y.~Xie, A.~Lopez, A.~Habte, G.~Maclaurin, and J.~Shelby, ``The National Solar Radiation Data Base (NSRDB),'' \emph{Renew.\ Sustain.\ Energy Rev.}, vol.~89, pp.~51--60, Jun.\ 2018, doi: 10.1016/j.rser.2018.03.003.
 \bibitem{ref_pvgis} European Commission Joint Research Centre, ``Photovoltaic Geographical Information System (PVGIS) 5.3, typical meteorological year, PVGIS-SARAH3, 2005--2023.'' [Online]. Available: \url{https://re.jrc.ec.europa.eu/pvg_tools/en/}
+\bibitem{ref_snakemake} F.~M\"older \emph{et al.}, ``Sustainable data analysis with Snakemake,'' \emph{F1000Research}, vol.~10, Art.~no.~33, Apr.\ 2021, doi: 10.12688/f1000research.29032.2.
 \bibitem{ref_3dep} U.S. Geological Survey, ``3D Elevation Program lidar point cloud, AZ\_MaricopaPinal\_2020\_B20,'' Entwine point tiles on AWS Open Data. [Online]. Available: \url{https://registry.opendata.aws/usgs-lidar/}
 \bibitem{ref_naip} U.S. Department of Agriculture Farm Service Agency, ``National Agriculture Imagery Program (NAIP), Arizona 2021,'' via Microsoft Planetary Computer. [Online]. Available: \url{https://planetarycomputer.microsoft.com/dataset/naip}
 \bibitem{ref_overture} Overture Maps Foundation, ``Buildings theme, release 2026-09-23.1.'' [Online]. Available: \url{https://overturemaps.org}
@@ -361,8 +424,8 @@ The pipeline, configuration, frozen route manifest and result tables are at \url
 \bibitem{ref_pvlib} K.~S.~Anderson \emph{et al.}, ``pvlib python: 2023 project update,'' \emph{J.\ Open Source Softw.}, vol.~8, no.~92, Art.~no.~5994, 2023, doi: 10.21105/joss.05994.
 \bibitem{ref_perez} R.~Perez, P.~Ineichen, R.~Seals, J.~Michalsky, and R.~Stewart, ``Modeling daylight availability and irradiance components from direct and global irradiance,'' \emph{Sol.\ Energy}, vol.~44, no.~5, pp.~271--289, 1990, doi: 10.1016/0038-092X(90)90055-H.
 \bibitem{ref_faiman} D.~Faiman, ``Assessing the outdoor operating temperature of photovoltaic modules,'' \emph{Prog.\ Photovolt.: Res.\ Appl.}, vol.~16, no.~4, pp.~307--315, 2008, doi: 10.1002/pip.813.
-\bibitem{ref_bishop} J.~W.~Bishop, ``Computer simulation of the effects of electrical mismatches in photovoltaic cell interconnection circuits,'' \emph{Solar Cells}, vol.~25, no.~1, pp.~73--89, 1988, doi: 10.1016/0379-6787(88)90059-2.
 \bibitem{ref_mapillary} Mapillary, ``Mapillary API v4,'' street-level imagery and semantic segmentation, CC BY-SA 4.0. [Online]. Available: \url{https://www.mapillary.com/developer/api-documentation}
+\bibitem{ref_zenodo} A.~Kumar, A.~Gaikwad, and A.~Deo, ``SOLARIS-Twin: Digital twin pipeline for shading-aware assessment of vehicle-integrated photovoltaics,'' version v2.0.0-journal, Zenodo, 2026, doi: 10.5281/zenodo.23896001.
 \end{thebibliography}
 
 \end{document}
