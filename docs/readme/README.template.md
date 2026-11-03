@@ -12,7 +12,7 @@
 ![Unity 6](https://img.shields.io/badge/twin-Unity%206%20%2B%20Cesium-222222)
 [![Paper](https://img.shields.io/badge/paper-PDF-d1495b)](paper/main.pdf)
 
-<img src="docs/readme/twin_drive.webp" width="100%" alt="The SOLARIS vehicle driving north on 1st Avenue in the Unity twin of downtown Phoenix at noon on 21 June, with live readouts of speed, PV power per facet and trip energy; mid-clip it passes under a bridge and the PV power drops to 0 W">
+<img src="docs/readme/twin_drive.webp" width="100%" alt="The SOLARIS vehicle driving south on 1st Avenue (the southbound one-way of Central Avenue) in the Unity twin of downtown Phoenix at noon on 21 June, with live readouts of speed, PV power per facet and trip energy; mid-clip it passes under a bridge and the PV power drops to 0 W">
 
 <sub>The Unity twin replaying a simulated trip through downtown Phoenix, 21 June, 12:05 MST. The panel on the right shows which facets are in direct sun; under the bridge every facet goes dark. Full clip: <a href="docs/readme/twin_drive.mp4">twin_drive.mp4</a>.</sub>
 
@@ -75,7 +75,7 @@ The same 1 km block of downtown Phoenix at each stage of the pipeline (Blender r
 <table>
 <tr>
 <td width="62%"><img src="docs/readme/sun_day.webp" alt="Animated clay render of downtown Phoenix from 05:45 to 19:15 on 21 June with the sun at its computed position; building shadows sweep across the streets"></td>
-<td>The sun position for every second of the year comes from the NREL solar position algorithm (pvlib). Each facet sample gets a horizon mask from the surface model; the beam is blocked when the sun is behind it, and diffuse light is scaled by the sky view factor. On 21 June the sun stands 79° high at noon, so even narrow canyons get light at midday; morning and evening are where buildings take it away.</td>
+<td>The sun position at every time step (each second while driving, every five minutes while parked) comes from the NREL solar position algorithm (pvlib). A ray from each facet sample toward the sun decides whether the beam reaches it, and the diffuse sky light is scaled by a sky view factor from the horizon of buildings and trees. On 21 June the sun stands 79° high at noon, so even narrow canyons get light at midday; morning and evening are where buildings take it away.</td>
 </tr>
 </table>
 
@@ -102,8 +102,17 @@ Pan and zoom the map; click a coloured route marker or a parking pin for its det
 
 Traffic comes from SUMO on the OSM network: background demand at three levels, five departure times (08:00 to 16:00) and both directions, giving 120 frozen trips with a position and speed every second. The vehicle parks at five sites: an open lot (P1), the darkest curb on Central Avenue (P2, sky view factor 0.34), a residential driveway beside a tree (P3), a garage top deck (P4) and the P1 stall under a shade roof (P5).
 
-[![Open the street canyon at P2 in GitHub's 3D viewer](https://img.shields.io/badge/3D%20viewer-street%20canyon%20at%20P2%2C%20lidar%2C%20300%20m-d1495b?style=for-the-badge&logo=threedotjs&logoColor=white)](docs/readme/canyon_p2.stl)
-<sub>The lidar surface (buildings and tree canopy on a 2 m grid) around the P2 curb.</sub>
+### The street canyon at the P2 curb, in 3D
+
+Drag to rotate, scroll to zoom. This is the block around the darkest curb on Central Avenue, where the downtown archetype parks all day: Overture building footprints raised to their lidar roof height (trees left out), with the curb at the centre. The tallest tower is 114 m; the canyon floor keeps a sky view factor of 0.34.
+
+```stl
+{{CANYON}}
+```
+
+[![Open the full lidar canyon in GitHub's 3D viewer](https://img.shields.io/badge/3D%20viewer-full%20lidar%20canyon%20with%20trees%2C%20300%20m-d1495b?style=for-the-badge&logo=threedotjs&logoColor=white)](docs/readme/canyon_p2.stl)
+
+<sub>The button opens the lidar surface itself (buildings and tree canopy on a 2 m grid, 300 m × 300 m) in GitHub's 3D viewer.</sub>
 
 ### A day in the life of each archetype
 
@@ -424,7 +433,7 @@ The Unity project in [`twin/unity/`](twin/unity/) (Unity 6.3 LTS, Cesium for Uni
 | USDA NAIP 2021 | tree/building separation (NDVI) | public domain |
 | NREL NSRDB (TMY-2023, 5-min 2023) | weather | NREL terms of use |
 | NGS survey marks | ground check | public domain |
-| Overture Maps buildings | building changes | ODbL |
+| Overture Maps buildings | building changes; footprints of the 3D canyon model above | ODbL |
 | OpenStreetMap | roads, bridges, tunnels, SUMO network | ODbL, © OpenStreetMap contributors |
 | Mapillary | street panoramas for sky view | CC BY-SA 4.0 |
 | Google Photorealistic 3D Tiles via Cesium ion | Unity visuals only (screenshots above keep the on-screen attribution) | Google Maps Platform terms |
