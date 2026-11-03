@@ -26,6 +26,7 @@ import pandas as pd  # noqa: E402
 import rasterio  # noqa: E402
 import rasterio.features  # noqa: E402
 import rasterio.windows  # noqa: E402
+import yaml  # noqa: E402
 from PIL import Image, ImageDraw, ImageFont  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -141,81 +142,39 @@ def _compact_stl(name, tris, nd=1):
     return "\n".join(lines + [f"endsolid {name}"]) + "\n"
 
 
-def canyon_blocks_stl(half=110.0):
-    """Block model of the P2 canyon: Overture footprints extruded to lidar roof height."""
-    import shapely
-    from shapely.geometry import box
+def vehicle_skin_stl(lift=0.05, thick=0.05):
+    """The Blender vehicle wearing the exact PV skin of configs/vehicle/solaris_p0.yaml.
 
-    m = json.loads((ROOT / "routes/v2/MANIFEST.json").read_text())["parking"]["P2"]
-    x0, y0 = m["x"], m["y"]
-    bb = box(x0 - half, y0 - half, x0 + half, y0 + half)
-    fp = gpd.read_file(ROOT / "data/raw/overture/buildings.gpkg", mask=bb).to_crs(26912)
-    fp = fp.explode(index_parts=False)
-    fp = fp[
-        (fp.geometry.area > 20) & fp.geometry.centroid.within(bb)
-    ]  # whole buildings, no cut walls
-    ext = box(*fp.total_bounds).union(bb).bounds
-
-    def window(p):
-        s = rasterio.open(p)
-        w = rasterio.windows.from_bounds(*ext, s.transform).round_offsets().round_lengths()
-        return s.read(1, window=w), s.window_transform(w)
-
-    dsm, tr = window(ROOT / "data/derived/dsm.tif")
-    dem, _ = window(ROOT / "data/derived/dem.tif")
-    ground = float(np.median(dem[dem > -1000]))
-    tris = []
-
-    def quad(a, b, c, d):
-        tris.extend([(a, b, c), (a, c, d)])
-
-    for poly in fp.geometry.simplify(0.7):
-        if poly.is_empty or poly.geom_type != "Polygon":
-            continue
-        mask = rasterio.features.geometry_mask([poly], dsm.shape, tr, invert=True)
-        if mask.sum() < 4:
-            continue
-        top = float(np.percentile(dsm[mask], 90)) - ground  # roof height above the street
-        if top < 2.5:
-            continue
-        ring = np.array(poly.exterior.coords)[:-1] - [x0, y0]
-        if shapely.Polygon(ring).exterior.is_ccw is False:
-            ring = ring[::-1]
-        for (xa, ya), (xb, yb) in zip(ring, np.roll(ring, -1, axis=0), strict=True):
-            quad(
-                np.array([xa, ya, 0]),
-                np.array([xb, yb, 0]),
-                np.array([xb, yb, top]),
-                np.array([xa, ya, top]),
-            )
-        roof = shapely.constrained_delaunay_triangles(shapely.Polygon(ring))
-        for t in roof.geoms:
-            c = np.array(t.exterior.coords)[:3]
-            tri = [np.array([x, y, top]) for x, y in c]
-            if np.cross(tri[1] - tri[0], tri[2] - tri[0])[2] < 0:
-                tri = tri[::-1]
-            tris.append(tuple(tri))
-    gx0, gy0, gx1, gy1 = ext[0] - x0 - 5, ext[1] - y0 - 5, ext[2] - x0 + 5, ext[3] - y0 + 5
-    quad(
-        *(
-            np.array(p)
-            for p in ([gx0, gy0, -0.05], [gx1, gy0, -0.05], [gx1, gy1, -0.05], [gx0, gy1, -0.05])
-        )
-    )
-    # the parked SOLARIS at the curb (5 x 2 x 1.85 m, heading along the avenue) for scale
-    lo, hi = np.array([-1.0, -2.5, 0.0]), np.array([1.0, 2.5, 1.85])
-    for ax in range(3):
-        for s in (lo, hi):
-            u, v = [i for i in range(3) if i != ax]
-            pts = []
-            for du, dv in ((0, 0), (1, 0), (1, 1), (0, 1)):
-                p = s.copy()
-                p[u] = (lo, hi)[du][u]
-                p[v] = (lo, hi)[dv][v]
-                pts.append(p)
-            quad(*pts)
-    (OUT / "canyon_p2_blocks.stl").write_text(_compact_stl("p2_canyon", tris), newline="\n")
-    print(f"  canyon blocks: {len(fp)} footprints, {len(tris)} triangles")
+    Each facet is a thin plate raised `lift` m along its normal so it stands out in GitHub's
+    single-colour viewer. The vehicle comes from blender_renders.py (body frame, x forward,
+    y left, z up, ground under the body centre), the same frame as the facets.
+    """
+    cfg = yaml.safe_load((ROOT / "configs/vehicle/solaris_p0.yaml").read_text())
+    v = [
+        list(map(float, ln.split()[1:]))
+        for ln in (OUT / "solaris_p0_vehicle_lowpoly.stl").read_text().splitlines()
+        if ln.startswith("vertex")
+    ]
+    tris = [tuple(np.array(v[i : i + 3])) for i in range(0, len(v), 3)]
+    for f in cfg["facets"]:
+        t, a = np.radians(f["tilt_deg"]), np.radians(f["azimuth_body_deg"])
+        nrm = np.array([np.cos(a) * np.sin(t), -np.sin(a) * np.sin(t), np.cos(t)])
+        across = np.array([-np.sin(a), -np.cos(a), 0.0]) * f["across_m"] / 2
+        up = np.cross(nrm, across / np.linalg.norm(across)) * f["slope_m"] / 2
+        c0 = np.array(f["centre_m"]) + lift * nrm
+        lo = [c0 + su * across + sv * up for su, sv in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+        hi = [p + thick * nrm for p in lo]
+        tris += [
+            (lo[0], lo[2], lo[1]),
+            (lo[0], lo[3], lo[2]),
+            (hi[0], hi[1], hi[2]),
+            (hi[0], hi[2], hi[3]),
+        ]
+        for i in range(4):
+            j = (i + 1) % 4
+            tris += [(lo[i], lo[j], hi[j]), (lo[i], hi[j], hi[i])]
+    stl = _compact_stl("solaris_p0_skin", tris, nd=2)
+    (OUT / "solaris_p0_skin.stl").write_text(stl, newline="\n")
 
 
 def canyon_stl(half=150.0, step=2.0):
@@ -549,14 +508,10 @@ def social_preview():
 
 
 def readme():
-    """README.md from README.template.md with the GeoJSON map and two STL models inlined."""
+    """README.md from README.template.md with the GeoJSON map and the vehicle STL inlined."""
     t = (OUT / "README.template.md").read_text(encoding="utf-8")
     t = t.replace("{{GEOJSON}}", (OUT / "routes.geojson").read_text(encoding="utf-8").strip())
-    for key, name in (
-        ("CANYON", "canyon_p2_blocks.stl"),
-        ("VEHICLE", "solaris_p0_vehicle_lowpoly.stl"),
-    ):
-        t = t.replace("{{" + key + "}}", (OUT / name).read_text(encoding="utf-8").strip())
+    t = t.replace("{{VEHICLE}}", (OUT / "solaris_p0_skin.stl").read_text(encoding="utf-8").strip())
     (ROOT / "README.md").write_bytes(t.encode("utf-8"))
 
 
@@ -570,7 +525,7 @@ def main():
     steps = {
         "routes": routes_geojson,
         "canyon": canyon_stl,
-        "blocks": canyon_blocks_stl,
+        "skin": vehicle_skin_stl,
         "weather": weather,
         "network": network_map,
         "traffic": traffic,

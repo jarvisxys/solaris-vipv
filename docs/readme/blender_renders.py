@@ -425,8 +425,8 @@ def vehicle_stl(readme_dir):
     def combined(skip_small):
         bm = bmesh.new()
         for o in parts(root):
-            if skip_small and o.name.startswith(small):
-                continue
+            if o.hide_render or (skip_small and o.name.startswith(small)):
+                continue  # hide_render: the wheel-arch boolean cutters
             me = bpy.data.meshes.new_from_object(o.evaluated_get(dg), depsgraph=dg)
             me.transform(rot @ o.matrix_world)
             bm.from_mesh(me)
@@ -458,8 +458,7 @@ def vehicle_stl(readme_dir):
         d = ob.modifiers.new("collapse", "DECIMATE")
         d.decimate_type, d.ratio = "COLLAPSE", 0.2
         ev = ob.evaluated_get(bpy.context.evaluated_depsgraph_get())
-        m = ev.to_mesh()
-        z0 = min(v.co.z for v in m.vertices)
+        m = ev.to_mesh()  # body frame of configs/vehicle: ground under the body centre is z = 0
 
         def g(x):
             s = f"{x:.2f}".rstrip("0").rstrip(".")
@@ -467,7 +466,7 @@ def vehicle_stl(readme_dir):
 
         lines = ["solid solaris_p0"]
         for p in m.polygons:
-            vs = [m.vertices[i].co - Vector((0, 0, z0)) for i in p.vertices]
+            vs = [m.vertices[i].co.copy() for i in p.vertices]
             n = (vs[1] - vs[0]).cross(vs[2] - vs[0])
             lines += [
                 "facet normal " + " ".join(g(q) for q in (n.normalized() if n.length else n)),
